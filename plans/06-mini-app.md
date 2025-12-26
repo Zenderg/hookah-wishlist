@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Mini App is a web-based application that runs inside Telegram, providing a rich, interactive interface for managing hookah tobacco wishlists. It offers a superior user experience compared to the text-based bot, with images, smooth animations, and intuitive touch interactions. The Mini App is built as static files and served via Coolify.
+The Mini App is a web-based application that runs inside Telegram, providing a rich, interactive interface for managing hookah tobacco wishlists. It offers a superior user experience compared to the text-based bot, with images, smooth animations, and intuitive touch interactions. The Mini App is built as static files and runs in a Docker container with nginx for serving static files and proxying API requests.
 
 ## Technology Stack
 
@@ -16,6 +16,7 @@ The Mini App is a web-based application that runs inside Telegram, providing a r
 - **HTTP Client**: Axios 1+
 - **Telegram Integration**: @telegram-apps/sdk
 - **Icons**: Lucide React
+- **Web Server**: nginx (alpine)
 
 ### Development Tools
 
@@ -46,23 +47,26 @@ mini-app/
 ├── index.html              # HTML template
 ├── vite.config.ts          # Vite configuration
 ├── tailwind.config.js      # Tailwind configuration
-└── tsconfig.json           # TypeScript configuration
+├── tsconfig.json           # TypeScript configuration
+├── Dockerfile              # Docker build configuration
+└── nginx.conf              # nginx configuration
 ```
 
 ## Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph "Mini App"
+    subgraph "Mini App Container"
         A[React Components]
         B[Zustand Store]
         C[API Services]
         D[Telegram SDK]
+        E[nginx Server]
     end
     
     subgraph "External"
-        E[API Server]
-        F[Telegram API]
+        F[API Server]
+        G[Telegram API]
     end
     
     A --> B
@@ -70,12 +74,14 @@ graph TB
     A --> D
     B --> C
     C --> E
-    D --> F
+    E --> F
+    D --> G
     
     style A fill:#61dafb
     style B fill:#764abc
     style C fill:#68a063
     style D fill:#0088cc
+    style E fill:#009639
 ```
 
 ## Core Features
@@ -424,7 +430,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 // services/api.ts
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.yourdomain.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -939,6 +945,102 @@ function VirtualList({ items }: { items: WishlistItem[] }) {
 
 ## Deployment
 
+### Docker Configuration
+
+The Mini App uses a multi-stage Docker build:
+
+```dockerfile
+# Stage 1: Build the React app with Vite
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Enable gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+
+    # Serve static files with SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API requests to backend
+    location /api/ {
+        proxy_pass http://api:3000/api/v1/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # CORS headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
 ### Build Configuration
 
 ```typescript
@@ -962,13 +1064,34 @@ export default defineConfig({
 ### Environment Variables
 
 ```env
-VITE_API_URL=https://api.yourdomain.com/api/v1
+# API URL (relative path for nginx proxy, or full URL for external)
+VITE_API_URL=/api
+
+# Telegram Bot Username
 VITE_TELEGRAM_BOT_USERNAME=your_bot_username
 ```
 
-### Deployment Steps
+### Deployment Options
 
-1. Build app:
+#### Option 1: Docker Compose (Recommended for Development)
+
+Run the Mini App with all services using Docker Compose:
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or start only the mini-app service
+docker-compose up mini-app
+```
+
+The Mini App will be available at `http://localhost:8080`
+
+#### Option 2: Coolify Static File Hosting (Alternative)
+
+For production deployment, you can also use Coolify's static file hosting:
+
+1. Build the app:
 ```bash
 npm run build
 ```
@@ -983,6 +1106,71 @@ npm run build
 Web App URL: https://yourdomain.com
 ```
 
+### Deployment Steps (Docker Compose)
+
+1. **Build Docker Image**:
+```bash
+docker-compose build mini-app
+```
+
+2. **Run with Docker Compose**:
+```bash
+docker-compose up -d mini-app
+```
+
+3. **Verify Deployment**:
+```bash
+# Check container status
+docker-compose ps mini-app
+
+# View logs
+docker-compose logs mini-app
+
+# Test access
+curl http://localhost:8080
+```
+
+4. **Configure Telegram BotFather**:
+```
+Web App URL: http://yourdomain.com:8080 (for local)
+            or https://yourdomain.com (for production with Coolify)
+```
+
+### Deployment Steps (Coolify Alternative)
+
+1. **Build app**:
+```bash
+npm run build
+```
+
+2. **Deploy to Coolify**:
+- Coolify automatically serves static files from `dist/` directory
+- Configure environment variables in Coolify dashboard
+- Automatic HTTPS via Coolify
+
+3. **Configure Telegram BotFather**:
+```
+Web App URL: https://yourdomain.com
+```
+
+### Local Development
+
+For local development without Docker:
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
 ## Summary
 
 The Mini App provides:
@@ -994,7 +1182,10 @@ The Mini App provides:
 ✅ **State Management** - Efficient state handling with Zustand
 ✅ **Accessibility** - Accessible components with Headless UI
 ✅ **Scalability** - Code splitting and virtual scrolling
-✅ **Coolify Deployment** - Static file hosting with automatic HTTPS
-✅ **No Local Build** - Built and deployed via Coolify
+✅ **Docker Support** - Runs in Docker container with nginx
+✅ **Docker Compose Ready** - Full integration with docker-compose
+✅ **API Proxy** - nginx handles API requests with CORS
+✅ **Static Asset Caching** - Optimized asset delivery
+✅ **Coolify Alternative** - Can also be deployed via Coolify static hosting
 
-The Mini App offers a superior user experience compared to text-based bot, with intuitive touch interactions, smooth animations, and visual feedback.
+The Mini App offers a superior user experience compared to text-based bot, with intuitive touch interactions, smooth animations, and visual feedback. It can be deployed either via Docker Compose (recommended) or Coolify static file hosting (alternative).

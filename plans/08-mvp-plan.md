@@ -38,13 +38,13 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 1.2 Docker Compose Setup
 
-- [ ] Create `docker-compose.yml` for local development
-- [ ] Configure PostgreSQL service
-- [ ] Configure API service
-- [ ] Configure Bot service
-- [ ] Configure Scraper service
-- [ ] Add environment variables configuration
-- [ ] Test Docker Compose startup
+- [X] Create `docker-compose.yml` for local development
+- [X] Configure PostgreSQL service
+- [X] Configure API service
+- [X] Configure Bot service
+- [X] Configure Scraper service
+- [X] Add environment variables configuration
+- [X] Test Docker Compose startup
 
 #### 1.3 Database Setup
 

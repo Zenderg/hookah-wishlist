@@ -59,6 +59,7 @@ graph TB
     I --> C
     I --> D
     I --> E
+    I --> B
     
     style A fill:#0088cc
     style B fill:#0088cc
@@ -135,8 +136,9 @@ graph TB
 
 **Deployment**:
 - Built as static files via Vite
-- Served via Coolify static file hosting
-- HTTPS automatically handled by Coolify
+- Runs in Docker container with nginx for static file serving
+- nginx acts as reverse proxy for API requests
+- HTTPS automatically handled by Coolify (production) or local setup
 
 ### 3. API Server
 
@@ -231,6 +233,7 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant MA as Mini App
+    participant NG as nginx
     participant TG as Telegram API
     participant API as API Server
     participant DB as PostgreSQL
@@ -238,14 +241,18 @@ sequenceDiagram
     U->>MA: Open Mini App
     MA->>TG: Get initData
     TG-->>MA: User data + auth hash
-    MA->>API: POST /api/auth/validate (initData)
+    MA->>NG: POST /api/auth/validate (initData)
+    NG->>API: Forward request
     API->>DB: Verify user
     DB-->>API: User data
-    API-->>MA: Auth token
-    MA->>API: GET /api/wishlist (with token)
+    API-->>NG: Auth token
+    NG-->>MA: JSON response
+    MA->>NG: GET /api/wishlist (with token)
+    NG->>API: Forward request
     API->>DB: Query wishlist
     DB-->>API: Wishlist data
-    API-->>MA: JSON response
+    API-->>NG: JSON response
+    NG-->>MA: JSON response
     MA-->>U: Display wishlist UI
 ```
 
@@ -255,20 +262,25 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant MA as Mini App
+    participant NG as nginx
     participant API as API Server
     participant DB as PostgreSQL
     
     U->>MA: Search for tobacco
-    MA->>API: GET /api/tobaccos?search=name
+    MA->>NG: GET /api/tobaccos?search=name
+    NG->>API: Forward request
     API->>DB: Query tobaccos
     DB-->>API: Results
-    API-->>MA: JSON response
+    API-->>NG: JSON response
+    NG-->>MA: JSON response
     MA-->>U: Display results
     U->>MA: Select and add to wishlist
-    MA->>API: POST /api/wishlist/items
+    MA->>NG: POST /api/wishlist/items
+    NG->>API: Forward request
     API->>DB: Insert wishlist item
     DB-->>API: Success
-    API-->>MA: Confirmation
+    API-->>NG: Confirmation
+    NG-->>MA: Confirmation
     MA-->>U: Show success message
 ```
 
@@ -375,6 +387,7 @@ graph TB
         DB_DEV[PostgreSQL]
         SCRAPER_DEV[Scraper]
         BOT_DEV[Telegram Bot]
+        MINI_DEV[Mini App + nginx]
     end
     
     DEV --> DC
@@ -382,9 +395,11 @@ graph TB
     DC --> DB_DEV
     DC --> SCRAPER_DEV
     DC --> BOT_DEV
+    DC --> MINI_DEV
     API_DEV --> DB_DEV
     SCRAPER_DEV --> DB_DEV
     BOT_DEV --> API_DEV
+    MINI_DEV --> API_DEV
     
     style DEV fill:#f0f0f0
     style DC fill:#2496ed
@@ -392,6 +407,7 @@ graph TB
     style DB_DEV fill:#336791
     style SCRAPER_DEV fill:#e03535
     style BOT_DEV fill:#0088cc
+    style MINI_DEV fill:#61dafb
 ```
 
 ### Production Environment (Coolify)
@@ -406,7 +422,6 @@ graph TB
     subgraph "Coolify Platform"
         CF[Coolify Dashboard]
         TR[Traefik Reverse Proxy]
-        ST[Static File Hosting]
     end
     
     subgraph "Docker Services"
@@ -414,6 +429,7 @@ graph TB
         BOT_PROD[Telegram Bot]
         SCRAPER_PROD[Scraper]
         PG_PROD[PostgreSQL]
+        MINI_PROD[Mini App + nginx]
     end
     
     subgraph "External"
@@ -424,25 +440,26 @@ graph TB
     GH --> WH
     WH --> CF
     CF --> TR
-    TR --> ST
     TR --> API_PROD
     TR --> BOT_PROD
     TR --> SCRAPER_PROD
+    TR --> MINI_PROD
     API_PROD --> PG_PROD
     SCRAPER_PROD --> PG_PROD
     BOT_PROD <--> TG
     API_PROD <--> TG
+    MINI_PROD --> API_PROD
     SCRAPER_PROD --> HTREVIEWS
     
     style GH fill:#2088ff
     style WH fill:#2088ff
     style CF fill:#6b4fbb
     style TR fill:#6b4fbb
-    style ST fill:#6b4fbb
     style API_PROD fill:#68a063
     style BOT_PROD fill:#0088cc
     style SCRAPER_PROD fill:#e03535
     style PG_PROD fill:#336791
+    style MINI_PROD fill:#61dafb
     style TG fill:#0088cc
     style HTREVIEWS fill:#ff6b6b
 ```
@@ -487,6 +504,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hookah_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build: ./api
@@ -494,13 +516,23 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      NODE_ENV: development
+      LOG_LEVEL: info
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   bot:
     build: ./bot
     environment:
       API_URL: http://api:3000/api/v1
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      LOG_LEVEL: info
     depends_on:
       - api
 
@@ -508,12 +540,76 @@ services:
     build: ./scraper
     environment:
       DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      SCRAPER_SCHEDULE: "0 2 * * *"
+      LOG_LEVEL: info
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+  mini-app:
+    build: ./mini-app
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
 ```
+
+### Mini App nginx Configuration
+
+The Mini App container includes nginx which serves static files and proxies API requests:
+
+**nginx.conf**:
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Serve static files
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API requests to backend
+    location /api/ {
+        proxy_pass http://api:3000/api/v1/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # CORS headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**Key Features**:
+- Static file serving from `/usr/share/nginx/html`
+- SPA routing support with `try_files $uri $uri/ /index.html`
+- Reverse proxy for API requests to backend
+- CORS headers for cross-origin requests
+- Gzip compression for better performance
+- Static asset caching
 
 ### Production (Coolify)
 
@@ -819,5 +915,6 @@ The Hookah Wishlist System architecture is designed with:
 ✅ **Containerization** - Docker Compose for consistent environments
 ✅ **Automated Deployment** - Coolify with GitHub Webhooks
 ✅ **No Local Dependencies** - PostgreSQL runs in containers, not installed locally
+✅ **Full Docker Compose** - All services including mini-app run in containers
 
 The architecture provides a solid foundation for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment and operations.

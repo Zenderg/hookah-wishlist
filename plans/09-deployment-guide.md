@@ -4,6 +4,8 @@
 
 This document provides comprehensive instructions for deploying Hookah Wishlist System to production using Coolify platform with GitHub Webhooks automation. The system runs entirely in Docker containers with PostgreSQL, eliminating the need for local database installation. Deployment is automated through GitHub push events.
 
+Additionally, the entire system can be run locally using Docker Compose for development and testing.
+
 ## Architecture Overview
 
 ```mermaid
@@ -24,7 +26,7 @@ graph TB
         G[Telegram Bot]
         H[Scraper]
         I[PostgreSQL Database]
-        J[Mini App Static Files]
+        J[Mini App + nginx]
     end
     
     subgraph "External"
@@ -44,6 +46,7 @@ graph TB
     F --> K
     G --> K
     H --> L
+    J --> F
     
     style A fill:#2088ff
     style B fill:#2088ff
@@ -67,7 +70,7 @@ graph TB
    - Repository for project code
    - Access to create webhooks
 
-2. **Coolify Account**
+2. **Coolify Account** (for production deployment)
    - Sign up at https://coolify.io
    - Free tier sufficient for MVP
    - GitHub integration enabled
@@ -79,25 +82,81 @@ graph TB
 
 ### Required Domains
 
-1. **API Domain** (optional but recommended)
+1. **API Domain** (optional but recommended for production)
    - Example: `api.yourdomain.com`
    - Configured in Coolify for API service
 
-2. **Mini App Domain** (optional but recommended)
+2. **Mini App Domain** (optional but recommended for production)
    - Example: `yourdomain.com`
-   - Configured in Coolify for static files
+   - Configured in Coolify for Mini App service
 
 ### Required Tokens
 
 1. **Telegram Bot Token**
    - Obtained from @BotFather
-   - Stored in Coolify environment variables
+   - Stored in environment variables
 
-2. **Coolify GitHub Token**
+2. **Coolify GitHub Token** (for production deployment)
    - Generated in Coolify dashboard
    - Used for GitHub repository connection
 
-## Step-by-Step Deployment
+### Required Software (for local development)
+
+1. **Docker** - Version 20.10+
+2. **Docker Compose** - Version 2.0+
+3. **Git** - For version control
+
+## Deployment Options
+
+### Option 1: Local Docker Compose (Development/Testing)
+
+Run the entire system locally using Docker Compose:
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/hookah-wishlist.git
+cd hookah-wishlist
+
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env with your values
+nano .env
+
+# Start all services
+docker-compose up --build
+
+# Or start in detached mode
+docker-compose up -d --build
+```
+
+**Access Points**:
+- Mini App: http://localhost:8080
+- API: http://localhost:3000
+- PostgreSQL: localhost:5432
+
+**Stop services**:
+```bash
+docker-compose down
+```
+
+**View logs**:
+```bash
+# All services
+docker-compose logs
+
+# Specific service
+docker-compose logs mini-app
+docker-compose logs api
+docker-compose logs bot
+docker-compose logs scraper
+```
+
+### Option 2: Coolify Production Deployment
+
+Deploy to production using Coolify platform with automated deployments.
+
+## Step-by-Step Deployment (Coolify)
 
 ### Step 1: Prepare GitHub Repository
 
@@ -174,12 +233,12 @@ git push -u origin main
 
 #### 2.5 Create Mini App Application
 
-1. Create application for Mini App static files:
+1. Create application for Mini App:
    - **Name**: `hookah-wishlist-mini-app`
-   - **Type**: `Static Site`
+   - **Type**: `Dockerfile / Docker Compose`
    - **Repository**: Same repository
    - **Branch**: `main`
-   - **Build Path**: `/mini-app/dist` (for Mini App)
+   - **Build Path**: `/mini-app` (for Mini App service)
 2. Click "Create Application"
 
 ### Step 3: Configure Environment Variables
@@ -248,7 +307,7 @@ In Coolify dashboard for `hookah-wishlist-mini-app` application, add:
 
 ```env
 # API URL (Coolify internal URL)
-VITE_API_URL=http://hookah-wishlist-api:3000/api/v1
+VITE_API_URL=/api
 
 # Telegram Bot Username
 VITE_TELEGRAM_BOT_USERNAME=your_bot_username
@@ -385,7 +444,7 @@ services:
     ports:
       - "80:80"
     environment:
-      VITE_API_URL: http://api:3000/api/v1
+      VITE_API_URL: /api
       VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
@@ -479,9 +538,101 @@ curl https://your-coolify-domain.com/
 /start
 ```
 
+## Local Docker Compose Deployment
+
+### Quick Start
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/hookah-wishlist.git
+cd hookah-wishlist
+
+# Create .env file
+cp .env.example .env
+
+# Edit .env with your configuration
+nano .env
+
+# Start all services
+docker-compose up --build
+
+# Access Mini App
+# Open http://localhost:8080 in browser
+```
+
+### Environment Variables (.env)
+
+```env
+# PostgreSQL
+POSTGRES_PASSWORD=hookah_password
+
+# Bot
+TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
+
+# Mini App
+TELEGRAM_BOT_USERNAME=your_bot_username
+```
+
+### Service Ports
+
+- **Mini App**: http://localhost:8080
+- **API**: http://localhost:3000
+- **PostgreSQL**: localhost:5432
+
+### Useful Commands
+
+```bash
+# Start all services
+docker-compose up
+
+# Start in detached mode
+docker-compose up -d
+
+# Rebuild and start
+docker-compose up --build
+
+# Stop all services
+docker-compose down
+
+# View logs
+docker-compose logs
+
+# View logs for specific service
+docker-compose logs mini-app
+docker-compose logs api
+docker-compose logs bot
+docker-compose logs scraper
+
+# Restart specific service
+docker-compose restart mini-app
+
+# Execute command in container
+docker-compose exec api sh
+docker-compose exec postgres psql -U hookah_user -d hookah_wishlist
+```
+
+### Local Development with Hot Reload
+
+For development with hot reload, you can run services individually:
+
+```bash
+# Start PostgreSQL and API
+docker-compose up postgres api
+
+# In another terminal, run bot locally
+cd bot
+npm install
+npm run dev
+
+# In another terminal, run mini-app locally
+cd mini-app
+npm install
+npm run dev
+```
+
 ## Deployment Workflow
 
-### Automated Deployment Process
+### Automated Deployment Process (Coolify)
 
 ```mermaid
 sequenceDiagram
@@ -501,7 +652,25 @@ sequenceDiagram
     APP->>DEV: Application running
 ```
 
-### Manual Deployment
+### Local Development Workflow
+
+```mermaid
+sequenceDiagram
+    participant DEV as Developer
+    participant DC as Docker Compose
+    participant APP as Application Containers
+    
+    DEV->>DC: docker-compose up --build
+    DC->>DC: Build Docker images
+    DC->>DC: Start containers
+    DC->>APP: Run services
+    APP->>DEV: Ready for development
+    DEV->>APP: Make code changes
+    DEV->>DC: Restart specific service
+    DC->>APP: Apply changes
+```
+
+### Manual Deployment (Coolify)
 
 If automatic deployment fails or you need to deploy manually:
 
@@ -543,6 +712,32 @@ HTTP 200 from / - Mini App health check
 ```
 
 Coolify automatically restarts unhealthy services.
+
+### Docker Compose Monitoring
+
+#### 1. View Container Status
+
+```bash
+docker-compose ps
+```
+
+#### 2. View Logs
+
+```bash
+# All services
+docker-compose logs
+
+# Specific service
+docker-compose logs -f mini-app
+docker-compose logs -f api
+```
+
+#### 3. Resource Usage
+
+```bash
+# View container resource usage
+docker stats
+```
 
 ### Database Backups
 
@@ -677,6 +872,30 @@ Run backup:
    docker-compose exec scraper node dist/index.js --manual
    ```
 
+#### Issue 7: Docker Compose Build Fails
+
+**Symptoms**:
+- `docker-compose up --build` fails
+- Build errors during image creation
+
+**Solutions**:
+1. Check Docker is running: `docker --version`
+2. Clear Docker cache: `docker system prune -a`
+3. Check for syntax errors in Dockerfile
+4. Verify all required files are present
+5. Check network connectivity for package downloads
+
+#### Issue 8: Port Already in Use
+
+**Symptoms**:
+- Error: "port is already allocated"
+- Services fail to start
+
+**Solutions**:
+1. Check what's using the port: `lsof -i :8080`
+2. Stop conflicting service
+3. Or change port in docker-compose.yml
+
 ## Scaling Considerations
 
 ### Horizontal Scaling
@@ -759,7 +978,7 @@ Coolify makes horizontal scaling easy:
 ### Coolify Pricing
 
 **Free Tier** (sufficient for MVP):
-- 2 applications (API + Bot)
+- 5 applications (API + Bot + Scraper + Mini App + PostgreSQL)
 - 2GB RAM total
 - 10GB storage
 - 1GB bandwidth per month
@@ -767,6 +986,12 @@ Coolify makes horizontal scaling easy:
 - Health monitoring
 
 **Estimated Monthly Cost**: $0 (free tier)
+
+### Local Development Cost
+
+- **Docker**: Free (open source)
+- **PostgreSQL**: Free (runs in container)
+- **No cloud costs**: Everything runs locally
 
 ### When to Upgrade
 
@@ -849,6 +1074,19 @@ git push origin main --force
 # Coolify will deploy this version
 ```
 
+### Docker Compose Rollback
+
+```bash
+# Stop current containers
+docker-compose down
+
+# Checkout previous commit
+git checkout <commit-hash>
+
+# Rebuild and start
+docker-compose up --build
+```
+
 ## Documentation
 
 ### Keep Documentation Updated
@@ -861,10 +1099,10 @@ git push origin main --force
 ### Deployment Checklist
 
 - [ ] GitHub repository created and configured
-- [ ] Coolify account created
-- [ ] All applications created in Coolify
+- [ ] Coolify account created (for production)
+- [ ] All applications created in Coolify (for production)
 - [ ] Environment variables configured
-- [ ] GitHub webhook configured
+- [ ] GitHub webhook configured (for production)
 - [ ] Docker Compose file created
 - [ ] Bot webhook configured
 - [ ] Mini App URL configured in BotFather
@@ -880,6 +1118,7 @@ This deployment guide provides:
 ✅ **Complete Coolify setup** - Step-by-step Coolify configuration
 ✅ **GitHub Webhooks** - Automated deployment on push
 ✅ **Docker Compose** - All services in containers
+✅ **Local Development** - Full local Docker Compose support
 ✅ **No local PostgreSQL** - Database runs in Docker
 ✅ **Environment management** - Coolify handles secrets
 ✅ **Monitoring** - Built-in logging and health checks
@@ -888,5 +1127,7 @@ This deployment guide provides:
 ✅ **Cost optimization** - Free tier sufficient for MVP
 ✅ **Rollback procedures** - Easy version control rollback
 ✅ **Troubleshooting** - Common issues and solutions
+✅ **Mini App nginx** - Static file serving with API proxy
+✅ **Alternative Deployment** - Both Coolify and local Docker Compose
 
-Following this guide will result in a production-ready deployment of Hookah Wishlist System with automated deployments via Coolify and GitHub Webhooks, eliminating manual server management and local database installation.
+Following this guide will result in a production-ready deployment of Hookah Wishlist System with automated deployments via Coolify and GitHub Webhooks, or a fully functional local development environment using Docker Compose, eliminating manual server management and local database installation.
