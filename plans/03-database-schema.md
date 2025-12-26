@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the database schema for the Hookah Wishlist System. The database is built on PostgreSQL 16+ and uses Prisma ORM for database operations. The schema is designed to support the core functionality of managing hookah tobacco wishlists while maintaining flexibility for future enhancements.
+This document describes the database schema for the Hookah Wishlist System. The database is built on PostgreSQL 16+ and uses Prisma ORM 7.2.0+ for database operations. The schema is designed to support the core functionality of managing hookah tobacco wishlists while maintaining flexibility for future enhancements. PostgreSQL runs in Docker container for both development and production environments.
 
 ## Entity Relationship Diagram
 
@@ -331,6 +331,56 @@ model WishlistItem {
 }
 ```
 
+## Prisma 7.2.0+ Enhancements
+
+### New Features in Prisma 7.2.0
+
+1. **Improved TypeScript Support**:
+   - Stricter type checking
+   - Better type inference
+   - Enhanced autocomplete in IDEs
+
+2. **Performance Improvements**:
+   - Optimized query execution
+   - Better connection pooling
+   - Reduced memory footprint
+
+3. **Enhanced Error Messages**:
+   - More descriptive error messages
+   - Better debugging experience
+   - Improved validation feedback
+
+4. **Migration Improvements**:
+   - Faster migration execution
+   - Better migration rollback
+   - Enhanced migration diffing
+
+### Migration from Prisma 5.x to 7.2.0+
+
+When upgrading from Prisma 5.x to 7.2.0+:
+
+1. Update package.json:
+```json
+{
+  "dependencies": {
+    "prisma": "^7.2.0",
+    "@prisma/client": "^7.2.0"
+  }
+}
+```
+
+2. Run migration:
+```bash
+npx prisma migrate dev --name upgrade_to_prisma_7_2_0
+```
+
+3. Regenerate client:
+```bash
+npx prisma generate
+```
+
+4. Test application thoroughly
+
 ## Common Queries
 
 ### Get User's Wishlist with Tobacco Details
@@ -461,6 +511,25 @@ WHERE id = $1;
 3. Create backup before running production migrations
 4. Document breaking changes
 
+### Prisma Migration Commands
+
+```bash
+# Create new migration
+npx prisma migrate dev --name migration_name
+
+# Apply migrations to production
+npx prisma migrate deploy
+
+# Reset database (development only)
+npx prisma migrate reset
+
+# Generate Prisma Client
+npx prisma generate
+
+# View migration history
+npx prisma migrate status
+```
+
 ## Performance Considerations
 
 ### Indexes
@@ -474,23 +543,74 @@ WHERE id = $1;
 - Use `JOIN` instead of separate queries
 - Consider adding `EXPLAIN ANALYZE` for slow queries
 
-### Caching Strategy (Future)
-- Cache tobacco catalog data (rarely changes)
-- Cache user wishlist data (changes frequently)
-- Use Redis for caching when scaling
+### Prisma 7.2.0+ Performance Features
+
+1. **Connection Pooling**:
+   - Prisma 7.2.0+ has improved connection pool management
+   - Better resource utilization
+   - Reduced connection overhead
+
+2. **Query Optimization**:
+   - Improved query planning
+   - Better index usage
+   - Reduced query execution time
+
+3. **Batch Operations**:
+   - Optimized batch inserts and updates
+   - Reduced database round trips
+   - Better performance for bulk operations
 
 ## Backup & Recovery
 
 ### Backup Strategy
+
 - Daily full backups at 3 AM UTC
 - Point-in-time recovery enabled
 - Backups retained for 30 days
+- Coolify automated backups (production)
+- Docker volume backups (development)
 
 ### Recovery Procedures
+
 1. Restore from most recent backup
 2. Apply WAL logs for point-in-time recovery
 3. Verify data integrity
 4. Test application functionality
+
+## Docker Integration
+
+### PostgreSQL Container Configuration
+
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hookah-postgres
+    environment:
+      POSTGRES_USER: hookah_user
+      POSTGRES_PASSWORD: hookah_password
+      POSTGRES_DB: hookah_wishlist
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hookah_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+### Prisma Client Configuration
+
+```env
+# .env
+DATABASE_URL="postgresql://hookah_user:hookah_password@localhost:5432/hookah_wishlist"
+```
 
 ## Security Considerations
 
@@ -504,10 +624,10 @@ WHERE id = $1;
 - Use prepared statements (handled by Prisma)
 - Regular security updates for PostgreSQL
 
-### Audit Logging (Future)
-- Log all data modifications
-- Track who changed what and when
-- Implement data retention policies
+### Container Security
+- Database runs in isolated Docker container
+- Network access restricted to application containers
+- Volume encryption (production)
 
 ## Summary
 
@@ -518,6 +638,8 @@ The database schema provides:
 ✅ **Data integrity** - Foreign keys, unique constraints, and check constraints
 ✅ **Performance** - Proper indexing for common queries
 ✅ **Scalability** - Schema designed to grow with the application
-✅ **Maintainability** - Clear structure with Prisma ORM for easy management
+✅ **Maintainability** - Clear structure with Prisma ORM 7.2.0+ for easy management
+✅ **Container-ready** - PostgreSQL runs in Docker containers
+✅ **Prisma 7.2.0+ support** - Latest Prisma features and improvements
 
 The schema supports the core functionality while providing flexibility for future enhancements.

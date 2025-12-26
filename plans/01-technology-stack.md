@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the technology choices for the Hookah Wishlist System, selected based on current industry trends (2025), community support, performance characteristics, and suitability for the project requirements.
+This document outlines the technology choices for the Hookah Wishlist System, selected based on current industry trends (2025), community support, performance characteristics, and suitability for the project requirements. The system is designed for containerized deployment using Docker Compose and production deployment via Coolify platform.
 
 ## Selection Criteria
 
@@ -13,6 +13,7 @@ The technology stack was evaluated based on:
 - **Scalability** - Ability to grow from MVP to production
 - **Ecosystem** - Rich library ecosystem for required features
 - **Maintenance** - Long-term viability and stability
+- **Containerization Ready** - Native support for Docker and container orchestration
 
 ## Technology Stack
 
@@ -26,6 +27,7 @@ The technology stack was evaluated based on:
   - TypeScript support out of the box
   - Unified stack with frontend (JavaScript/TypeScript)
   - Strong community and corporate backing (OpenJS Foundation)
+  - Excellent Docker support
 
 #### Framework: Fastify 4+
 - **Justification**:
@@ -35,6 +37,7 @@ The technology stack was evaluated based on:
   - Plugin architecture for extensibility
   - Low overhead and memory footprint
   - Active development and growing community
+  - Container-friendly architecture
 
 #### API Style: REST
 - **Justification**:
@@ -44,15 +47,17 @@ The technology stack was evaluated based on:
   - Sufficient for the current requirements
   - Better client compatibility
 
-#### ORM: Prisma 5+
+#### ORM: Prisma 7.2.0+
 - **Justification**:
   - Type-safe database client with excellent TypeScript integration
-  - Modern, intuitive API design
+  - Modern, intuitive API design with improved performance in v7
   - Automatic migrations and schema management
   - Excellent performance with connection pooling
   - Built-in query builder and raw SQL support
   - Active development and strong community
   - Supports PostgreSQL, MySQL, SQLite, MongoDB
+  - Enhanced TypeScript support with stricter type checking
+  - Improved error messages and debugging experience
 
 #### Database: PostgreSQL 16+
 - **Justification**:
@@ -63,10 +68,11 @@ The technology stack was evaluated based on:
   - Full-text search capabilities
   - Extensible architecture
   - Excellent replication and backup tools
+  - Official Docker images available
 
 ### Frontend
 
-#### Framework: React 18+ with TypeScript
+#### Framework: React 19+ with TypeScript
 - **Justification**:
   - Most popular frontend framework with largest ecosystem
   - Excellent TypeScript support
@@ -75,8 +81,9 @@ The technology stack was evaluated based on:
   - Strong community and long-term viability
   - Extensive learning resources
   - Great for Mini App development
+  - Latest version with improved performance and features
 
-#### Build Tool: Vite 5+
+#### Build Tool: Vite 7+
 - **Justification**:
   - Extremely fast development server with HMR
   - Optimized production builds
@@ -84,6 +91,7 @@ The technology stack was evaluated based on:
   - TypeScript and JSX support out of the box
   - Plugin ecosystem
   - Modern and actively maintained
+  - Excellent Docker integration
 
 #### UI Library: Tailwind CSS 4+ with Headless UI
 - **Justification**:
@@ -94,7 +102,7 @@ The technology stack was evaluated based on:
   - Easy customization
   - Great for Telegram Mini App styling
 
-#### State Management: Zustand 4+
+#### State Management: Zustand 5+
 - **Justification**:
   - Minimal boilerplate compared to Redux
   - TypeScript-friendly
@@ -143,6 +151,7 @@ The technology stack was evaluated based on:
   - Strong TypeScript support
   - Better anti-detection than Puppeteer
   - Active development by Microsoft
+  - Container-friendly with Docker support
 
 #### Scheduling: node-cron 3+
 - **Justification**:
@@ -151,6 +160,7 @@ The technology stack was evaluated based on:
   - TypeScript support
   - Well-tested and stable
   - Easy to integrate with Node.js applications
+  - Works well in containerized environments
 
 ### DevOps & Infrastructure
 
@@ -161,31 +171,36 @@ The technology stack was evaluated based on:
   - Isolation of dependencies
   - Industry standard
   - Great for local development
+  - Perfect for Coolify deployment
+  - Simplifies dependency management (no local PostgreSQL needed)
 
-#### Process Manager: PM2 5+
+#### Deployment Platform: Coolify
 - **Justification**:
-  - Process management for Node.js applications
-  - Automatic restarts on crashes
-  - Cluster mode for multi-core utilization
-  - Log management
-  - Easy monitoring
-  - Production-ready
+  - Self-hosted PaaS platform
+  - GitHub integration with webhooks
+  - Automatic deployments on push
+  - Docker Compose support
+  - Built-in SSL/TLS certificates
+  - Easy environment variable management
+  - Cost-effective compared to managed services
+  - Supports custom domains
 
-#### Reverse Proxy: Nginx
+#### Reverse Proxy: Traefik (via Coolify)
 - **Justification**:
-  - High performance and low memory footprint
-  - SSL/TLS termination
+  - Automatic service discovery
+  - Built-in SSL/TLS termination
   - Load balancing capabilities
-  - Static file serving
-  - Industry standard
-  - Excellent documentation
+  - Dynamic configuration
+  - Container-native
+  - Integrated with Docker Compose
 
-#### Monitoring: Winston 3+ (Logging) & Prometheus (Metrics)
+#### Monitoring: Winston 3+ (Logging)
 - **Justification**:
-  - Winston: Flexible logging with multiple transports
-  - Prometheus: Industry-standard metrics collection
-  - Grafana: Beautiful dashboards for metrics visualization
-  - Together provide comprehensive observability
+  - Flexible logging with multiple transports
+  - JSON format for structured logging
+  - Multiple log levels
+  - Easy integration with external log aggregators
+  - Container-friendly
 
 ### Development Tools
 
@@ -197,28 +212,13 @@ The technology stack was evaluated based on:
   - Refactoring confidence
   - Industry standard for modern JavaScript projects
 
-#### Code Quality: ESLint 8+ & Prettier 3+
+#### Code Quality: ESLint 9+ & Prettier 3+
 - **Justification**:
   - ESLint: Code linting and error detection
   - Prettier: Code formatting consistency
   - Together ensure code quality and style consistency
   - Highly configurable
   - Large plugin ecosystem
-
-#### Testing: Vitest 1+ & Playwright 1.40+
-- **Justification**:
-  - Vitest: Fast unit testing (compatible with Jest API)
-  - Playwright: E2E testing for Mini App
-  - TypeScript support
-  - Modern and actively maintained
-  - Great developer experience
-
-#### Version Control: Git
-- **Justification**:
-  - Industry standard
-  - Excellent branching and merging
-  - Distributed workflow
-  - Large ecosystem of tools
 
 ## Technology Stack Summary
 
@@ -227,24 +227,23 @@ The technology stack was evaluated based on:
 | **Backend Runtime** | Node.js | 20+ LTS | Server-side JavaScript runtime |
 | **Backend Framework** | Fastify | 4+ | Web framework and API server |
 | **API Style** | REST | - | API architecture pattern |
-| **ORM** | Prisma | 5+ | Database ORM and migrations |
-| **Database** | PostgreSQL | 16+ | Primary database |
-| **Frontend Framework** | React | 18+ | UI framework for Mini App |
-| **Build Tool** | Vite | 5+ | Build tool and dev server |
+| **ORM** | Prisma | 7.2.0+ | Database ORM and migrations |
+| **Database** | PostgreSQL | 16+ | Primary database (via Docker) |
+| **Frontend Framework** | React | 19+ | UI framework for Mini App |
+| **Build Tool** | Vite | 7+ | Build tool and dev server |
 | **CSS Framework** | Tailwind CSS | 4+ | Utility-first CSS |
 | **UI Components** | Headless UI | - | Accessible component library |
-| **State Management** | Zustand | 4+ | Client-side state management |
+| **State Management** | Zustand | 5+ | Client-side state management |
 | **HTTP Client** | Axios | 1+ | HTTP requests |
 | **Telegram Bot** | Telegraf | 4+ | Telegram Bot API wrapper |
 | **Telegram Web App** | @telegram-apps/sdk | latest | Web App integration |
 | **Web Scraping** | Playwright | 1.40+ | Browser automation |
 | **Job Scheduling** | node-cron | 3+ | Cron job scheduler |
 | **Containerization** | Docker | latest | Container runtime |
-| **Process Manager** | PM2 | 5+ | Process manager |
-| **Reverse Proxy** | Nginx | latest | Web server and reverse proxy |
+| **Orchestration** | Docker Compose | latest | Multi-container orchestration |
+| **Deployment Platform** | Coolify | latest | PaaS deployment platform |
+| **Reverse Proxy** | Traefik | latest | Load balancer and SSL (via Coolify) |
 | **Logging** | Winston | 3+ | Logging library |
-| **Testing** | Vitest | 1+ | Unit testing |
-| **E2E Testing** | Playwright | 1.40+ | End-to-end testing |
 | **Language** | TypeScript | 5+ | Type-safe JavaScript |
 
 ## Architecture Diagram
@@ -252,7 +251,8 @@ The technology stack was evaluated based on:
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        A[Telegram Bot] --> B[Telegram Mini App]
+        A[Telegram Bot]
+        B[Telegram Mini App]
     end
     
     subgraph "API Layer"
@@ -268,11 +268,22 @@ graph TB
         F[node-cron Scheduler]
     end
     
+    subgraph "Deployment Layer"
+        G[Docker Compose]
+        H[Coolify Platform]
+        I[GitHub Webhooks]
+    end
+    
     A --> C
     B --> C
     C --> D
     F --> E
     E --> D
+    G --> H
+    I --> H
+    H --> C
+    H --> A
+    H --> E
     
     style A fill:#0088cc
     style B fill:#0088cc
@@ -280,6 +291,9 @@ graph TB
     style D fill:#336791
     style E fill:#e03535
     style F fill:#e03535
+    style G fill:#2496ed
+    style H fill:#6b4fbb
+    style I fill:#2088ff
 ```
 
 ## Alternative Technologies Considered
@@ -298,6 +312,7 @@ graph TB
 - **TypeORM**: Good alternative, but Prisma has better TypeScript support and developer experience
 - **Sequelize**: Older, more verbose API, less type-safe
 - **MikroORM**: Excellent, but smaller community than Prisma
+- **Prisma 5.x**: Upgrading to 7.2.0+ for improved TypeScript support and performance
 
 ### Databases
 - **MySQL**: Good alternative, but PostgreSQL has more advanced features
@@ -309,15 +324,22 @@ graph TB
 - **aiogram (Python)**: Excellent, but would require Python backend
 - **grammY**: Good modern alternative, but Telegraf has larger community
 
+### Deployment Platforms
+- **VPS with PM2/Nginx**: Replaced by Coolify for easier deployment and management
+- **Heroku**: Good alternative, but more expensive and less control
+- **Vercel**: Great for static sites, but limited for Node.js backends
+- **Railway**: Good alternative, but Coolify offers more control and cost-effectiveness
+
 ## Scalability Considerations
 
 The chosen stack is designed to scale from MVP to production:
 
-1. **Horizontal Scaling**: Fastify + PostgreSQL can be scaled horizontally
+1. **Horizontal Scaling**: Fastify + PostgreSQL can be scaled horizontally via Coolify
 2. **Caching**: Redis can be added for caching (not needed for MVP)
-3. **Load Balancing**: Nginx can distribute traffic across multiple API instances
+3. **Load Balancing**: Coolify provides built-in load balancing
 4. **Database Scaling**: PostgreSQL supports read replicas and partitioning
 5. **Message Queue**: BullMQ can be added for background jobs (not needed for MVP)
+6. **Container Orchestration**: Docker Compose makes scaling straightforward
 
 ## Security Considerations
 
@@ -328,13 +350,28 @@ The chosen stack is designed to scale from MVP to production:
 5. **XSS Protection**: React's built-in escaping
 6. **Rate Limiting**: Fastify rate limiting plugin
 7. **CORS**: Configured for Telegram domains only
+8. **Container Security**: Docker provides isolation and security boundaries
+9. **Secrets Management**: Coolify provides secure environment variable management
 
 ## Maintenance & Updates
 
 - **LTS Versions**: Using LTS versions of Node.js and PostgreSQL
-- **Regular Updates**: Monthly dependency updates
+- **Regular Updates**: Monthly dependency updates via Coolify automatic deployments
 - **Security Patches**: Immediate updates for critical vulnerabilities
 - **Monitoring**: Logging and metrics for proactive issue detection
+- **Container Updates**: Easy to update Docker images and dependencies
+
+## Containerization Benefits
+
+Using Docker Compose and Coolify provides:
+
+- **Environment Consistency**: Same environment across development, staging, and production
+- **Dependency Isolation**: No conflicts between project dependencies
+- **Easy Setup**: Single command to start entire stack
+- **Scalability**: Easy to scale services horizontally
+- **Rollback**: Quick rollback to previous versions via Coolify
+- **Cost Efficiency**: Better resource utilization compared to VPS
+- **Simplified Operations**: No manual server management
 
 ## Conclusion
 
@@ -347,5 +384,8 @@ The selected technology stack provides:
 - ✅ Scalability for future growth
 - ✅ Security best practices
 - ✅ Easy deployment and maintenance
+- ✅ Containerized architecture
+- ✅ Automated deployment via Coolify
+- ✅ No local PostgreSQL installation required
 
-This stack is well-suited for building a clean, modern, and potentially scalable hookah tobacco wishlist system.
+This stack is well-suited for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment process.

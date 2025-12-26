@@ -655,57 +655,6 @@ Allowed methods:
 Allowed headers:
 - Content-Type, Authorization, X-API-Key
 
-## Webhook Support (Future)
-
-For real-time updates, webhooks can be configured:
-
-**Endpoint**: `POST /webhooks`
-
-**Request Body**:
-```json
-{
-  "url": "https://your-server.com/webhook",
-  "events": ["wishlist.updated", "item.added", "item.purchased"]
-}
-```
-
-## Versioning
-
-The API is versioned using the URL path: `/api/v1/`
-
-Breaking changes will increment the version number. Non-breaking changes will be made within the current version.
-
-## Testing
-
-### Example cURL Commands
-
-**Authenticate**:
-```bash
-curl -X POST https://api.yourdomain.com/api/v1/auth/telegram \
-  -H "Content-Type: application/json" \
-  -d '{"initData": "user=%7B%22id%22%3A123456789%7D&auth_date=1234567890&hash=..."}'
-```
-
-**Search tobaccos**:
-```bash
-curl https://api.yourdomain.com/api/v1/tobaccos?search=зима \
-  -H "Authorization: Bearer <token>"
-```
-
-**Get wishlist**:
-```bash
-curl https://api.yourdomain.com/api/v1/wishlist \
-  -H "Authorization: Bearer <token>"
-```
-
-**Add item to wishlist**:
-```bash
-curl -X POST https://api.yourdomain.com/api/v1/wishlist/items \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"tobaccoId": 1}'
-```
-
 ## SDK Examples
 
 ### JavaScript (Axios)

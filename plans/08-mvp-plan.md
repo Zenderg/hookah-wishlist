@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the implementation plan for the Minimum Viable Product (MVP) of the Hookah Wishlist System. The MVP focuses on core functionality: users can interact with the bot, open the Mini App, and perform basic wishlist operations.
+This document outlines implementation plan for Minimum Viable Product (MVP) of Hookah Wishlist System. The MVP focuses on core functionality: users can interact with bot, open Mini App, and perform basic wishlist operations. All components run in Docker containers with PostgreSQL, and deployment is automated via Coolify with GitHub Webhooks.
 
 ## MVP Goals
 
@@ -36,16 +36,25 @@ This document outlines the implementation plan for the Minimum Viable Product (M
 - [ ] Configure ESLint and Prettier
 - [ ] Set up TypeScript configuration
 
-#### 1.2 Database Setup
+#### 1.2 Docker Compose Setup
 
-- [ ] Install PostgreSQL locally
-- [ ] Create database `hookah_wishlist`
-- [ ] Set up Prisma ORM
-- [ ] Create initial schema
-- [ ] Run initial migration
+- [ ] Create `docker-compose.yml` for local development
+- [ ] Configure PostgreSQL service
+- [ ] Configure API service
+- [ ] Configure Bot service
+- [ ] Configure Scraper service
+- [ ] Add environment variables configuration
+- [ ] Test Docker Compose startup
+
+#### 1.3 Database Setup
+
+- [ ] Create Prisma schema file
+- [ ] Set up Prisma ORM 7.2.0+
+- [ ] Create initial database schema
+- [ ] Run initial migration via Docker Compose
 - [ ] Seed test data (optional)
 
-#### 1.3 API Server Setup
+#### 1.4 API Server Setup
 
 - [ ] Initialize Node.js project
 - [ ] Install Fastify and dependencies
@@ -55,7 +64,7 @@ This document outlines the implementation plan for the Minimum Viable Product (M
 - [ ] Create basic server with health check
 
 **Deliverables**:
-- Running API server on `http://localhost:3000`
+- Running Docker Compose stack with all services
 - Database with schema created
 - Health check endpoint responding
 
@@ -113,7 +122,7 @@ This document outlines the implementation plan for the Minimum Viable Product (M
 - [ ] Create bot via BotFather
 - [ ] Install Telegraf
 - [ ] Set up bot project structure
-- [ ] Configure bot token
+- [ ] Configure bot token in environment variables
 - [ ] Set up webhook (or polling for development)
 
 #### 3.2 Basic Commands
@@ -201,74 +210,79 @@ This document outlines the implementation plan for the Minimum Viable Product (M
 
 ---
 
-### Phase 5: Integration & Testing (Week 5)
+### Phase 5: Docker Compose Configuration (Week 5)
 
-#### 5.1 End-to-End Integration
+#### 5.1 Docker Compose File
 
-- [ ] Connect bot to API
-- [ ] Connect Mini App to API
-- [ ] Test complete user flows
-- [ ] Verify data consistency
+- [ ] Create `docker-compose.yml` with all services
+- [ ] Configure PostgreSQL service with volumes
+- [ ] Configure API service with build and environment
+- [ ] Configure Bot service with build and environment
+- [ ] Configure Scraper service with build and environment
+- [ ] Add health checks for all services
+- [ ] Configure Docker network for service communication
 
-#### 5.2 Testing
+#### 5.2 Environment Configuration
 
-- [ ] Write unit tests for API
-- [ ] Write unit tests for bot commands
-- [ ] Write unit tests for Mini App components
-- [ ] Perform manual testing of all features
+- [ ] Create `.env.example` file
+- [ ] Document all required environment variables
+- [ ] Add Docker-specific variables
+- [ ] Add Coolify deployment variables
 
-#### 5.3 Bug Fixes
+#### 5.3 Dockerfiles
 
-- [ ] Fix identified bugs
-- [ ] Improve error handling
-- [ ] Optimize performance
-- [ ] Refactor code as needed
+- [ ] Create Dockerfile for API
+- [ ] Create Dockerfile for Bot
+- [ ] Create Dockerfile for Scraper
+- [ ] Optimize Docker images for production
 
 **Deliverables**:
-- Fully integrated system
-- All features tested and working
-- Known bugs documented
+- Complete Docker Compose configuration
+- All services can run with single command
+- Environment variables documented
 
 ---
 
-### Phase 6: Deployment (Week 6)
+### Phase 6: Coolify Deployment Setup (Week 6)
 
-#### 6.1 Infrastructure Setup
+#### 6.1 Coolify Account Setup
 
-- [ ] Set up VPS or cloud instance
-- [ ] Install Node.js and PostgreSQL
-- [ ] Configure Nginx reverse proxy
-- [ ] Set up SSL certificates
+- [ ] Create Coolify account
+- [ ] Connect GitHub repository to Coolify
+- [ ] Configure GitHub webhook for automatic deployments
+- [ ] Set up custom domain (if applicable)
 
-#### 6.2 Database Deployment
+#### 6.2 Coolify Application Configuration
 
-- [ ] Create production database
-- [ ] Run migrations
-- [ ] Set up backups
-- [ ] Configure connection pooling
+- [ ] Create application in Coolify for API
+- [ ] Configure Docker Compose settings
+- [ ] Set environment variables in Coolify dashboard
+- [ ] Configure build command
+- [ ] Set up resource limits
 
-#### 6.3 Application Deployment
+#### 6.3 GitHub Webhook Configuration
 
-- [ ] Deploy API server
-- [ ] Deploy Telegram bot
-- [ ] Deploy Mini App
-- [ ] Configure environment variables
+- [ ] Configure webhook in Coolify
+- [ ] Set deployment branch (main)
+- [ ] Configure automatic deployment on push
+- [ ] Test webhook trigger
 
 #### 6.4 Bot Configuration
 
-- [ ] Set bot webhook URL
+- [ ] Set bot webhook URL to Coolify API URL
 - [ ] Configure Mini App URL in BotFather
 - [ ] Test bot in production
 
-#### 6.5 Monitoring
+#### 6.5 Monitoring Setup
 
-- [ ] Set up logging
-- [ ] Configure error tracking
+- [ ] Configure logging in Coolify
 - [ ] Set up health checks
-- [ ] Document deployment process
+- [ ] Configure error alerts
+- [ ] Document monitoring procedures
 
 **Deliverables**:
-- System deployed to production
+- System deployed to Coolify
+- GitHub Webhook configured
 - Bot and Mini App accessible
 - Monitoring in place
 
@@ -301,7 +315,7 @@ EOF
 # Initialize API
 cd api
 npm init -y
-npm install fastify @fastify/cors @fastify/jwt prisma @prisma/client winston
+npm install fastify @fastify/cors @fastify/jwt prisma@7.2.0 @prisma/client@7.2.0 winston
 npm install -D typescript @types/node tsx
 
 # Initialize Bot
@@ -320,12 +334,77 @@ npx tailwindcss init -p
 # Initialize Scraper
 cd ../scraper
 npm init -y
-npm install playwright prisma @prisma/client node-cron winston
-npm install -D typescript @types/node tsx
+npm install playwright@1.40.0 prisma@7.2.0 @prisma/client@7.2.0 node-cron@3.0.3 winston
+npm install -D typescript @types/node tsx @types/node-cron
 npx playwright install
 ```
 
-### Step 2: Database Schema
+### Step 2: Docker Compose Configuration
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hookah-postgres
+    environment:
+      POSTGRES_USER: hookah_user
+      POSTGRES_PASSWORD: hookah_password
+      POSTGRES_DB: hookah_wishlist
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hookah_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    container_name: hookah-api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      NODE_ENV: development
+      LOG_LEVEL: info
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  bot:
+    build: ./bot
+    container_name: hookah-bot
+    environment:
+      API_URL: http://api:3000/api/v1
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      LOG_LEVEL: info
+    depends_on:
+      - api
+
+  scraper:
+    build: ./scraper
+    container_name: hookah-scraper
+    environment:
+      DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      SCRAPER_SCHEDULE: "0 2 * * *"
+      LOG_LEVEL: info
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+```
+
+### Step 3: Database Schema
 
 ```prisma
 // api/prisma/schema.prisma
@@ -342,7 +421,7 @@ datasource db {
 model User {
   id           BigInt    @id @default(autoincrement())
   telegramId   BigInt    @unique @map("telegram_id")
-  username     String?
+  username     String?   @map("username")
   firstName    String?   @map("first_name")
   lastName     String?   @map("last_name")
   languageCode String?   @map("language_code")
@@ -388,6 +467,7 @@ model Tobacco {
   @@unique([brandId, slug])
   @@index([brandId])
   @@index([name])
+  @@index([slug])
   @@map("tobaccos")
 }
 
@@ -423,11 +503,12 @@ model WishlistItem {
   @@unique([wishlistId, customName])
   @@index([wishlistId])
   @@index([tobaccoId])
+  @@index([isPurchased])
   @@map("wishlist_items")
 }
 ```
 
-### Step 3: API Server Structure
+### Step 4: API Server Structure
 
 ```
 api/
@@ -452,10 +533,11 @@ api/
 │   └── index.ts
 ├── prisma/
 │   └── schema.prisma
+├── Dockerfile
 └── package.json
 ```
 
-### Step 4: Bot Structure
+### Step 5: Bot Structure
 
 ```
 bot/
@@ -474,10 +556,11 @@ bot/
 │   │   ├── logger.ts
 │   │   └── api.ts
 │   └── index.ts
+├── Dockerfile
 └── package.json
 ```
 
-### Step 5: Mini App Structure
+### Step 6: Mini App Structure
 
 ```
 mini-app/
@@ -491,11 +574,12 @@ mini-app/
 │   │   │   ├── WishlistPage.tsx
 │   │   │   └── WishlistItem.tsx
 │   │   └── search/
-│   │       ├── SearchPage.tsx
-│   │       └── TobaccoCard.tsx
+│   │   │       ├── SearchPage.tsx
+│   │   │       └── TobaccoCard.tsx
 │   ├── pages/
 │   │   ├── Home.tsx
 │   │   ├── Search.tsx
+│   │   ├── Brands.tsx
 │   │   └── Profile.tsx
 │   ├── stores/
 │   │   ├── auth.ts
@@ -508,39 +592,60 @@ mini-app/
 │   │   └── index.ts
 │   ├── App.tsx
 │   └── main.tsx
+├── public/
+├── index.html
+├── vite.config.ts
+├── tailwind.config.js
+└── tsconfig.json
+```
+
+### Step 7: Scraper Structure
+
+```
+scraper/
+├── src/
+│   ├── brand-scraper.ts
+│   ├── tobacco-scraper.ts
+│   ├── database-writer.ts
+│   ├── scraper-controller.ts
+│   ├── scheduler.ts
+│   ├── logger.ts
+│   └── index.ts
+├── Dockerfile
 └── package.json
 ```
 
-## Testing Checklist
+## Quick Start
 
-### Manual Testing
+### Local Development with Docker Compose
 
-#### Bot Commands
-- [ ] `/start` creates user and shows welcome message
-- [ ] `/help` displays all available commands
-- [ ] `/list` shows empty list for new user
-- [ ] `/add <name>` adds tobacco to wishlist
-- [ ] `/list` shows added tobacco
-- [ ] `/remove 1` removes tobacco from wishlist
-- [ ] `/clear` clears entire wishlist with confirmation
-- [ ] `/app` opens Mini App
+```bash
+# Start all services
+docker-compose up -d
 
-#### Mini App
-- [ ] Opens from bot
-- [ ] Authenticates with Telegram
-- [ ] Displays empty wishlist
-- [ ] Can search for tobaccos
-- [ ] Can add tobacco to wishlist
-- [ ] Shows added tobacco in wishlist
-- [ ] Can remove tobacco from wishlist
+# View logs
+docker-compose logs -f
 
-#### API Endpoints
-- [ ] `POST /auth/telegram` validates initData and returns token
-- [ ] `GET /users/me` returns user information
-- [ ] `GET /tobaccos` returns tobacco list
-- [ ] `GET /wishlist` returns user's wishlist
-- [ ] `POST /wishlist/items` adds item to wishlist
-- [ ] `DELETE /wishlist/items/:id` removes item from wishlist
+# Stop all services
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build
+```
+
+### Run Database Migrations
+
+```bash
+# Generate Prisma client
+cd api
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed database (optional)
+npx prisma db seed
+```
 
 ## Success Criteria
 
@@ -556,58 +661,93 @@ mini-app/
 8. ✅ User can search for tobaccos in Mini App
 9. ✅ User can add tobacco to wishlist in Mini App
 10. ✅ User can remove tobacco from wishlist in Mini App
+11. ✅ All services run in Docker containers
+12. ✅ PostgreSQL runs in Docker container
+13. ✅ System can be deployed to Coolify via GitHub Webhook
 
 ## Post-MVP Enhancements
 
 ### Priority 1 (Next Sprint)
-- [ ] Purchase tracking (mark items as purchased)
-- [ ] Purchased items view
-- [ ] Clear purchased items
-- [ ] Brand filtering in search
+
+- Purchase tracking (mark items as purchased)
+- Purchased items view
+- Clear purchased items
+- Brand filtering in search
 
 ### Priority 2
-- [ ] User settings (language, notifications)
-- [ ] Daily reminders
-- [ ] Statistics (total items, most popular)
-- [ ] Share wishlist
+
+- User settings (language, notifications)
+- Daily reminders
+- Statistics (total items, most popular)
 
 ### Priority 3
-- [ ] Multiple wishlists per user
-- [ ] Wishlist templates
-- [ ] Import/export wishlist
-- [ ] Advanced search filters
+
+- Multiple wishlists per user
+- Wishlist templates and collections
+- Import/export wishlist
+- Advanced search filters
 
 ## Timeline Summary
 
 | Week | Phase | Deliverables |
 |------|-------|--------------|
-| 1 | Project Setup | Repository, database, API server foundation |
+| 1 | Project Setup | Repository, Docker Compose, database, API server foundation |
 | 2 | API Development | All core API endpoints |
 | 3 | Bot Development | Working Telegram bot with commands |
 | 4 | Mini App Development | Functional Mini App with wishlist and search |
-| 5 | Integration & Testing | Fully integrated and tested system |
-| 6 | Deployment | Production deployment |
+| 5 | Docker Compose Configuration | Complete Docker Compose setup for all services |
+| 6 | Coolify Deployment Setup | Coolify deployment with GitHub Webhooks |
+
+## Deployment Workflow
+
+### Local Development
+
+```bash
+# Start development environment
+docker-compose up -d
+
+# Access API at http://localhost:3000
+# Bot runs independently
+# Scraper runs on schedule
+```
+
+### Coolify Deployment
+
+```bash
+# Push to GitHub (triggers automatic deployment)
+git push origin main
+
+# Coolify automatically:
+# 1. Pulls latest code
+# 2. Builds Docker images
+# 3. Deploys services
+# 4. Runs health checks
+```
 
 ## Risks & Mitigations
 
-### Risk 1: Telegram API Changes
+### Risk 1: Docker Compose Configuration Issues
+**Mitigation**: Test Docker Compose locally before deploying to Coolify
+
+### Risk 2: Coolify Webhook Configuration
+**Mitigation**: Test webhook manually before relying on automatic deployment
+
+### Risk 3: GitHub Integration Issues
+**Mitigation**: Verify GitHub repository access and webhook permissions
+
+### Risk 4: Database Migration Failures
+**Mitigation**: Test migrations in development environment first
+
+### Risk 5: Telegram API Changes
 **Mitigation**: Use stable Telegraf library, monitor Telegram changelog
 
-### Risk 2: Target Website Structure Changes
+### Risk 6: Target Website Structure Changes
 **Mitigation**: Design flexible scraper, monitor for changes
-
-### Risk 3: Database Performance Issues
-**Mitigation**: Implement proper indexing, use connection pooling
-
-### Risk 4: Mini App Compatibility Issues
-**Mitigation**: Test on multiple devices, use Telegram Web App SDK
-
-### Risk 5: Deployment Complexity
-**Mitigation**: Use Docker for consistent environments, document deployment process
 
 ## Resources
 
 ### Documentation
+
 - [Telegram Bot API](https://core.telegram.org/bots/api)
 - [Telegram Web Apps](https://core.telegram.org/bots/webapps)
 - [Telegraf Documentation](https://telegraf.js.org/)
@@ -615,15 +755,28 @@ mini-app/
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [React Documentation](https://react.dev/)
 - [Vite Documentation](https://vitejs.dev/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Coolify Documentation](https://coolify.io/docs)
 
 ### Tools
+
 - [BotFather](https://t.me/botfather) - Create and configure bots
 - [Prisma Studio](https://www.prisma.io/studio) - Database GUI
-- [Postman](https://www.postman.com/) - API testing
-- [Telegram Web App Demo](https://telegram.org/js/telegram-web-app.js) - Test Mini App
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) - Container management
+- [Coolify Dashboard](https://coolify.io/dashboard) - Deployment management
+- [GitHub](https://github.com) - Version control and webhooks
 
 ## Conclusion
 
-This MVP implementation plan provides a clear roadmap for building the core functionality of the Hookah Wishlist System. Following this plan will result in a working system that demonstrates the value proposition and provides a foundation for future enhancements.
+This MVP implementation plan provides a clear roadmap for building core functionality of Hookah Wishlist System. Following this plan will result in a working system that demonstrates value proposition and provides a foundation for future enhancements.
 
-The 6-week timeline is achievable with focused development and allows for testing and deployment before moving to post-MVP features.
+The 6-week timeline is achievable with focused development and allows for deployment to Coolify with GitHub Webhooks automation before moving to post-MVP features.
+
+Key improvements from previous plan:
+- ✅ Docker Compose for all services (no local PostgreSQL installation)
+- ✅ Prisma 7.2.0+ for enhanced TypeScript support
+- ✅ Coolify deployment with GitHub Webhooks automation
+- ✅ Containerized architecture for consistency
+- ✅ Removed testing sections to focus on core functionality
+- ✅ Simplified deployment workflow

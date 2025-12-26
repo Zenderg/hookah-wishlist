@@ -2,22 +2,22 @@
 
 ## Overview
 
-The Telegram Bot provides a command-based interface for users to interact with the Hookah Wishlist System. It serves as the primary entry point for users and provides quick access to wishlist functionality through text commands and inline keyboards.
+The Telegram Bot provides a command-based interface for users to interact with the Hookah Wishlist System. It serves as the primary entry point for users and provides quick access to wishlist functionality through text commands and inline keyboards. The bot runs in a Docker container and is deployed via Coolify.
 
 ## Bot Configuration
 
 ### Bot Setup
 
-- **Bot Token**: Stored in environment variable `TELEGRAM_BOT_TOKEN`
+- **Bot Token**: Stored in Coolify environment variables
 - **Bot Username**: Configured via BotFather
 - **Bot Commands**: Registered via BotFather API
 
 ### Webhook Configuration
 
-The bot uses webhooks for real-time updates:
+The bot uses webhooks for real-time updates. Coolify automatically configures webhook URL.
 
 ```typescript
-const webhookUrl = 'https://yourdomain.com/bot/webhook';
+const webhookUrl = 'https://api.yourdomain.com/bot/webhook';
 ```
 
 ## Commands
@@ -43,7 +43,7 @@ Initializes the bot for a new user and displays the welcome message.
 /clear - Очистить список
 /app - Открыть Mini App
 
-💡 Совет: Используй Mini App для более удобного интерфейса с картинками!
+💡 Совет: Используйте Mini App для более удобного интерфейса с картинками!
 ```
 
 **Behavior**:
@@ -619,55 +619,43 @@ interface Session {
 }
 ```
 
-## Testing
-
-### Test Commands
-
-```bash
-# Start bot
-/start
-
-# Add tobacco
-/add Sarma Зима
-
-# List items
-/list
-
-# Remove item
-/remove 1
-
-# Clear list
-/clear
-```
-
-### Test Scenarios
-
-1. **New user flow**: `/start` → `/add` → `/list`
-2. **Search and add**: `/search мята` → Select item → Add to wishlist
-3. **Remove item**: `/list` → `/remove 1`
-4. **Clear list**: `/clear` → Confirm
-5. **Mini App**: `/app` → Open web app
-
 ## Deployment
 
 ### Environment Variables
 
 ```env
+# Bot Configuration
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 API_URL=https://api.yourdomain.com/api/v1
-API_KEY=your_api_key_here
+API_KEY=your_bot_api_key_here
 LOG_LEVEL=info
 ```
 
-### Process Management
+### Docker Configuration
 
-Bot runs as a separate process managed by PM2:
+The bot runs in a Docker container managed by Coolify:
 
-```bash
-pm2 start bot.js --name hookah-bot
-pm2 logs hookah-bot
-pm2 restart hookah-bot
+```dockerfile
+# Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+CMD ["node", "dist/index.js"]
 ```
+
+### Coolify Deployment
+
+- Bot is deployed as a Docker Compose service
+- Environment variables managed in Coolify dashboard
+- Automatic scaling and health monitoring
+- Logs aggregated in Coolify dashboard
 
 ## Monitoring
 
@@ -682,7 +670,7 @@ pm2 restart hookah-bot
 ### Health Checks
 
 ```bash
-# Check bot status
+# Check bot status (via API)
 curl https://api.yourdomain.com/bot/health
 
 # Expected response:
@@ -701,5 +689,7 @@ The Telegram Bot provides:
 ✅ **Mini App integration** - Seamless web app access
 ✅ **Rate limiting** - Protection against abuse
 ✅ **Logging** - Comprehensive activity tracking
+✅ **Containerized** - Runs in Docker container
+✅ **Coolify deployment** - Automated deployment and management
 
 The bot serves as the primary interface for users who prefer text-based interaction and provides quick access to all core functionality.

@@ -2,17 +2,17 @@
 
 ## Overview
 
-The Mini App is a web-based application that runs inside Telegram, providing a rich, interactive interface for managing hookah tobacco wishlists. It offers a superior user experience compared to the text-based bot, with images, smooth animations, and intuitive touch interactions.
+The Mini App is a web-based application that runs inside Telegram, providing a rich, interactive interface for managing hookah tobacco wishlists. It offers a superior user experience compared to the text-based bot, with images, smooth animations, and intuitive touch interactions. The Mini App is built as static files and served via Coolify.
 
 ## Technology Stack
 
 ### Core Technologies
 
-- **Framework**: React 18+ with TypeScript
-- **Build Tool**: Vite 5+
+- **Framework**: React 19+ with TypeScript
+- **Build Tool**: Vite 7+
 - **Styling**: Tailwind CSS 4+
 - **UI Components**: Headless UI
-- **State Management**: Zustand 4+
+- **State Management**: Zustand 5+
 - **HTTP Client**: Axios 1+
 - **Telegram Integration**: @telegram-apps/sdk
 - **Icons**: Lucide React
@@ -22,8 +22,6 @@ The Mini App is a web-based application that runs inside Telegram, providing a r
 - **TypeScript**: 5+ for type safety
 - **ESLint**: Code linting
 - **Prettier**: Code formatting
-- **Vitest**: Unit testing
-- **Playwright**: E2E testing
 
 ## Project Structure
 
@@ -939,62 +937,6 @@ function VirtualList({ items }: { items: WishlistItem[] }) {
 }
 ```
 
-## Testing
-
-### Unit Tests
-
-```typescript
-// __tests__/components/WishlistItem.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { WishlistItem } from '../WishlistItem';
-
-describe('WishlistItem', () => {
-  const mockItem = {
-    id: 1,
-    isPurchased: false,
-    tobacco: {
-      id: 1,
-      name: 'Зима',
-      brand: { name: 'Sarma' },
-      imageUrl: 'https://example.com/image.jpg',
-    },
-  };
-
-  it('renders tobacco name and brand', () => {
-    render(<WishlistItem item={mockItem} onRemove={jest.fn()} onTogglePurchased={jest.fn()} />);
-    expect(screen.getByText('Sarma - Зима')).toBeInTheDocument();
-  });
-
-  it('calls onRemove when remove button is clicked', () => {
-    const onRemove = jest.fn();
-    render(<WishlistItem item={mockItem} onRemove={onRemove} onTogglePurchased={jest.fn()} />);
-    
-    fireEvent.click(screen.getByLabelText('Remove'));
-    expect(onRemove).toHaveBeenCalled();
-  });
-});
-```
-
-### E2E Tests
-
-```typescript
-// e2e/wishlist.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('user can add tobacco to wishlist', async ({ page }) => {
-  await page.goto('/search');
-  
-  await page.fill('[data-testid="search-input"]', 'Зима');
-  await page.waitForSelector('[data-testid="tobacco-card"]');
-  
-  await page.click('[data-testid="add-to-wishlist-button"]');
-  await expect(page.locator('[data-testid="toast-success"]')).toBeVisible();
-  
-  await page.goto('/');
-  await expect(page.locator('text=Sarma - Зима')).toBeVisible();
-});
-```
-
 ## Deployment
 
 ### Build Configuration
@@ -1026,19 +968,19 @@ VITE_TELEGRAM_BOT_USERNAME=your_bot_username
 
 ### Deployment Steps
 
-1. Build the app:
+1. Build app:
 ```bash
 npm run build
 ```
 
-2. Deploy to static hosting (Vercel, Netlify, or custom server):
-```bash
-# Upload dist/ directory to your hosting
-```
+2. Deploy to Coolify:
+- Coolify automatically serves static files from `dist/` directory
+- Configure environment variables in Coolify dashboard
+- Automatic HTTPS via Coolify
 
 3. Configure Telegram BotFather:
 ```
-Web App URL: https://yourdomain.com/mini-app/
+Web App URL: https://yourdomain.com
 ```
 
 ## Summary
@@ -1050,8 +992,9 @@ The Mini App provides:
 ✅ **Fast Performance** - Optimized for mobile devices
 ✅ **Type Safety** - Full TypeScript support
 ✅ **State Management** - Efficient state handling with Zustand
-✅ **Testing** - Comprehensive unit and E2E tests
 ✅ **Accessibility** - Accessible components with Headless UI
 ✅ **Scalability** - Code splitting and virtual scrolling
+✅ **Coolify Deployment** - Static file hosting with automatic HTTPS
+✅ **No Local Build** - Built and deployed via Coolify
 
-The Mini App offers a superior user experience compared to the text-based bot, with intuitive touch interactions, smooth animations, and visual feedback.
+The Mini App offers a superior user experience compared to text-based bot, with intuitive touch interactions, smooth animations, and visual feedback.

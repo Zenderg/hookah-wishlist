@@ -2,7 +2,7 @@
 
 ## Overview
 
-The scraper module is responsible for automatically populating the tobacco database by collecting data from htreviews.org. It runs on a daily schedule (via cron job) and incrementally updates the database with new tobacco information, avoiding duplicates.
+The scraper module is responsible for automatically populating tobacco database by collecting data from htreviews.org. It runs on a daily schedule (via cron job) and incrementally updates database with new tobacco information, avoiding duplicates. The scraper runs in a Docker container and connects to PostgreSQL via Docker network.
 
 ## Technology Stack
 
@@ -33,6 +33,10 @@ graph TB
         H[PostgreSQL]
     end
     
+    subgraph "Docker Network"
+        I[Docker Network]
+    end
+    
     A --> B
     B --> C
     B --> D
@@ -42,6 +46,8 @@ graph TB
     D --> E
     E --> F
     F --> H
+    F --> I
+    H --> I
     
     style A fill:#e03535
     style B fill:#e03535
@@ -51,6 +57,7 @@ graph TB
     style F fill:#e03535
     style G fill:#ff6b6b
     style H fill:#336791
+    style I fill:#2496ed
 ```
 
 ## Target Website Structure
@@ -81,7 +88,7 @@ Tobacco: https://htreviews.org/tobaccos/sarma/klassicheskaya/zima
 
 ### 1. Scheduler
 
-Runs the scraper on a daily schedule.
+Runs scraper on a daily schedule.
 
 ```typescript
 // scheduler.ts
@@ -106,7 +113,7 @@ console.log('Scraper scheduler started');
 
 ### 2. Scraper Controller
 
-Orchestrates the scraping process.
+Orchestrates scraping process.
 
 ```typescript
 // scraper-controller.ts
@@ -217,7 +224,7 @@ export class ScraperController {
 
 ### 3. Brand Scraper
 
-Scrapes the list of brands from htreviews.org.
+Scrapes list of brands from htreviews.org.
 
 ```typescript
 // brand-scraper.ts
@@ -533,7 +540,7 @@ export class TobaccoScraper {
 
 ### 5. Database Writer
 
-Saves scraped data to the database, avoiding duplicates.
+Saves scraped data to database, avoiding duplicates.
 
 ```typescript
 // database-writer.ts
@@ -653,7 +660,7 @@ export class DatabaseWriter {
 
 ### 6. Logger
 
-Centralized logging for the scraper.
+Centralized logging for scraper.
 
 ```typescript
 // logger.ts
@@ -682,13 +689,6 @@ export class Logger {
             })
           ),
         }),
-        new winston.transports.File({
-          filename: 'logs/scraper-error.log',
-          level: 'error',
-        }),
-        new winston.transports.File({
-          filename: 'logs/scraper-combined.log',
-        }),
       ],
     });
   }
@@ -715,7 +715,7 @@ export class Logger {
 
 ### Cron Schedule
 
-The scraper runs daily at 2 AM UTC to minimize impact on the target website and database.
+The scraper runs daily at 2 AM UTC to minimize impact on target website and database.
 
 ```typescript
 // Run daily at 2 AM UTC
@@ -807,7 +807,7 @@ SCRAPER_DELAY_BRAND=2000
 SCRAPER_DELAY_TOBACCO=1000
 
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/hookah_wishlist"
+DATABASE_URL="postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist"
 
 # Logging
 LOG_LEVEL=info
@@ -875,54 +875,9 @@ export async function healthCheck(): Promise<HealthStatus> {
 }
 ```
 
-## Testing
-
-### Unit Tests
-
-```typescript
-// __tests__/brand-scraper.test.ts
-import { BrandScraper } from '../brand-scraper';
-
-describe('BrandScraper', () => {
-  it('should extract brand slug from URL', () => {
-    const scraper = new BrandScraper();
-    const slug = scraper['extractSlug']('https://htreviews.org/tobaccos/sarma');
-    expect(slug).toBe('sarma');
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-// __tests__/scraper-integration.test.ts
-import { ScraperController } from '../scraper-controller';
-
-describe('Scraper Integration', () => {
-  it('should scrape a single brand', async () => {
-    const controller = new ScraperController();
-    const result = await controller.scrapeSingleBrand('sarma');
-    
-    expect(result.tobaccosAdded).toBeGreaterThan(0);
-  }, 30000);
-});
-```
-
 ## Deployment
 
-### Process Management
-
-```bash
-# Run scraper
-npm run scraper
-
-# Run with PM2
-pm2 start dist/scraper/index.js --name hookah-scraper
-pm2 logs hookah-scraper
-pm2 restart hookah-scraper
-```
-
-### Docker Deployment
+### Docker Configuration
 
 ```dockerfile
 # Dockerfile
@@ -933,15 +888,40 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY dist/ ./dist/
+COPY . .
+RUN npm run build
 
-CMD ["node", "dist/scraper/index.js"]
+CMD ["node", "dist/index.js"]
 ```
+
+### Environment Variables
+
+```env
+# Scraper Configuration
+SCRAPER_SCHEDULE="0 2 * * *"
+SCRAPER_TIMEOUT=60000
+SCRAPER_MAX_RETRIES=3
+SCRAPER_DELAY_BRAND=2000
+SCRAPER_DELAY_TOBACCO=1000
+
+# Database
+DATABASE_URL="postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist"
+
+# Logging
+LOG_LEVEL=info
+```
+
+### Coolify Deployment
+
+- Scraper runs as a Docker Compose service
+- Environment variables managed in Coolify dashboard
+- Automatic scaling and health monitoring
+- Logs aggregated in Coolify dashboard
 
 ## Security Considerations
 
 1. **User Agent**: Use a descriptive user agent
-2. **Rate Limiting**: Respect the target website's limits
+2. **Rate Limiting**: Respect target website's limits
 3. **Error Handling**: Don't expose sensitive information in logs
 4. **Environment Variables**: Store sensitive data in environment variables
 5. **Access Control**: Restrict scraper to internal network if possible
@@ -956,7 +936,8 @@ The scraper module provides:
 ✅ **Rate limiting** - Respects target website's limits
 ✅ **Logging** - Comprehensive logging for monitoring
 ✅ **Scheduling** - Configurable cron-based scheduling
-✅ **Testing** - Unit and integration tests
-✅ **Monitoring** - Health checks and metrics
+✅ **Containerized** - Runs in Docker container
+✅ **Coolify deployment** - Automated deployment and management
+✅ **Docker network** - Connects to PostgreSQL via Docker network
 
-The scraper ensures the tobacco database stays up-to-date with minimal manual intervention.
+The scraper ensures tobacco database stays up-to-date with minimal manual intervention.
