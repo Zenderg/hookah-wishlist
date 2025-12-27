@@ -1,12 +1,14 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import logger from './utils/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { healthRoutes } from './routes/health.js';
+import { authRoutes } from './routes/auth.js';
 
 // Initialize Fastify server
 const fastify = Fastify({
@@ -26,9 +28,20 @@ const prisma = new PrismaClient({
   adapter,
 });
 
+// Attach Prisma client to Fastify instance for access in routes
+(fastify as any).prisma = prisma;
+
 // Register CORS
 await fastify.register(cors, {
   origin: true, // Allow all origins for development
+});
+
+// Register JWT plugin
+await fastify.register(jwt, {
+  secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+  sign: {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  },
 });
 
 // Register custom error handler
@@ -36,6 +49,9 @@ fastify.setErrorHandler(errorHandler);
 
 // Register health check routes
 await fastify.register(healthRoutes);
+
+// Register auth routes with prefix /api/v1/auth
+await fastify.register(authRoutes, { prefix: '/api/v1/auth' });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string): Promise<void> => {

@@ -74,11 +74,11 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 2.1 Authentication
 
-- [ ] Implement Telegram initData validation
-- [ ] Create JWT token generation
-- [ ] Create authentication middleware
-- [ ] Implement `/auth/telegram` endpoint
-- [ ] Add token refresh mechanism
+- [X] Implement Telegram initData validation
+- [X] Create JWT token generation
+- [X] Create authentication middleware
+- [X] Implement `/auth/telegram` endpoint
+- [X] Add token refresh mechanism
 
 #### 2.2 User Management
 
