@@ -82,10 +82,10 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 2.2 User Management
 
-- [ ] Implement user creation/update from Telegram data
-- [ ] Create `/users/me` endpoint
-- [ ] Implement user lookup by Telegram ID
-- [ ] Add user validation
+- [X] Implement user creation/update from Telegram data
+- [X] Create `/users/me` endpoint
+- [X] Implement user lookup by Telegram ID
+- [X] Add user validation
 
 #### 2.3 Tobacco Endpoints
 

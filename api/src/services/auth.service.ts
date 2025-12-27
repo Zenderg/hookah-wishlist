@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger.js';
 import type { TelegramUser } from '../utils/telegram.js';
+import { UserService, type TelegramUserData } from './user.service.js';
 
 export interface AuthResult {
   success: boolean;
@@ -17,7 +18,11 @@ export interface AuthResult {
 }
 
 export class AuthService {
-  constructor(private prisma: PrismaClient) {}
+  private userService: UserService;
+
+  constructor(private prisma: PrismaClient) {
+    this.userService = new UserService(prisma);
+  }
 
   /**
    * Authenticate user via Telegram initData
@@ -25,38 +30,18 @@ export class AuthService {
    */
   async authenticateViaTelegram(telegramUser: TelegramUser): Promise<AuthResult> {
     try {
-      const telegramId = BigInt(telegramUser.id);
+      // Convert TelegramUser to TelegramUserData
+      const telegramData: TelegramUserData = {
+        telegramId: BigInt(telegramUser.id),
+        username: telegramUser.username,
+        firstName: telegramUser.first_name,
+        lastName: telegramUser.last_name,
+      };
 
-      // Check if user exists
-      let user = await this.prisma.user.findUnique({
-        where: { telegramId },
-      });
+      // Create or update user using UserService
+      const user = await this.userService.createOrUpdateUser(telegramData);
 
-      if (user) {
-        // Update existing user
-        user = await this.prisma.user.update({
-          where: { telegramId },
-          data: {
-            username: telegramUser.username || user.username,
-            firstName: telegramUser.first_name || user.firstName,
-            lastName: telegramUser.last_name || user.lastName,
-          },
-        });
-
-        logger.info('User updated successfully', { userId: user.id, telegramId });
-      } else {
-        // Create new user
-        user = await this.prisma.user.create({
-          data: {
-            telegramId,
-            username: telegramUser.username || null,
-            firstName: telegramUser.first_name,
-            lastName: telegramUser.last_name || null,
-          },
-        });
-
-        logger.info('User created successfully', { userId: user.id, telegramId });
-      }
+      logger.info('User authenticated successfully', { userId: user.id, telegramId: user.telegramId });
 
       return {
         success: true,
@@ -84,9 +69,7 @@ export class AuthService {
    */
   async getUserById(userId: number): Promise<AuthResult> {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
+      const user = await this.userService.getUserById(userId);
 
       if (!user) {
         return {

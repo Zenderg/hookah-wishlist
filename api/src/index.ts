@@ -9,6 +9,7 @@ import logger from './utils/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
+import { userRoutes } from './routes/users.js';
 
 // Initialize Fastify server
 const fastify = Fastify({
@@ -52,6 +53,9 @@ await fastify.register(healthRoutes);
 
 // Register auth routes with prefix /api/v1/auth
 await fastify.register(authRoutes, { prefix: '/api/v1/auth' });
+
+// Register user routes with prefix /api/v1/users
+await fastify.register(userRoutes, { prefix: '/api/v1/users' });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string): Promise<void> => {
