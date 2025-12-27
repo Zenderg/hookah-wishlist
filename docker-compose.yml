@@ -144,6 +144,8 @@ services:
       API_URL: ${API_URL}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       LOG_LEVEL: ${LOG_LEVEL}
+      # Suppress punycode deprecation warning (temporary workaround for uri-js dependency)
+      NODE_OPTIONS: "--no-deprecation"
     
     # Wait for API to be healthy before starting
     depends_on:

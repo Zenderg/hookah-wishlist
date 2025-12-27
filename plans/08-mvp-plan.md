@@ -119,11 +119,11 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 3.1 Bot Setup
 
-- [ ] Create bot via BotFather
-- [ ] Install Telegraf
-- [ ] Set up bot project structure
-- [ ] Configure bot token in environment variables
-- [ ] Set up webhook (or polling for development)
+- [X] Create bot via BotFather
+- [X] Install Telegraf
+- [X] Set up bot project structure
+- [X] Configure bot token in environment variables
+- [X] Set up webhook (or polling for development)
 
 #### 3.2 Basic Commands
 
