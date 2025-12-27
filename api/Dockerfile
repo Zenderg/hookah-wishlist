@@ -26,11 +26,11 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy source code
 COPY . .
 
+# Generate Prisma client BEFORE building TypeScript
+RUN npx prisma generate
+
 # Build the TypeScript application
 RUN npm run build
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # ============================================
 # Stage 2: Production stage
