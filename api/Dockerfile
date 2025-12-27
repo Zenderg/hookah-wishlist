@@ -29,6 +29,9 @@ COPY . .
 # Build the TypeScript application
 RUN npm run build
 
+# Generate Prisma client
+RUN npx prisma generate
+
 # ============================================
 # Stage 2: Production stage
 # ============================================
@@ -55,13 +58,17 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY package*.json ./
 
 # Install only production dependencies
-# Use BuildKit cache mount for faster builds
+# Use BuildKit cache mount for faster subsequent builds
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy Prisma schema, migrations, and config from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # Switch to non-root user
 USER nodejs
@@ -75,5 +82,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the application with proper signal handling
+# Run Prisma migrations before starting the API
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
