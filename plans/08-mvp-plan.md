@@ -89,18 +89,18 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 2.3 Tobacco Endpoints
 
-- [ ] Create `/tobaccos` search endpoint
-- [ ] Create `/tobaccos/:id` detail endpoint
-- [ ] Create `/brands` list endpoint
-- [ ] Create `/brands/:slug` detail endpoint
-- [ ] Add pagination support
+- [X] Create `/tobaccos` search endpoint
+- [X] Create `/tobaccos/:id` detail endpoint
+- [X] Create `/brands` list endpoint
+- [X] Create `/brands/:slug` detail endpoint
+- [X] Add pagination support
 
 #### 2.4 Wishlist Endpoints
 
-- [ ] Create `/wishlist` GET endpoint
-- [ ] Create `/wishlist/items` POST endpoint
-- [ ] Create `/wishlist/items/:id` DELETE endpoint
-- [ ] Add basic validation
+- [X] Create `/wishlist` GET endpoint
+- [X] Create `/wishlist/items` POST endpoint
+- [X] Create `/wishlist/items/:id` DELETE endpoint
+- [X] Add basic validation
 
 #### 2.5 Bot Endpoints
 

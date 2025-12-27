@@ -10,6 +10,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
+import { tobaccoRoutes } from './routes/tobaccos.js';
+import { brandRoutes } from './routes/brands.js';
+import { wishlistRoutes } from './routes/wishlist.js';
 
 // Initialize Fastify server
 const fastify = Fastify({
@@ -56,6 +59,15 @@ await fastify.register(authRoutes, { prefix: '/api/v1/auth' });
 
 // Register user routes with prefix /api/v1/users
 await fastify.register(userRoutes, { prefix: '/api/v1/users' });
+
+// Register tobacco routes with prefix /api/v1/tobaccos
+await fastify.register(tobaccoRoutes, { prefix: '/api/v1/tobaccos' });
+
+// Register brand routes with prefix /api/v1/brands
+await fastify.register(brandRoutes, { prefix: '/api/v1/brands' });
+
+// Register wishlist routes with prefix /api/v1/wishlist
+await fastify.register(wishlistRoutes, { prefix: '/api/v1/wishlist' });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string): Promise<void> => {
