@@ -1,5 +1,5 @@
 # ============================================
-# Stage 1: Build the React app with Vite
+# Stage 1: Build React app with Vite
 # ============================================
 FROM node:22.12-alpine AS builder
 
@@ -12,9 +12,6 @@ LABEL stage="builder"
 # Set working directory
 WORKDIR /app
 
-# Install dumb-init for proper signal handling in containers
-RUN apk add --no-cache dumb-init
-
 # Copy package files first for better layer caching
 COPY package*.json ./
 
@@ -26,7 +23,12 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy source code
 COPY . .
 
-# Build the application
+# Build application with environment variables
+ARG VITE_API_URL
+ARG NODE_ENV=production
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_ENV=${NODE_ENV}
+
 RUN npm run build
 
 # ============================================
@@ -40,8 +42,8 @@ LABEL description="Production nginx image for hookah-wishlist mini-app"
 LABEL version="1.0.0"
 LABEL stage="production"
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Install curl for healthcheck and dumb-init for proper signal handling
+RUN apk add --no-cache curl dumb-init
 
 # Create non-root user for security
 # nginx:alpine runs as nginx user by default, but we ensure proper permissions

@@ -71,6 +71,8 @@ services:
       target: production
       cache_from:
         - node:22.12-alpine
+      args:
+        NODE_ENV: ${NODE_ENV}
     container_name: hookah-api
     
     # Labels for better organization
@@ -238,6 +240,8 @@ services:
       cache_from:
         - node:22.12-alpine
         - nginx:1.27-alpine
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: hookah-mini-app
     
     # Labels for better organization

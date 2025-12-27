@@ -162,11 +162,11 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.1 Mini App Setup
 
-- [ ] Initialize React project with Vite
-- [ ] Install dependencies (Tailwind, Zustand, Axios)
-- [ ] Set up project structure
-- [ ] Configure Tailwind CSS
-- [ ] Set up Telegram Web App SDK
+- [X] Initialize React project with Vite
+- [X] Install dependencies (Tailwind, Zustand, Axios)
+- [X] Set up project structure
+- [X] Configure Tailwind CSS
+- [X] Set up Telegram Web App SDK
 
 #### 4.2 Authentication
 
