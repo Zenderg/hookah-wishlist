@@ -14,9 +14,9 @@ export const Brands: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+    <div className="min-h-screen bg-tg-bg p-4 pb-20">
       <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Brands</h1>
+        <h1 className="text-2xl font-bold text-tg-text mb-6">Brands</h1>
 
         <div className="grid grid-cols-2 gap-3">
           {brands.map((brand) => (
@@ -25,8 +25,8 @@ export const Brands: React.FC = () => {
               className="cursor-pointer hover:shadow-md transition-shadow"
             >
               <CardContent className="p-4 text-center">
-                <Tag className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                <h3 className="font-semibold text-gray-900">{brand.name}</h3>
+                <Tag className="w-8 h-8 mx-auto mb-2 text-tg-hint" />
+                <h3 className="font-semibold text-tg-text">{brand.name}</h3>
               </CardContent>
             </Card>
           ))}

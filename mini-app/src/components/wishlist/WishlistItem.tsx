@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Check, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
+import { useTelegram } from '../../hooks/useTelegram';
 
 export interface WishlistItemProps {
   id: number;
@@ -23,6 +24,22 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
   onRemove,
   isRemoving = false,
 }) => {
+  const { hapticImpact } = useTelegram();
+
+  const handleTogglePurchased = () => {
+    hapticImpact('light');
+    if (onTogglePurchased) {
+      onTogglePurchased();
+    }
+  };
+
+  const handleRemove = () => {
+    hapticImpact('medium');
+    if (onRemove) {
+      onRemove();
+    }
+  };
+
   return (
     <Card
       className={`transition-opacity ${isPurchased ? 'opacity-60' : ''} ${
@@ -37,15 +54,15 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
             className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
           />
         ) : (
-          <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <ShoppingBag className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 rounded-lg bg-tg-secondary-bg flex items-center justify-center flex-shrink-0">
+            <ShoppingBag className="w-8 h-8 text-tg-hint" />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold text-gray-900 ${isPurchased ? 'line-through' : ''}`}>
+          <h3 className={`font-semibold text-tg-text ${isPurchased ? 'line-through' : ''}`}>
             {name}
           </h3>
-          <p className="text-sm text-gray-600">{brand}</p>
+          <p className="text-sm text-tg-hint">{brand}</p>
           {isPurchased && (
             <span className="inline-flex items-center text-xs text-green-600 mt-1">
               <Check className="w-3 h-3 mr-1" />
@@ -59,7 +76,7 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
           <Button
             variant="secondary"
             size="sm"
-            onClick={onTogglePurchased}
+            onClick={handleTogglePurchased}
             disabled={isRemoving}
           >
             {isPurchased ? 'Mark Unpurchased' : 'Mark Purchased'}
@@ -69,7 +86,7 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
           <Button
             variant="danger"
             size="sm"
-            onClick={onRemove}
+            onClick={handleRemove}
             disabled={isRemoving}
           >
             {isRemoving ? (

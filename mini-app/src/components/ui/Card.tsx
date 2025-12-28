@@ -7,11 +7,14 @@ export interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => {
-  const baseStyles = 'bg-white rounded-lg shadow-sm border border-gray-200';
+  const baseStyles = 'bg-tg-bg rounded-lg shadow-sm border border-tg-hint';
   const interactiveStyles = onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : '';
-  
+
   return (
-    <div className={`${baseStyles} ${interactiveStyles} ${className}`} onClick={onClick}>
+    <div
+      className={`${baseStyles} ${interactiveStyles} ${className}`}
+      onClick={onClick}
+    >
       {children}
     </div>
   );
@@ -23,7 +26,7 @@ export interface CardHeaderProps {
 }
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
-  return <div className={`p-4 border-b border-gray-200 ${className}`}>{children}</div>;
+  return <div className={`p-4 border-b border-tg-hint ${className}`}>{children}</div>;
 };
 
 export interface CardContentProps {
@@ -41,5 +44,5 @@ export interface CardFooterProps {
 }
 
 export const CardFooter: React.FC<CardFooterProps> = ({ children, className = '' }) => {
-  return <div className={`p-4 border-t border-gray-200 ${className}`}>{children}</div>;
+  return <div className={`p-4 border-t border-tg-hint ${className}`}>{children}</div>;
 };

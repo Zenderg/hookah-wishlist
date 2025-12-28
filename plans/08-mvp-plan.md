@@ -203,9 +203,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.6 Telegram Integration
 
-- [ ] Apply Telegram theme
-- [ ] Add haptic feedback
-- [ ] Implement Main Button (optional)
+- [X] Apply Telegram theme
+- [X] Add haptic feedback
+- [X] Implement Main Button (optional)
 
 **Deliverables**:
 - Working Mini App with wishlist and search
@@ -306,18 +306,18 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 7.1 Coolify Account Setup
 
-- [ ] Create Coolify account
-- [ ] Connect GitHub repository to Coolify
-- [ ] Configure GitHub webhook for automatic deployments
-- [ ] Set up custom domain (if applicable)
+- [X] Create Coolify account
+- [X] Connect GitHub repository to Coolify
+- [X] Configure GitHub webhook for automatic deployments
+- [X] Set up custom domain (if applicable)
 
 #### 7.2 Coolify Application Configuration
 
-- [ ] Create application in Coolify for API
-- [ ] Configure Docker Compose settings
-- [ ] Set environment variables in Coolify dashboard
-- [ ] Configure build command (pnpm install && pnpm build)
-- [ ] Set up resource limits
+- [X] Create application in Coolify for API
+- [X] Configure Docker Compose settings
+- [X] Set environment variables in Coolify dashboard
+- [X] Configure build command (pnpm install && pnpm build)
+- [X] Set up resource limits
 
 #### 7.3 GitHub Webhook Configuration
 
