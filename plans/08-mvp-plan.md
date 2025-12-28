@@ -145,9 +145,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 3.4 Mini App Integration
 
-- [ ] Implement `/app` command
-- [ ] Add Mini App button
-- [ ] Test Mini App opening
+- [X] Implement `/app` command
+- [X] Add Mini App button
+- [X] Test Mini App opening
 
 #### 3.5 Error Handling
 
