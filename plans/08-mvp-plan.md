@@ -197,9 +197,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.5 Navigation
 
-- [ ] Implement bottom navigation
-- [ ] Set up React Router
-- [ ] Create page transitions
+- [X] Implement bottom navigation
+- [X] Set up React Router
+- [X] Create page transitions
 
 #### 4.6 Telegram Integration
 

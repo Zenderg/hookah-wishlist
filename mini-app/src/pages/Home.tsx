@@ -5,7 +5,7 @@ import { Heart, Search, Tag, User } from 'lucide-react';
 export const Home: React.FC = () => {
   // Placeholder implementation - full functionality will be in later tasks
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4 pb-20">
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Hookah Wishlist</h1>

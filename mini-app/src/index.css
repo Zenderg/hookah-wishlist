@@ -91,6 +91,66 @@ button {
   animation: spin 1s linear infinite;
 }
 
+/* Page transition animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page transition classes */
+.page-transition {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.page-transition-slide-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.page-transition-slide-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.page-transition-slide-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
 /* Focus styles for accessibility */
 button:focus-visible,
 a:focus-visible,
@@ -102,4 +162,25 @@ input:focus-visible {
 /* Smooth transitions */
 * {
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Performance optimizations for mobile */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hardware acceleration for smooth animations */
+.page-transition,
+.page-transition-slide-right,
+.page-transition-slide-left,
+.page-transition-slide-up {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
