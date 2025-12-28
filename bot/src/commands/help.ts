@@ -1,5 +1,6 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
+import { handleCommandError } from '../utils/errorHandler.js';
 
 export const helpCommand = async (ctx: Context) => {
   try {
@@ -29,7 +30,6 @@ Need more help? Contact support!
     await ctx.replyWithHTML(helpMessage);
     logger.info(`User ${ctx.from?.id} requested help`);
   } catch (error) {
-    logger.error('Error in help command:', error);
-    await ctx.reply('Sorry, something went wrong. Please try again.');
+    await handleCommandError(ctx, error, 'help');
   }
 };

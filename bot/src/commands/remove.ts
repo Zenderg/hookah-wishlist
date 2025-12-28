@@ -1,6 +1,7 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
 import { apiClient } from '../utils/api.js';
+import { handleCommandError, handleCallbackError } from '../utils/errorHandler.js';
 import type { InlineKeyboardMarkup } from 'telegraf/types';
 
 export const removeCommand = async (ctx: Context) => {
@@ -82,22 +83,7 @@ export const removeCommand = async (ctx: Context) => {
       totalItems,
     });
   } catch (error) {
-    logger.error('Error in remove command:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 404) {
-        await ctx.reply('👤 User not found. Please use /start to create your account first.');
-        return;
-      }
-
-      if (axiosError.response?.status === 401) {
-        await ctx.reply('❌ Authentication failed. Please try again later.');
-        return;
-      }
-    }
-
-    await ctx.reply('❌ Failed to fetch your wishlist. Please try again later.');
+    await handleCommandError(ctx, error, 'remove');
   }
 };
 
@@ -146,9 +132,7 @@ export async function handleRemoveSelection(ctx: Context, itemId: string) {
 
     logger.info(`Remove confirmation shown to user ${telegramId}`, { itemId });
   } catch (error) {
-    logger.error('Error handling remove selection:', error);
-    await ctx.answerCbQuery('Failed to show confirmation');
-    await ctx.reply('❌ Failed to show confirmation. Please try again later.');
+    await handleCallbackError(ctx, error, 'remove_selection');
   }
 }
 
@@ -211,18 +195,6 @@ export async function handleRemoveConfirmation(ctx: Context, itemId: string) {
       itemId,
     });
   } catch (error) {
-    logger.error('Error handling remove confirmation:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 404) {
-        await ctx.answerCbQuery('Item not found');
-        await ctx.reply('❌ Item not found. It may have been removed already.');
-        return;
-      }
-    }
-
-    await ctx.answerCbQuery('Failed to remove');
-    await ctx.reply('❌ Failed to remove item. Please try again later.');
+    await handleCallbackError(ctx, error, 'remove_confirmation');
   }
 }

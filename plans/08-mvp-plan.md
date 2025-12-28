@@ -151,9 +151,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 3.5 Error Handling
 
-- [ ] Add global error handler
-- [ ] Implement user-friendly error messages
-- [ ] Add logging for debugging
+- [X] Add global error handler
+- [X] Implement user-friendly error messages
+- [X] Add logging for debugging
 
 **Deliverables**:
 - Working Telegram bot with core commands

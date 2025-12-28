@@ -1,5 +1,6 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
+import { handleCommandError } from '../utils/errorHandler.js';
 
 export const appCommand = async (ctx: Context) => {
   try {
@@ -39,7 +40,6 @@ Ready to explore? Click the button below! 👇
     await ctx.reply(message, { reply_markup: keyboard, parse_mode: 'Markdown' });
     logger.info(`Mini App link sent to user ${telegramId}`);
   } catch (error) {
-    logger.error('Error in app command:', error);
-    await ctx.reply('Sorry, something went wrong. Please try again.');
+    await handleCommandError(ctx, error, 'app');
   }
 };

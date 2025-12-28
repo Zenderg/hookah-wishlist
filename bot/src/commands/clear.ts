@@ -1,6 +1,7 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
 import { apiClient } from '../utils/api.js';
+import { handleCommandError, handleCallbackError } from '../utils/errorHandler.js';
 import type { InlineKeyboardMarkup } from 'telegraf/types';
 
 export const clearCommand = async (ctx: Context) => {
@@ -61,22 +62,7 @@ export const clearCommand = async (ctx: Context) => {
 
     logger.info(`Clear confirmation shown to user ${telegramId}`, { totalItems });
   } catch (error) {
-    logger.error('Error in clear command:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 404) {
-        await ctx.reply('👤 User not found. Please use /start to create your account first.');
-        return;
-      }
-
-      if (axiosError.response?.status === 401) {
-        await ctx.reply('❌ Authentication failed. Please try again later.');
-        return;
-      }
-    }
-
-    await ctx.reply('❌ Failed to fetch your wishlist. Please try again later.');
+    await handleCommandError(ctx, error, 'clear');
   }
 };
 
@@ -167,8 +153,6 @@ export async function handleClearConfirmation(ctx: Context) {
       });
     }
   } catch (error) {
-    logger.error('Error handling clear confirmation:', error);
-    await ctx.answerCbQuery('Failed to clear');
-    await ctx.reply('❌ Failed to clear wishlist. Please try again later.');
+    await handleCallbackError(ctx, error, 'clear_confirmation');
   }
 }

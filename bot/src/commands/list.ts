@@ -1,6 +1,7 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
 import { apiClient } from '../utils/api.js';
+import { handleCommandError } from '../utils/errorHandler.js';
 
 export const listCommand = async (ctx: Context) => {
   try {
@@ -54,40 +55,6 @@ export const listCommand = async (ctx: Context) => {
       totalItems: pagination?.total || 0,
     });
   } catch (error) {
-    logger.error('Error in list command:', error);
-
-    if (error instanceof Error) {
-      // Handle axios errors
-      if ('response' in error) {
-        const axiosError = error as any;
-        logger.error('Axios error response:', {
-          status: axiosError.response?.status,
-          data: axiosError.response?.data,
-        });
-
-        if (axiosError.response?.status === 404) {
-          await ctx.reply('👤 User not found. Please use /start to create your account first.');
-          return;
-        }
-
-        if (axiosError.response?.status === 401) {
-          await ctx.reply('❌ Authentication failed. Please try again later.');
-          return;
-        }
-
-        if (axiosError.response?.status === 500) {
-          await ctx.reply('❌ Server error. Please try again later.');
-          return;
-        }
-      }
-
-      // Handle network errors
-      if ('code' in error && (error as any).code === 'ECONNREFUSED') {
-        await ctx.reply('❌ Could not connect to the server. Please try again later.');
-        return;
-      }
-    }
-
-    await ctx.reply('❌ Failed to fetch your wishlist. Please try again later.');
+    await handleCommandError(ctx, error, 'list');
   }
 };

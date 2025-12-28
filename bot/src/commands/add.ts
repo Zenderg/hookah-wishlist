@@ -1,6 +1,7 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
 import { apiClient } from '../utils/api.js';
+import { handleCommandError, handleCallbackError } from '../utils/errorHandler.js';
 import type { InlineKeyboardMarkup } from 'telegraf/types';
 
 // Store user search state (in production, use Redis or database)
@@ -23,8 +24,7 @@ export const addCommand = async (ctx: Context) => {
         'You can search by tobacco name or enter the exact ID if you know it.'
     );
   } catch (error) {
-    logger.error('Error in add command:', error);
-    await ctx.reply('Sorry, something went wrong. Please try again.');
+    await handleCommandError(ctx, error, 'add');
   }
 };
 
@@ -59,8 +59,7 @@ export const handleAddSearch = async (ctx: Context) => {
       await searchTobaccos(ctx, telegramId, messageText.trim());
     }
   } catch (error) {
-    logger.error('Error handling add search:', error);
-    await ctx.reply('Sorry, something went wrong. Please try again.');
+    await handleCommandError(ctx, error, 'add_search');
   }
 };
 
@@ -154,17 +153,7 @@ async function searchTobaccos(ctx: Context, telegramId: number, query: string) {
       displayed: tobaccos.length,
     });
   } catch (error) {
-    logger.error('Error searching tobaccos:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 401) {
-        await ctx.reply('❌ Authentication failed. Please try again later.');
-        return;
-      }
-    }
-
-    await ctx.reply('❌ Failed to search for tobacco. Please try again later.');
+    await handleCommandError(ctx, error, 'search_tobaccos');
   }
 }
 
@@ -217,30 +206,7 @@ async function addTobaccoById(ctx: Context, telegramId: number, tobaccoId: strin
       wishlistItemId: item.id,
     });
   } catch (error) {
-    logger.error('Error adding tobacco by ID:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 404) {
-        await ctx.reply(
-          '❌ Tobacco with this ID not found.\n\n' +
-            'Please check the ID or use /add to search by name.'
-        );
-        return;
-      }
-
-      if (axiosError.response?.status === 409) {
-        await ctx.reply('⚠️ This tobacco is already in your wishlist!');
-        return;
-      }
-
-      if (axiosError.response?.status === 401) {
-        await ctx.reply('❌ Authentication failed. Please try again later.');
-        return;
-      }
-    }
-
-    await ctx.reply('❌ Failed to add tobacco to wishlist. Please try again later.');
+    await handleCommandError(ctx, error, 'add_tobacco_by_id');
   }
 }
 
@@ -302,24 +268,6 @@ export async function handleAddSelection(ctx: Context, tobaccoId: string) {
       wishlistItemId: item.id,
     });
   } catch (error) {
-    logger.error('Error handling add selection:', error);
-
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 404) {
-        await ctx.answerCbQuery('Tobacco not found');
-        await ctx.reply('❌ Tobacco not found. It may have been removed.');
-        return;
-      }
-
-      if (axiosError.response?.status === 409) {
-        await ctx.answerCbQuery('Already in wishlist');
-        await ctx.reply('⚠️ This tobacco is already in your wishlist!');
-        return;
-      }
-    }
-
-    await ctx.answerCbQuery('Failed to add');
-    await ctx.reply('❌ Failed to add tobacco to wishlist. Please try again later.');
+    await handleCallbackError(ctx, error, 'add_selection');
   }
 }

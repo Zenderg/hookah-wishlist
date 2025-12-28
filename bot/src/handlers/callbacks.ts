@@ -5,6 +5,7 @@ import { helpCommand } from '../commands/help.js';
 import { handleAddSelection } from '../commands/add.js';
 import { handleRemoveSelection, handleRemoveConfirmation } from '../commands/remove.js';
 import { handleClearConfirmation } from '../commands/clear.js';
+import { handleCallbackError } from '../utils/errorHandler.js';
 
 export const handleCallbackQuery = async (ctx: Context) => {
   try {
@@ -83,12 +84,7 @@ export const handleCallbackQuery = async (ctx: Context) => {
         await ctx.reply('❌ Unknown action. Please try again.');
     }
   } catch (error) {
-    logger.error('Error in callback handler:', error);
-    try {
-      await ctx.answerCbQuery('An error occurred');
-    } catch (answerError) {
-      logger.error('Error answering callback query:', answerError);
-    }
+    await handleCallbackError(ctx, error, 'callback_query');
   }
 };
 
@@ -107,7 +103,7 @@ async function handleCancelAction(ctx: Context) {
     await ctx.answerCbQuery('Cancelled');
     await ctx.reply('❌ Action cancelled.');
 
-    // Try to delete the message with the inline keyboard
+    // Try to delete of the message with the inline keyboard
     try {
       if (ctx.callbackQuery && 'message' in ctx.callbackQuery) {
         await ctx.deleteMessage();
@@ -117,11 +113,6 @@ async function handleCancelAction(ctx: Context) {
       logger.debug('Could not delete message:', deleteError);
     }
   } catch (error) {
-    logger.error('Error handling cancel action:', error);
-    try {
-      await ctx.answerCbQuery('An error occurred');
-    } catch (answerError) {
-      logger.error('Error answering callback query:', answerError);
-    }
+    await handleCallbackError(ctx, error, 'cancel_action');
   }
 }

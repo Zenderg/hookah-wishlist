@@ -1,5 +1,6 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
+import { handleCommandError } from '../utils/errorHandler.js';
 
 export const startCommand = async (ctx: Context) => {
   try {
@@ -33,7 +34,6 @@ Use the buttons below to get started quickly!
     await ctx.reply(welcomeMessage, { reply_markup: keyboard });
     logger.info(`Welcome message sent to user ${telegramId}`);
   } catch (error) {
-    logger.error('Error in start command:', error);
-    await ctx.reply('Sorry, something went wrong. Please try again.');
+    await handleCommandError(ctx, error, 'start');
   }
 };

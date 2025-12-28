@@ -9,6 +9,7 @@ import { removeCommand } from './commands/remove.js';
 import { clearCommand } from './commands/clear.js';
 import { appCommand } from './commands/app.js';
 import { handleCallbackQuery } from './handlers/callbacks.js';
+import { categorizeError, formatErrorMessage, logError } from './utils/errorHandler.js';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -73,9 +74,45 @@ bot.on('text', async (ctx) => {
   }
 });
 
+// Global error handler - catches all unhandled errors in bot commands
 bot.catch((err, ctx) => {
-  logger.error(`Error for ${ctx.updateType}:`, err);
-  void ctx.reply('An error occurred while processing your request. Please try again.');
+  const category = categorizeError(err);
+  const userId = ctx.from?.id;
+  const updateType = ctx.updateType;
+
+  // Log error with full context
+  logError(category, {
+    userId,
+    command: updateType,
+    error: err,
+    stack: err instanceof Error ? err.stack : undefined,
+    additionalInfo: {
+      updateType,
+      updateId: ctx.update?.update_id,
+    },
+  });
+
+  // Send user-friendly error message
+  const errorMessage = formatErrorMessage(category, updateType);
+
+  // Attempt to send error message to user
+  void ctx.reply(errorMessage).catch((replyError) => {
+    logger.error('Failed to send error message to user', {
+      userId,
+      updateType,
+      originalError: err instanceof Error ? err.message : String(err),
+      replyError: replyError instanceof Error ? replyError.message : String(replyError),
+    });
+  });
+
+  // In development, log additional details
+  if (process.env.NODE_ENV !== 'production' && err instanceof Error) {
+    logger.error('Error details for debugging', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    });
+  }
 });
 
 logger.info('All bot commands and handlers registered');
