@@ -55,8 +55,8 @@ LABEL description="Production image for hookah-wishlist API (Node.js/TypeScript)
 LABEL version="1.0.0"
 LABEL stage="production"
 
-# Install dumb-init and curl for healthcheck
-RUN apk add --no-cache dumb-init curl
+# Install dumb-init, curl for healthcheck, and postgresql-client for pg_isready
+RUN apk add --no-cache dumb-init curl postgresql-client
 
 # Set working directory
 WORKDIR /app
@@ -88,6 +88,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
+# Copy migration startup script
+COPY api/scripts/migrate-and-start.sh ./api/scripts/migrate-and-start.sh
+RUN chmod +x ./api/scripts/migrate-and-start.sh
+
 # Switch to non-root user
 USER nodejs
 
@@ -99,6 +103,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Start application with proper signal handling
+# Start application with migration script
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "/app/api/dist/index.js"]
+CMD ["sh", "/app/api/scripts/migrate-and-start.sh"]

@@ -61,56 +61,6 @@ services:
       - backend
 
   # ============================================
-  # Prisma Migration Service
-  # ============================================
-  prisma-migrate:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
-      target: builder
-      args:
-        NODE_ENV: ${NODE_ENV}
-    container_name: hookah-prisma-migrate
-    
-    # Labels for better organization
-    labels:
-      - "com.hookah-wishlist.service=prisma-migrate"
-      - "com.hookah-wishlist.environment=development"
-    
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      NODE_ENV: ${NODE_ENV}
-    
-    # Wait for postgres to be healthy before running migrations
-    depends_on:
-      postgres:
-        condition: service_healthy
-    
-    # Run migrations and exit
-    command: ["pnpm", "prisma", "migrate", "deploy"]
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-    
-    # Logging configuration
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    
-    # Connect to backend network
-    networks:
-      - backend
-
-  # ============================================
   # API Service
   # ============================================
   api:
@@ -141,12 +91,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
     
-    # Wait for postgres and migrations to complete before starting
+    # Wait for postgres to be healthy before starting
     depends_on:
       postgres:
         condition: service_healthy
-      prisma-migrate:
-        condition: service_completed_successfully
     
     # Healthcheck using curl (installed in Dockerfile)
     healthcheck:
