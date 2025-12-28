@@ -19,7 +19,7 @@ RUN apk add --no-cache dumb-init
 RUN npm install -g pnpm
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files first for better layer caching
 COPY bot/package*.json ./bot/
@@ -63,7 +63,7 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN npm install -g pnpm
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files
 COPY bot/package*.json ./bot/

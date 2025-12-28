@@ -19,7 +19,7 @@ RUN apk add --no-cache dumb-init
 RUN npm install -g pnpm
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files first for better layer caching
 COPY api/package*.json ./api/
@@ -67,7 +67,7 @@ RUN addgroup -g 1001 -S nodejs && \
     chown -R nodejs:nodejs /app
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files
 COPY api/package*.json ./api/

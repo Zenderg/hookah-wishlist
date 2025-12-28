@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y dumb-init
 RUN npm install -g pnpm
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files first for better layer caching
 COPY scraper/package*.json ./scraper/
@@ -66,7 +66,7 @@ COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma.config.ts ./prisma.config.ts
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 
 # Copy package files
 COPY scraper/package*.json ./scraper/
