@@ -1,44 +1,36 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { User } from '../types';
 
-export interface User {
-  id: number;
-  telegramId: number;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface AuthState {
+interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  setAuth: (user: User, token: string) => void;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
   logout: () => void;
-  setLoading: (loading: boolean) => void;
+  initializeAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-
-  setAuth: (user, token) =>
-    set({
-      user,
-      token,
-      isAuthenticated: true,
-      isLoading: false,
-    }),
-
-  logout: () =>
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: false,
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setToken: (token) => set({ token }),
+      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      initializeAuth: () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          set({ token, isAuthenticated: true });
+        }
+      },
     }),
-
-  setLoading: (loading) => set({ isLoading: loading }),
-}));
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({ token: state.token }),
+    }
+  )
+);

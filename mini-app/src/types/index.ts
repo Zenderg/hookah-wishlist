@@ -2,13 +2,25 @@
 export interface User {
   id: number;
   telegramId: number;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  languageCode?: string;
-  isBot?: boolean;
-  createdAt: string;
-  updatedAt: string;
+  username: string | null;
+  firstName: string;
+  lastName: string | null;
+  languageCode?: string; // Make optional
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data: {
+    token: string;
+    user: User;
+  };
+  error: null | { code: string; message: string };
+}
+
+export interface AuthErrorResponse {
+  success: boolean;
+  data: null;
+  error: string;
 }
 
 // Tobacco types
@@ -86,16 +98,6 @@ export interface SearchParams {
   page?: number;
   limit?: number;
   brandId?: number;
-}
-
-// Auth types
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
-export interface TelegramAuthData {
-  initData: string;
 }
 
 // Navigation types

@@ -174,10 +174,10 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.2 Authentication
 
-- [ ] Implement initData extraction
-- [ ] Create authentication flow
-- [ ] Set up Axios interceptors
-- [ ] Store JWT token
+- [X] Implement initData extraction
+- [X] Create authentication flow
+- [X] Set up Axios interceptors
+- [X] Store JWT token
 
 #### 4.3 Wishlist Page
 

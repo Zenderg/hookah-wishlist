@@ -1,76 +1,46 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 import './index.css';
-import App from './App.tsx';
+import { init, retrieveRawInitData } from '@telegram-apps/sdk';
+import { useAuthStore } from './stores/auth';
+import { authenticateWithTelegram } from './services/auth';
 
-// Load Telegram WebApp script
-const loadTelegramScript = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-web-app.js';
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Telegram WebApp script'));
-    document.head.appendChild(script);
-  });
-};
+// Initialize Telegram Web App
+init();
 
-// Initialize Telegram WebApp and render the app
-const initializeApp = async () => {
-  try {
-    // Load Telegram WebApp script
-    await loadTelegramScript();
+// Initialize authentication on app load
+const initializeAuth = async () => {
+  const { setToken, setUser, logout } = useAuthStore.getState();
 
-    // Initialize Telegram WebApp if available
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      const tg = (window as any).Telegram.WebApp;
-
-      // Set up Telegram WebApp
-      tg.ready();
-      tg.expand();
-
-      // Apply Telegram theme colors to CSS variables
-      const root = document.documentElement;
-      const themeParams = tg.themeParams || {};
-
-      if (themeParams.bg_color) {
-        root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color);
-      }
-      if (themeParams.text_color) {
-        root.style.setProperty('--tg-theme-text-color', themeParams.text_color);
-      }
-      if (themeParams.hint_color) {
-        root.style.setProperty('--tg-theme-hint-color', themeParams.hint_color);
-      }
-      if (themeParams.link_color) {
-        root.style.setProperty('--tg-theme-link-color', themeParams.link_color);
-      }
-      if (themeParams.button_color) {
-        root.style.setProperty('--tg-theme-button-color', themeParams.button_color);
-      }
-      if (themeParams.button_text_color) {
-        root.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color);
-      }
-
-      console.log('Telegram WebApp initialized:', {
-        version: tg.version,
-        platform: tg.platform,
-        initData: tg.initData ? 'present' : 'missing',
-      });
-    } else {
-      console.warn('Telegram WebApp not available - running in development mode');
-    }
-  } catch (error) {
-    console.error('Failed to initialize Telegram WebApp:', error);
+  // Check if token exists in localStorage
+  const existingToken = localStorage.getItem('token');
+  if (existingToken) {
+    setToken(existingToken);
+    return;
   }
 
-  // Render the React app
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
+  // Authenticate with Telegram initData
+  try {
+    const initData = retrieveRawInitData();
+    if (!initData) {
+      console.error('No initData available from Telegram');
+      return;
+    }
+
+    const { token, user } = await authenticateWithTelegram(initData);
+    setToken(token);
+    setUser(user);
+  } catch (error) {
+    console.error('Authentication failed:', error);
+    logout();
+  }
 };
 
-// Start the app
-initializeApp();
+initializeAuth();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
