@@ -4,7 +4,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { startCommand } from './commands/start.js';
 import { helpCommand } from './commands/help.js';
 import { listCommand } from './commands/list.js';
-import { addCommand } from './commands/add.js';
+import { addCommand, handleAddSearch } from './commands/add.js';
 import { removeCommand } from './commands/remove.js';
 import { clearCommand } from './commands/clear.js';
 import { appCommand } from './commands/app.js';
@@ -60,9 +60,17 @@ bot.on('callback_query', async (ctx) => {
   await handleCallbackQuery(ctx);
 });
 
-bot.on('message', async (ctx) => {
+// Handle text messages for search functionality
+bot.on('text', async (ctx) => {
+  const telegramId = ctx.from?.id;
   const messageText = 'text' in ctx.message ? ctx.message.text : undefined;
-  logger.info(`Received message from user ${ctx.from?.id}: ${messageText}`);
+
+  logger.info(`Received text message from user ${telegramId}: ${messageText}`);
+
+  // Handle search for /add command - only process non-command text messages
+  if (messageText && !messageText.startsWith('/')) {
+    await handleAddSearch(ctx);
+  }
 });
 
 bot.catch((err, ctx) => {

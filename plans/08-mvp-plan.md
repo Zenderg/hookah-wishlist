@@ -138,10 +138,10 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 3.3 Wishlist Commands
 
-- [ ] Implement `/add` command (simple version)
-- [ ] Implement `/remove` command
-- [ ] Implement `/clear` command
-- [ ] Add confirmation dialogs
+- [X] Implement `/add` command (simple version)
+- [X] Implement `/remove` command
+- [X] Implement `/clear` command
+- [X] Add confirmation dialogs
 
 #### 3.4 Mini App Integration
 

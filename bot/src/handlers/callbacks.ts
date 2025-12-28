@@ -2,6 +2,9 @@ import { Context } from 'telegraf';
 import { logger } from '../utils/logger.js';
 import { listCommand } from '../commands/list.js';
 import { helpCommand } from '../commands/help.js';
+import { handleAddSelection } from '../commands/add.js';
+import { handleRemoveSelection, handleRemoveConfirmation } from '../commands/remove.js';
+import { handleClearConfirmation } from '../commands/clear.js';
 
 export const handleCallbackQuery = async (ctx: Context) => {
   try {
@@ -23,10 +26,41 @@ export const handleCallbackQuery = async (ctx: Context) => {
 
     logger.info(`Callback query received from user ${telegramId}: ${callbackData}`);
 
-    // Answer the callback query to remove the loading indicator
-    await ctx.answerCbQuery();
-
     // Handle different callback actions
+    if (callbackData.startsWith('add_')) {
+      // Handle add selection from search results
+      const tobaccoId = callbackData.substring(4); // Remove 'add_' prefix
+      await handleAddSelection(ctx, tobaccoId);
+      return;
+    }
+
+    if (callbackData.startsWith('remove_')) {
+      // Handle remove selection (first step)
+      const itemId = callbackData.substring(7); // Remove 'remove_' prefix
+      await handleRemoveSelection(ctx, itemId);
+      return;
+    }
+
+    if (callbackData.startsWith('confirm_remove_')) {
+      // Handle remove confirmation (second step)
+      const itemId = callbackData.substring(15); // Remove 'confirm_remove_' prefix
+      await handleRemoveConfirmation(ctx, itemId);
+      return;
+    }
+
+    if (callbackData === 'confirm_clear') {
+      // Handle clear confirmation
+      await handleClearConfirmation(ctx);
+      return;
+    }
+
+    if (callbackData === 'cancel_action') {
+      // Handle cancel button clicks
+      await handleCancelAction(ctx);
+      return;
+    }
+
+    // Handle existing actions
     switch (callbackData) {
       case 'action_view_wishlist':
         logger.info(`User ${telegramId} clicked View Wishlist button`);
@@ -45,6 +79,7 @@ export const handleCallbackQuery = async (ctx: Context) => {
 
       default:
         logger.warn(`Unknown callback action: ${callbackData}`);
+        await ctx.answerCbQuery('Unknown action');
         await ctx.reply('❌ Unknown action. Please try again.');
     }
   } catch (error) {
@@ -56,3 +91,37 @@ export const handleCallbackQuery = async (ctx: Context) => {
     }
   }
 };
+
+async function handleCancelAction(ctx: Context) {
+  try {
+    const telegramId = ctx.from?.id;
+
+    if (!telegramId) {
+      logger.warn('No telegram ID found in context');
+      await ctx.answerCbQuery('Could not identify you');
+      return;
+    }
+
+    logger.info(`User ${telegramId} cancelled action`);
+
+    await ctx.answerCbQuery('Cancelled');
+    await ctx.reply('❌ Action cancelled.');
+
+    // Try to delete the message with the inline keyboard
+    try {
+      if (ctx.callbackQuery && 'message' in ctx.callbackQuery) {
+        await ctx.deleteMessage();
+      }
+    } catch (deleteError) {
+      // Ignore errors when trying to delete the message
+      logger.debug('Could not delete message:', deleteError);
+    }
+  } catch (error) {
+    logger.error('Error handling cancel action:', error);
+    try {
+      await ctx.answerCbQuery('An error occurred');
+    } catch (answerError) {
+      logger.error('Error answering callback query:', answerError);
+    }
+  }
+}
