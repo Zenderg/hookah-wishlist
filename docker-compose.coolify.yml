@@ -1,0 +1,279 @@
+# ============================================
+# Hookah Wishlist - Docker Compose for Coolify
+# ============================================
+# No port mappings - Coolify handles routing via domains
+
+services:
+  # ============================================
+  # PostgreSQL Database Service
+  # ============================================
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: hookah-postgres
+    
+    labels:
+      - "com.hookah-wishlist.service=postgres"
+      - "com.hookah-wishlist.environment=production"
+    
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - backend
+
+  # ============================================
+  # API Service
+  # ============================================
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: production
+      cache_from:
+        - node:22.12-alpine
+      args:
+        NODE_ENV: ${NODE_ENV}
+    container_name: hookah-api
+    
+    labels:
+      - "com.hookah-wishlist.service=api"
+      - "com.hookah-wishlist.environment=production"
+    
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: ${NODE_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      BOT_API_KEY: ${BOT_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - backend
+
+  # ============================================
+  # Telegram Bot Service
+  # ============================================
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+      target: production
+      cache_from:
+        - node:22.12-alpine
+    container_name: hookah-bot
+    
+    labels:
+      - "com.hookah-wishlist.service=bot"
+      - "com.hookah-wishlist.environment=production"
+    
+    environment:
+      API_URL: ${API_URL}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      BOT_API_KEY: ${BOT_API_KEY}
+      LOG_LEVEL: ${LOG_LEVEL}
+      NODE_OPTIONS: "--no-deprecation"
+    
+    depends_on:
+      api:
+        condition: service_healthy
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - backend
+
+  # ============================================
+  # Web Scraper Service
+  # ============================================
+  scraper:
+    build:
+      context: .
+      dockerfile: scraper/Dockerfile
+      target: production
+      cache_from:
+        - node:22.12-alpine
+    container_name: hookah-scraper
+    
+    labels:
+      - "com.hookah-wishlist.service=scraper"
+      - "com.hookah-wishlist.environment=production"
+    
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SCRAPER_SCHEDULE: ${SCRAPER_SCHEDULE}
+      SCRAPER_TIMEOUT: ${SCRAPER_TIMEOUT}
+      SCRAPER_MAX_RETRIES: ${SCRAPER_MAX_RETRIES}
+      SCRAPER_DELAY_BRAND: ${SCRAPER_DELAY_BRAND}
+      SCRAPER_DELAY_TOBACCO: ${SCRAPER_DELAY_TOBACCO}
+      LOG_LEVEL: ${LOG_LEVEL}
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - backend
+
+  # ============================================
+  # Mini-App Service (React/Vite Frontend)
+  # ============================================
+  mini-app:
+    build:
+      context: .
+      dockerfile: mini-app/Dockerfile
+      target: production
+      cache_from:
+        - node:22.12-alpine
+        - nginx:1.27-alpine
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: hookah-mini-app
+    
+    labels:
+      - "com.hookah-wishlist.service=mini-app"
+      - "com.hookah-wishlist.environment=production"
+    
+    depends_on:
+      api:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - frontend
+      - backend
+
+# ============================================
+# Networks Configuration
+# ============================================
+networks:
+  frontend:
+    driver: bridge
+    labels:
+      - "com.hookah-wishlist.network=frontend"
+  
+  backend:
+    driver: bridge
+    labels:
+      - "com.hookah-wishlist.network=backend"
+    internal: false
+
+# ============================================
+# Volumes Configuration
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+    labels:
+      - "com.hookah-wishlist.volume=postgres_data"
