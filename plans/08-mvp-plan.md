@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines implementation plan for Minimum Viable Product (MVP) of Hookah Wishlist System. The MVP focuses on core functionality: users can interact with bot, open Mini App, and perform basic wishlist operations. All components run in Docker containers with PostgreSQL, and deployment is automated via Coolify with GitHub Webhooks.
+This document outlines implementation plan for Minimum Viable Product (MVP) of Hookah Wishlist System. The MVP focuses on core functionality: users can interact with bot, open Mini App, and perform basic wishlist operations. All components run in Docker containers with PostgreSQL, and deployment is automated via Coolify with GitHub Webhooks. The project uses **pnpm workspaces** for monorepo management with centralized Prisma configuration.
 
 ## MVP Goals
 
@@ -35,6 +35,8 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 - [X] Set up `.gitignore`
 - [X] Configure ESLint and Prettier
 - [X] Set up TypeScript configuration
+- [X] Set up pnpm workspaces configuration
+- [X] Create `pnpm-workspace.yaml`
 
 #### 1.2 Docker Compose Setup
 
@@ -48,7 +50,7 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 1.3 Database Setup
 
-- [X] Create Prisma schema file
+- [X] Create Prisma schema file (centralized at project root)
 - [X] Set up Prisma ORM 7.2.0+
 - [X] Create initial database schema
 - [X] Run initial migration via Docker Compose
@@ -56,8 +58,8 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 1.4 API Server Setup
 
-- [X] Initialize Node.js project
-- [X] Install Fastify and dependencies
+- [X] Initialize Node.js project (workspace)
+- [X] Install Fastify and dependencies via pnpm
 - [X] Set up project structure
 - [X] Configure environment variables
 - [X] Set up logging with Winston
@@ -65,8 +67,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 **Deliverables**:
 - Running Docker Compose stack with all services
-- Database with schema created
+- Database with schema created (centralized)
 - Health check endpoint responding
+- pnpm workspaces configured
 
 ---
 
@@ -112,6 +115,7 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 - All core API endpoints implemented
 - Authentication working with Telegram initData
 - API documentation with examples
+- Uses centralized Prisma Client
 
 ---
 
@@ -120,8 +124,8 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 #### 3.1 Bot Setup
 
 - [X] Create bot via BotFather
-- [X] Install Telegraf
-- [X] Set up bot project structure
+- [X] Install Telegraf via pnpm
+- [X] Set up bot project structure (workspace)
 - [X] Configure bot token in environment variables
 - [X] Set up webhook (or polling for development)
 
@@ -162,8 +166,8 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.1 Mini App Setup
 
-- [X] Initialize React project with Vite
-- [X] Install dependencies (Tailwind, Zustand, Axios)
+- [X] Initialize React project with Vite (workspace)
+- [X] Install dependencies (Tailwind, Zustand, Axios) via pnpm
 - [X] Set up project structure
 - [X] Configure Tailwind CSS
 - [X] Set up Telegram Web App SDK
@@ -243,37 +247,92 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 ---
 
-### Phase 6: Coolify Deployment Setup (Week 6)
+### Phase 6: Scraper Implementation (Week 6)
 
-#### 6.1 Coolify Account Setup
+#### 6.1 Scraper Setup
+
+- [X] Initialize scraper project (workspace)
+- [X] Install Playwright and dependencies via pnpm
+- [X] Set up project structure
+- [X] Configure environment variables
+- [X] Set up logging with Winston
+
+#### 6.2 Scheduler Implementation
+
+- [X] Implement node-cron scheduler
+- [X] Configure daily schedule
+- [X] Add initial scrape on startup
+- [X] Implement graceful shutdown
+
+#### 6.3 Scraper Controller
+
+- [X] Implement scraper orchestration logic
+- [X] Add browser initialization and cleanup
+- [X] Implement metrics tracking
+- [X] Add error handling and retry logic
+
+#### 6.4 Brand Scraper
+
+- [X] Implement brand list scraping
+- [X] Add infinite scroll handling
+- [X] Implement multiple extraction strategies
+- [X] Add brand deduplication
+
+#### 6.5 Tobacco Scraper
+
+- [X] Implement tobacco scraping for brands
+- [X] Add infinite scroll handling
+- [X] Implement multiple extraction strategies
+- [X] Add tobacco deduplication
+- [X] Extract metadata (strength, cut, flavor, rating)
+
+#### 6.6 Database Integration
+
+- [X] Implement database service with centralized Prisma
+- [X] Add upsert operations for brands
+- [X] Add upsert operations for tobaccos
+- [X] Implement connection pooling
+
+**Deliverables**:
+- Fully functional scraper with Playwright
+- Daily scheduling with node-cron
+- Robust error handling and retry logic
+- Database integration via centralized Prisma
+- Comprehensive logging and metrics
+
+---
+
+### Phase 7: Coolify Deployment Setup (Week 7)
+
+#### 7.1 Coolify Account Setup
 
 - [ ] Create Coolify account
 - [ ] Connect GitHub repository to Coolify
 - [ ] Configure GitHub webhook for automatic deployments
 - [ ] Set up custom domain (if applicable)
 
-#### 6.2 Coolify Application Configuration
+#### 7.2 Coolify Application Configuration
 
 - [ ] Create application in Coolify for API
 - [ ] Configure Docker Compose settings
 - [ ] Set environment variables in Coolify dashboard
-- [ ] Configure build command
+- [ ] Configure build command (pnpm install && pnpm build)
 - [ ] Set up resource limits
 
-#### 6.3 GitHub Webhook Configuration
+#### 7.3 GitHub Webhook Configuration
 
 - [ ] Configure webhook in Coolify
 - [ ] Set deployment branch (main)
 - [ ] Configure automatic deployment on push
 - [ ] Test webhook trigger
 
-#### 6.4 Bot Configuration
+#### 7.4 Bot Configuration
 
 - [ ] Set bot webhook URL to Coolify API URL
 - [ ] Configure Mini App URL in BotFather
 - [ ] Test bot in production
 
-#### 6.5 Monitoring Setup
+#### 7.5 Monitoring Setup
 
 - [ ] Configure logging in Coolify
 - [ ] Set up health checks
@@ -301,7 +360,16 @@ cd hookah-wishlist
 git init
 
 # Create directories
-mkdir -p api bot mini-app scraper docs
+mkdir -p api bot mini-app scraper prisma
+
+# Create pnpm workspace configuration
+cat > pnpm-workspace.yaml << EOF
+packages:
+  - 'api'
+  - 'scraper'
+  - 'bot'
+  - 'mini-app'
+EOF
 
 # Create .gitignore
 cat > .gitignore << EOF
@@ -310,36 +378,57 @@ dist/
 .env
 *.log
 .DS_Store
+.env.example
 EOF
 
-# Initialize API
+# Initialize API workspace
 cd api
-npm init -y
-npm install fastify @fastify/cors @fastify/jwt prisma@7.2.0 @prisma/client@7.2.0 winston
-npm install -D typescript @types/node tsx
+pnpm init
+pnpm install fastify @fastify/cors @fastify/jwt @prisma/client@7.2.0 winston
+pnpm install -D typescript @types/node tsx
 
-# Initialize Bot
+# Initialize Bot workspace
 cd ../bot
-npm init -y
-npm install telegraf axios
-npm install -D typescript @types/node tsx
+pnpm init
+pnpm install telegraf axios
+pnpm install -D typescript @types/node tsx
 
-# Initialize Mini App
+# Initialize Mini App workspace
 cd ../mini-app
-npm create vite@latest . -- --template react-ts
-npm install axios zustand @tanstack/react-query lucide-react
-npm install -D tailwindcss postcss autoprefixer
+pnpm create vite@latest . -- --template react-ts
+pnpm install axios zustand @tanstack/react-query lucide-react
+pnpm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 
-# Initialize Scraper
+# Initialize Scraper workspace
 cd ../scraper
-npm init -y
-npm install playwright@1.40.0 prisma@7.2.0 @prisma/client@7.2.0 node-cron@3.0.3 winston
-npm install -D typescript @types/node tsx @types/node-cron
+pnpm init
+pnpm install playwright@1.57.0 @prisma/client@7.2.0 node-cron@4.0.0 winston
+pnpm install -D typescript @types/node tsx @types/node-cron
 npx playwright install
+
+# Initialize centralized Prisma at root
+cd ..
+pnpm install -D -w prisma@7.2.0
+npx prisma init
 ```
 
-### Step 2: Docker Compose Configuration
+### Step 2: Centralized Prisma Setup
+
+```bash
+# Prisma schema is already at prisma/schema.prisma
+
+# Generate Prisma Client for all workspaces
+pnpm prisma generate
+
+# Create migration
+pnpm prisma migrate dev --name init
+
+# Run migrations in Docker Compose
+docker-compose exec api pnpm prisma migrate deploy
+```
+
+### Step 3: Docker Compose Configuration
 
 ```yaml
 # docker-compose.yml
@@ -351,7 +440,7 @@ services:
     container_name: hookah-postgres
     environment:
       POSTGRES_USER: hookah_user
-      POSTGRES_PASSWORD: hookah_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: hookah_wishlist
     ports:
       - "5432:5432"
@@ -369,11 +458,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      DATABASE_URL: postgresql://hookah_user:${POSTGRES_PASSWORD}@postgres:5432/hookah_wishlist
+      PORT: 3000
       NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET}
+      BOT_API_KEY: ${BOT_API_KEY}
       LOG_LEVEL: info
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -384,8 +477,10 @@ services:
     build: ./bot
     container_name: hookah-bot
     environment:
-      API_URL: http://api:3000/api/v1
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      API_URL: http://api:3000/api/v1
+      API_KEY: ${BOT_API_KEY}
+      NODE_ENV: development
       LOG_LEVEL: info
     depends_on:
       - api
@@ -394,20 +489,25 @@ services:
     build: ./scraper
     container_name: hookah-scraper
     environment:
-      DATABASE_URL: postgresql://hookah_user:hookah_password@postgres:5432/hookah_wishlist
+      DATABASE_URL: postgresql://hookah_user:${POSTGRES_PASSWORD}@postgres:5432/hookah_wishlist
       SCRAPER_SCHEDULE: "0 2 * * *"
+      SCRAPER_TIMEOUT: 60000
+      SCRAPER_MAX_RETRIES: 3
+      SCRAPER_DELAY_BRAND: 2000
+      SCRAPER_DELAY_TOBACCO: 1000
       LOG_LEVEL: info
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
 ```
 
-### Step 3: Database Schema
+### Step 4: Database Schema
 
 ```prisma
-// api/prisma/schema.prisma
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -439,6 +539,8 @@ model Brand {
   id            Int      @id @default(autoincrement())
   name          String   @unique
   slug          String   @unique
+  description   String?  @db.Text
+  imageUrl      String?  @map("image_url")
   htreviewsUrl  String?  @map("htreviews_url")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -508,7 +610,7 @@ model WishlistItem {
 }
 ```
 
-### Step 4: API Server Structure
+### Step 5: API Server Structure
 
 ```
 api/
@@ -532,12 +634,12 @@ api/
 │   │   └── telegram.ts
 │   └── index.ts
 ├── prisma/
-│   └── schema.prisma
+│   └── schema.prisma  # Symbolic link to ../../prisma/schema.prisma
 ├── Dockerfile
 └── package.json
 ```
 
-### Step 5: Bot Structure
+### Step 6: Bot Structure
 
 ```
 bot/
@@ -560,7 +662,7 @@ bot/
 └── package.json
 ```
 
-### Step 6: Mini App Structure
+### Step 7: Mini App Structure
 
 ```
 mini-app/
@@ -574,8 +676,8 @@ mini-app/
 │   │   │   ├── WishlistPage.tsx
 │   │   │   └── WishlistItem.tsx
 │   │   └── search/
-│   │   │       ├── SearchPage.tsx
-│   │   │       └── TobaccoCard.tsx
+│   │       ├── SearchPage.tsx
+│   │       └── TobaccoCard.tsx
 │   ├── pages/
 │   │   ├── Home.tsx
 │   │   ├── Search.tsx
@@ -596,21 +698,30 @@ mini-app/
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.js
-└── tsconfig.json
+├── tsconfig.json
+└── package.json
 ```
 
-### Step 7: Scraper Structure
+### Step 8: Scraper Structure
 
 ```
 scraper/
 ├── src/
-│   ├── brand-scraper.ts
-│   ├── tobacco-scraper.ts
-│   ├── database-writer.ts
-│   ├── scraper-controller.ts
-│   ├── scheduler.ts
-│   ├── logger.ts
+│   ├── scrapers/
+│   │   ├── scraperController.ts
+│   │   ├── brandScraper.ts
+│   │   └── tobaccoScraper.ts
+│   ├── services/
+│   │   └── database.ts
+│   ├── config/
+│   │   └── logger.ts
+│   ├── utils/
+│   │   └── waitForContent.ts
+│   ├── types/
+│   │   └── index.ts
 │   └── index.ts
+├── prisma/
+│   └── schema.prisma  # Symbolic link to ../../prisma/schema.prisma
 ├── Dockerfile
 └── package.json
 ```
@@ -620,31 +731,40 @@ scraper/
 ### Local Development with Docker Compose
 
 ```bash
+# Clone repository
+git clone https://github.com/your-username/hookah-wishlist.git
+cd hookah-wishlist
+
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env with your values
+nano .env
+
+# Install all workspace dependencies
+pnpm install
+
 # Start all services
-docker-compose up -d
+docker-compose up --build
 
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild and restart
+# Or start in detached mode
 docker-compose up -d --build
 ```
 
 ### Run Database Migrations
 
 ```bash
-# Generate Prisma client
-cd api
-npx prisma generate
+# Generate Prisma Client for all workspaces
+pnpm prisma generate
 
-# Run migrations
-npx prisma migrate dev
+# Create migration
+pnpm prisma migrate dev --name init
 
-# Seed database (optional)
-npx prisma db seed
+# Run migrations in Docker Compose
+docker-compose exec api pnpm prisma migrate deploy
+
+# Or run from root
+pnpm prisma migrate deploy
 ```
 
 ## Success Criteria
@@ -664,6 +784,9 @@ npx prisma db seed
 11. ✅ All services run in Docker containers
 12. ✅ PostgreSQL runs in Docker container
 13. ✅ System can be deployed to Coolify via GitHub Webhook
+14. ✅ pnpm workspaces configured and working
+15. ✅ Centralized Prisma configuration shared across API and scraper
+16. ✅ Scraper fully implemented with Playwright and node-cron
 
 ## Post-MVP Enhancements
 
@@ -691,12 +814,13 @@ npx prisma db seed
 
 | Week | Phase | Deliverables |
 |------|-------|--------------|
-| 1 | Project Setup | Repository, Docker Compose, database, API server foundation |
+| 1 | Project Setup | Repository, Docker Compose, database, API server foundation, pnpm workspaces |
 | 2 | API Development | All core API endpoints |
 | 3 | Bot Development | Working Telegram bot with commands |
 | 4 | Mini App Development | Functional Mini App with wishlist and search |
 | 5 | Docker Compose Configuration | Complete Docker Compose setup for all services |
-| 6 | Coolify Deployment Setup | Coolify deployment with GitHub Webhooks |
+| 6 | Scraper Implementation | Fully functional scraper with Playwright and scheduling |
+| 7 | Coolify Deployment Setup | Coolify deployment with GitHub Webhooks |
 
 ## Deployment Workflow
 
@@ -704,7 +828,8 @@ npx prisma db seed
 
 ```bash
 # Start development environment
-docker-compose up -d
+pnpm install
+docker-compose up -d --build
 
 # Access API at http://localhost:3000
 # Bot runs independently
@@ -719,9 +844,10 @@ git push origin main
 
 # Coolify automatically:
 # 1. Pulls latest code
-# 2. Builds Docker images
-# 3. Deploys services
-# 4. Runs health checks
+# 2. Installs dependencies (pnpm install)
+# 3. Builds Docker images
+# 4. Deploys services
+# 5. Runs health checks
 ```
 
 ## Risks & Mitigations
@@ -742,7 +868,10 @@ git push origin main
 **Mitigation**: Use stable Telegraf library, monitor Telegram changelog
 
 ### Risk 6: Target Website Structure Changes
-**Mitigation**: Design flexible scraper, monitor for changes
+**Mitigation**: Design flexible scraper with multiple extraction strategies, monitor for changes
+
+### Risk 7: pnpm Workspace Configuration
+**Mitigation**: Test workspace setup locally, verify cross-workspace imports work correctly
 
 ## Resources
 
@@ -758,6 +887,8 @@ git push origin main
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [Coolify Documentation](https://coolify.io/docs)
+- [pnpm Documentation](https://pnpm.io/)
+- [Playwright Documentation](https://playwright.dev/)
 
 ### Tools
 
@@ -771,12 +902,17 @@ git push origin main
 
 This MVP implementation plan provides a clear roadmap for building core functionality of Hookah Wishlist System. Following this plan will result in a working system that demonstrates value proposition and provides a foundation for future enhancements.
 
-The 6-week timeline is achievable with focused development and allows for deployment to Coolify with GitHub Webhooks automation before moving to post-MVP features.
+The 7-week timeline is achievable with focused development and allows for deployment to Coolify with GitHub Webhooks automation before moving to post-MVP features.
 
 Key improvements from previous plan:
+- ✅ pnpm workspaces for monorepo management
+- ✅ Centralized Prisma configuration and migrations
 - ✅ Docker Compose for all services (no local PostgreSQL installation)
 - ✅ Prisma 7.2.0+ for enhanced TypeScript support
 - ✅ Coolify deployment with GitHub Webhooks automation
 - ✅ Containerized architecture for consistency
 - ✅ Removed testing sections to focus on core functionality
 - ✅ Simplified deployment workflow
+- ✅ Fully implemented scraper with Playwright and node-cron
+- ✅ Shared dependencies across workspaces
+- ✅ Efficient package management with pnpm

@@ -13,7 +13,7 @@ The Hookah Wishlist System is a Telegram-based application designed to help user
 
 ## Architecture
 
-All components run in Docker containers with PostgreSQL database. Deployment is automated via Coolify platform with GitHub Webhooks.
+All components run in Docker containers with PostgreSQL database. The project uses **pnpm workspaces** for monorepo management, with centralized Prisma configuration and migrations shared across API and scraper subprojects. Deployment is automated via Coolify platform with GitHub Webhooks.
 
 ## Documentation Structure
 
@@ -43,14 +43,18 @@ All components run in Docker containers with PostgreSQL database. Deployment is 
 ### Local Development
 
 1. Clone repository
-2. Create `.env` file (see [`docker-compose.yml.md`](docker-compose.yml.md))
-3. Start all services:
+2. Install dependencies using pnpm workspaces:
+   ```bash
+   pnpm install
+   ```
+3. Create `.env` file (see [`docker-compose.yml.md`](docker-compose.yml.md))
+4. Start all services:
    ```bash
    docker-compose up -d
    ```
-4. Access API at http://localhost:3000
-5. Bot runs independently
-6. Scraper runs on schedule
+5. Access API at http://localhost:3000
+6. Bot runs independently
+7. Scraper runs on schedule
 
 ### Production Deployment
 
@@ -77,16 +81,33 @@ All components run in Docker containers with PostgreSQL database. Deployment is 
 
 ## Key Features
 
+✅ **pnpm Workspaces** - Monorepo management with shared dependencies
+✅ **Centralized Prisma** - Shared schema and migrations across API and scraper
 ✅ **Docker Compose** - All services containerized, no local PostgreSQL installation
 ✅ **Coolify Deployment** - Automated deployment via GitHub Webhooks
 ✅ **Prisma 7.2.0+** - Latest ORM version with enhanced TypeScript support
 ✅ **No Testing Sections** - Focus on core functionality
 ✅ **Modern Tech Stack** - Latest 2025 technology versions
+✅ **Implemented Scraper** - Full scraper logic with Playwright and node-cron
 
 ## Version
 
-Documentation Version: 2.0
-Last Updated: 2025-12-26
+Documentation Version: 3.0
+Last Updated: 2025-12-28
+
+## Changes in Version 3.0
+
+- ✅ Migrated from npm to pnpm workspaces for monorepo management
+- ✅ Centralized Prisma configuration and migrations (shared by api and scraper)
+- ✅ Implemented complete scraper logic with Playwright and node-cron
+- ✅ Updated technology stack to latest versions (Prisma 7.2.0+, React 19+, Vite 7+)
+- ✅ Replaced VPS deployment with Docker Compose and Coolify
+- ✅ Added GitHub Webhooks automation
+- ✅ Removed all testing sections from documentation
+- ✅ Added Docker Compose configuration guide
+- ✅ Added Coolify deployment configuration guide
+- ✅ Updated system architecture for container-first approach
+- ✅ Updated deployment guide for Coolify platform
 
 ## Changes in Version 2.0
 

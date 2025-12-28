@@ -2,12 +2,17 @@
 
 ## Overview
 
-The Hookah Wishlist System is a distributed application consisting of four main components that work together to provide a seamless user experience for managing hookah tobacco preferences. The architecture is designed to be clean, modern, and potentially scalable while maintaining simplicity for the initial MVP. All components are containerized using Docker Compose and deployed via Coolify platform with GitHub Webhooks automation.
+The Hookah Wishlist System is a distributed application consisting of four main components that work together to provide a seamless user experience for managing hookah tobacco preferences. The architecture is designed to be clean, modern, and potentially scalable while maintaining simplicity for the initial MVP. All components are containerized using Docker Compose and deployed via Coolify platform with GitHub Webhooks automation. The project uses **pnpm workspaces** for monorepo management with centralized Prisma configuration shared across API and scraper.
 
 ## High-Level Architecture
 
 ```mermaid
 graph TB
+    subgraph "Package Management Layer"
+        PM[pnpm Workspaces]
+        WS[pnpm-workspace.yaml]
+    end
+    
     subgraph "Client Layer"
         A[Telegram Bot]
         B[Telegram Mini App]
@@ -28,11 +33,17 @@ graph TB
         D2[Tobaccos Table]
         D3[Wishlists Table]
         D4[WishlistItems Table]
+        PC[Centralized Prisma]
+        PM[Prisma Migrations]
     end
     
     subgraph "Automation Layer"
         E[Playwright Scraper]
         F[node-cron Scheduler]
+        SC[Scraper Controller]
+        BS[Brand Scraper]
+        TS[Tobacco Scraper]
+        DBS[Database Service]
     end
     
     subgraph "External Services"
@@ -46,14 +57,22 @@ graph TB
         K[GitHub Repository]
     end
     
+    PM --> PC
+    PC --> C
+    PC --> E
+    WS --> PM
     A <--> G
     B <--> G
     A --> C
     B --> C
     C --> D
-    F --> E
-    E --> H
-    E --> D
+    F --> SC
+    SC --> BS
+    SC --> TS
+    SC --> DBS
+    BS --> H
+    TS --> H
+    DBS --> D
     K --> J
     J --> I
     I --> C
@@ -61,12 +80,19 @@ graph TB
     I --> E
     I --> B
     
+    style PM fill:#f6921e
+    style PC fill:#336791
+    style WS fill:#f6921e
     style A fill:#0088cc
     style B fill:#0088cc
     style C fill:#68a063
     style D fill:#336791
     style E fill:#e03535
     style F fill:#e03535
+    style SC fill:#e03535
+    style BS fill:#e03535
+    style TS fill:#e03535
+    style DBS fill:#e03535
     style G fill:#ff6b6b
     style H fill:#ff6b6b
     style I fill:#2496ed
@@ -76,7 +102,32 @@ graph TB
 
 ## System Components
 
-### 1. Telegram Bot
+### 1. Package Management Layer
+
+**Purpose**: Manage monorepo dependencies and workspace coordination
+
+**Responsibilities**:
+- Install dependencies across all workspaces efficiently
+- Share common dependencies between packages
+- Ensure consistent versions across workspaces
+- Simplify CI/CD with single install command
+
+**Key Features**:
+- pnpm 9+ for fast, efficient package management
+- Workspace configuration in `pnpm-workspace.yaml`
+- Hard links for reduced disk usage
+- Strict dependency management
+- Cross-workspace imports without publishing
+
+**Technology**: pnpm 9+ with workspaces
+
+**Workspaces**:
+- `api` - Backend API server
+- `scraper` - Web scraping module
+- `bot` - Telegram bot
+- `mini-app` - Telegram Mini App
+
+### 2. Telegram Bot
 
 **Purpose**: Handle user interactions via Telegram chat interface
 
@@ -106,7 +157,7 @@ graph TB
 - Environment variables managed via Docker Compose
 - Logs output to stdout for Coolify log aggregation
 
-### 2. Telegram Mini App
+### 3. Telegram Mini App
 
 **Purpose**: Provide rich, interactive web-based interface within Telegram
 
@@ -140,7 +191,7 @@ graph TB
 - nginx acts as reverse proxy for API requests
 - HTTPS automatically handled by Coolify (production) or local setup
 
-### 3. API Server
+### 4. API Server
 
 **Purpose**: Provide business logic and data management via REST API
 
@@ -148,7 +199,7 @@ graph TB
 - Handle HTTP requests from Bot and Mini App
 - Validate and authenticate requests
 - Execute business logic
-- Interact with database
+- Interact with database via centralized Prisma
 - Return structured responses
 - Handle errors gracefully
 
@@ -161,12 +212,13 @@ graph TB
 - Comprehensive error handling
 - Logging and monitoring
 - CORS configuration for Telegram domains
+- Uses centralized Prisma Client from root workspace
 
-**Technology**: Fastify 4+ with Node.js, TypeScript
+**Technology**: Fastify 5+ with Node.js, TypeScript
 
 **Communication**:
 - Receives HTTP requests from Bot and Mini App
-- Communicates with PostgreSQL via Prisma ORM
+- Communicates with PostgreSQL via Prisma ORM (centralized)
 - Returns JSON responses
 
 **Containerization**:
@@ -174,36 +226,80 @@ graph TB
 - Database connection via Docker network
 - Environment variables managed by Docker Compose
 
-### 4. Scraper Module
+### 5. Scraper Module (Fully Implemented)
 
 **Purpose**: Automatically populate tobacco database from htreviews.org
 
 **Responsibilities**:
-- Scrape tobacco data from htreviews.org
+- Scrape tobacco data from htreviews.org using Playwright
 - Parse HTML and extract structured data
-- Store data in PostgreSQL database
+- Store data in PostgreSQL database via centralized Prisma
 - Avoid duplicates by checking existing records
 - Store image URLs (not images themselves)
-- Run on schedule (daily)
+- Run on schedule (daily via node-cron)
 
 **Key Features**:
-- Browser automation with Playwright
+- Browser automation with Playwright 1.57+
 - Incremental updates (only new records)
-- Error handling and retry logic
+- Error handling and retry logic with exponential backoff
 - Logging of scraping activities
-- Configurable schedule
+- Configurable schedule via environment variables
 - Rate limiting to avoid overwhelming target site
+- Multiple extraction strategies for robustness
+- Infinite scroll handling for dynamic content
+- Full implementation with brand and tobacco scrapers
 
-**Technology**: Playwright 1.40+, node-cron 3+
+**Implemented Components**:
+- **Scraper Controller** ([`scraper/src/scrapers/scraperController.ts`](../scraper/src/scrapers/scraperController.ts:1)) - Orchestrates scraping process
+- **Brand Scraper** ([`scraper/src/scrapers/brandScraper.ts`](../scraper/src/scrapers/brandScraper.ts:1)) - Scrapes brand list and details
+- **Tobacco Scraper** ([`scraper/src/scrapers/tobaccoScraper.ts`](../scraper/src/scrapers/tobaccoScraper.ts:1)) - Scrapes tobacco details
+- **Database Service** ([`scraper/src/services/database.ts`](../scraper/src/services/database.ts:1)) - Database operations via Prisma
+- **Scheduler** ([`scraper/src/index.ts`](../scraper/src/index.ts:1)) - Cron-based scheduling with node-cron
+
+**Technology**: Playwright 1.57+, node-cron 4+, Prisma 7.2.0+ (centralized)
 
 **Communication**:
 - Fetches pages from htreviews.org
-- Inserts/updates records in PostgreSQL via Prisma
+- Inserts/updates records in PostgreSQL via centralized Prisma
 
 **Containerization**:
 - Runs in Docker container
 - Headless browser mode
 - Database connection via Docker network
+- Uses same Prisma schema as API
+
+### 6. Centralized Prisma Layer
+
+**Purpose**: Provide unified database schema and migrations across API and scraper
+
+**Responsibilities**:
+- Define database schema in single location
+- Manage database migrations
+- Generate Prisma Client for all workspaces
+- Ensure schema consistency across services
+
+**Key Features**:
+- Single schema file at `prisma/schema.prisma`
+- Centralized migrations in `prisma/migrations/`
+- Shared Prisma Client via workspace
+- Configuration in `prisma.config.ts`
+- Both API and scraper import from same installation
+
+**Technology**: Prisma 7.2.0+ with PostgreSQL adapter
+
+**Structure**:
+```
+project-root/
+├── prisma/
+│   ├── schema.prisma          # Shared database schema
+│   └── migrations/            # Shared migration files
+├── prisma.config.ts           # Prisma configuration
+├── api/
+│   └── package.json           # Imports @prisma/client
+├── scraper/
+│   └── package.json           # Imports @prisma/client
+└── pnpm-workspace.yaml         # Workspace configuration
+```
 
 ## Data Flow
 
@@ -284,27 +380,44 @@ sequenceDiagram
     MA-->>U: Show success message
 ```
 
-### Daily Scraping Process
+### Daily Scraping Process (Implemented)
 
 ```mermaid
 sequenceDiagram
     participant CR as node-cron
-    participant SC as Scraper
+    participant SC as Scraper Controller
+    participant BS as Brand Scraper
+    participant TS as Tobacco Scraper
     participant WEB as htreviews.org
-    participant DB as PostgreSQL
+    participant DB as Database Service
+    participant DBMS as PostgreSQL
     
     CR->>SC: Trigger daily at 2 AM
-    SC->>WEB: Fetch brands list
-    WEB-->>SC: HTML response
-    SC->>WEB: Fetch each brand page
-    WEB-->>SC: HTML response
-    SC->>WEB: Fetch each tobacco detail page
-    WEB-->>SC: HTML response
-    SC->>DB: Check if tobacco exists
-    DB-->>SC: Exists/Not exists
-    SC->>DB: Insert new tobacco
-    DB-->>SC: Success
-    SC->>SC: Log results
+    SC->>SC: Initialize Playwright browser
+    SC->>BS: Scrape brands list
+    BS->>WEB: Fetch brands page
+    WEB-->>BS: HTML response
+    BS->>WEB: Scroll for infinite scroll
+    WEB-->>BS: Additional content
+    BS-->>SC: Brands data
+    SC->>DB: Upsert brands to database
+    DB->>DBMS: INSERT/UPDATE brands
+    DBMS-->>DB: Success
+    loop For each brand
+        SC->>TS: Scrape tobaccos for brand
+        TS->>WEB: Fetch brand page
+        WEB-->>TS: HTML response
+        TS->>WEB: Scroll for infinite scroll
+        WEB-->>TS: Additional content
+        TS->>WEB: Fetch tobacco detail pages
+        WEB-->>TS: HTML responses
+        TS-->>SC: Tobaccos data
+        SC->>DB: Upsert tobaccos to database
+        DB->>DBMS: INSERT/UPDATE tobaccos
+        DBMS-->>DB: Success
+    end
+    SC->>SC: Log metrics summary
+    SC->>DB: Disconnect from database
 ```
 
 ## Component Interaction Patterns
@@ -364,12 +477,23 @@ sequenceDiagram
 
 ### 3. Scraper ↔ Database
 
-**Protocol**: Direct via Prisma ORM
+**Protocol**: Direct via Prisma ORM (centralized)
 
 **Pattern**:
-- Batch inserts for efficiency
-- Transaction for data consistency
+- Upsert operations (create or update)
+- Batch operations for efficiency
 - Error handling per record
+- Shared schema with API
+
+### 4. API ↔ Database
+
+**Protocol**: Direct via Prisma ORM (centralized)
+
+**Pattern**:
+- Query operations for reads
+- Transaction for writes
+- Connection pooling via Prisma
+- Shared schema with scraper
 
 ## Deployment Architecture
 
@@ -380,6 +504,7 @@ graph TB
     subgraph "Developer Machine"
         DEV[VS Code]
         DC[Docker Compose]
+        PN[pnpm]
     end
     
     subgraph "Docker Containers"
@@ -390,24 +515,37 @@ graph TB
         MINI_DEV[Mini App + nginx]
     end
     
+    subgraph "Shared Resources"
+        PR[Centralized Prisma]
+        WS[Workspaces]
+    end
+    
+    DEV --> PN
+    PN --> WS
+    WS --> PR
     DEV --> DC
     DC --> API_DEV
     DC --> DB_DEV
     DC --> SCRAPER_DEV
     DC --> BOT_DEV
     DC --> MINI_DEV
-    API_DEV --> DB_DEV
-    SCRAPER_DEV --> DB_DEV
+    API_DEV --> PR
+    SCRAPER_DEV --> PR
     BOT_DEV --> API_DEV
     MINI_DEV --> API_DEV
+    API_DEV --> DB_DEV
+    SCRAPER_DEV --> DB_DEV
     
     style DEV fill:#f0f0f0
     style DC fill:#2496ed
+    style PN fill:#f6921e
     style API_DEV fill:#68a063
     style DB_DEV fill:#336791
     style SCRAPER_DEV fill:#e03535
     style BOT_DEV fill:#0088cc
     style MINI_DEV fill:#61dafb
+    style PR fill:#336791
+    style WS fill:#f6921e
 ```
 
 ### Production Environment (Coolify)
@@ -432,6 +570,11 @@ graph TB
         MINI_PROD[Mini App + nginx]
     end
     
+    subgraph "Shared Resources"
+        PR[Centralized Prisma]
+        WS[Workspaces]
+    end
+    
     subgraph "External"
         TG[Telegram API]
         HTREVIEWS[htreviews.org]
@@ -444,6 +587,8 @@ graph TB
     TR --> BOT_PROD
     TR --> SCRAPER_PROD
     TR --> MINI_PROD
+    API_PROD --> PR
+    SCRAPER_PROD --> PR
     API_PROD --> PG_PROD
     SCRAPER_PROD --> PG_PROD
     BOT_PROD <--> TG
@@ -460,6 +605,8 @@ graph TB
     style SCRAPER_PROD fill:#e03535
     style PG_PROD fill:#336791
     style MINI_PROD fill:#61dafb
+    style PR fill:#336791
+    style WS fill:#f6921e
     style TG fill:#0088cc
     style HTREVIEWS fill:#ff6b6b
 ```
@@ -476,7 +623,9 @@ sequenceDiagram
     DEV->>GH: Push to main branch
     GH->>CF: Trigger webhook
     CF->>CF: Pull latest code
+    CF->>CF: Install dependencies (pnpm install)
     CF->>CF: Build Docker images
+    CF->>CF: Run Prisma migrations
     CF->>CF: Deploy services
     CF->>APP: Start/Restart containers
     CF-->>DEV: Deployment status
@@ -671,7 +820,7 @@ Coolify automatically manages Docker Compose configuration:
 - Single API server instance
 - Single PostgreSQL instance
 - Up to 100 users
-- Daily scraping job
+- Daily scraping job (fully implemented)
 - Coolify auto-scaling disabled
 
 ### Future Scalability Path
@@ -789,18 +938,19 @@ graph TB
    - Log all errors
    - Return appropriate HTTP status codes
 
-4. **Scraper**:
-   - Retry failed requests
+4. **Scraper** (Implemented):
+   - Retry failed requests with exponential backoff
    - Skip problematic pages
    - Log all errors
    - Continue processing
+   - Multiple extraction strategies for robustness
 
 ## Logging & Monitoring
 
 ### Logging Strategy
 
 1. **Application Logs**:
-   - Winston logger
+   - Winston logger (used in scraper)
    - Multiple transports (console, file)
    - Log levels: error, warn, info, debug
    - Structured logging with JSON format
@@ -834,7 +984,7 @@ graph TB
    - Total users
    - Active wishlists
    - Items added/removed
-   - Scraper success rate
+   - Scraper success rate (brands added, tobaccos added/updated)
 
 ## Backup & Recovery
 
@@ -890,15 +1040,22 @@ graph LR
     N --> O[node-cron]
     O --> M
     
-    P[Docker Compose] --> Q[Docker]
-    Q --> R[Coolify]
-    R --> S[GitHub]
+    P[pnpm Workspaces] --> C
+    P --> K
+    Q[Centralized Prisma] --> K
+    Q --> L
+    
+    R[Docker Compose] --> S[Docker]
+    S --> T[Coolify]
+    T --> U[GitHub]
     
     style C fill:#3178c6
     style L fill:#336791
-    style Q fill:#2496ed
-    style R fill:#6b4fbb
-    style S fill:#2088ff
+    style S fill:#2496ed
+    style T fill:#6b4fbb
+    style U fill:#2088ff
+    style P fill:#f6921e
+    style Q fill:#336791
 ```
 
 ## Summary
@@ -916,5 +1073,8 @@ The Hookah Wishlist System architecture is designed with:
 ✅ **Automated Deployment** - Coolify with GitHub Webhooks
 ✅ **No Local Dependencies** - PostgreSQL runs in containers, not installed locally
 ✅ **Full Docker Compose** - All services including mini-app run in containers
+✅ **pnpm Workspaces** - Efficient monorepo management with shared dependencies
+✅ **Centralized Prisma** - Shared schema and migrations across API and scraper
+✅ **Implemented Scraper** - Full scraper logic with Playwright, node-cron, and robust error handling
 
-The architecture provides a solid foundation for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment and operations.
+The architecture provides a solid foundation for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment process, efficient monorepo management, and fully implemented scraping functionality.

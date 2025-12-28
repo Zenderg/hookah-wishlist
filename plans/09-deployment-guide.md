@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive instructions for deploying Hookah Wishlist System to production using Coolify platform with GitHub Webhooks automation. The system runs entirely in Docker containers with PostgreSQL, eliminating the need for local database installation. Deployment is automated through GitHub push events.
+This document provides comprehensive instructions for deploying Hookah Wishlist System to production using Coolify platform with GitHub Webhooks automation. The system runs entirely in Docker containers with PostgreSQL, eliminating the need for local database installation. Deployment is automated through GitHub push events. The project uses **pnpm workspaces** for monorepo management with centralized Prisma configuration shared across API and scraper.
 
 Additionally, the entire system can be run locally using Docker Compose for development and testing.
 
@@ -29,6 +29,16 @@ graph TB
         J[Mini App + nginx]
     end
     
+    subgraph "Package Management"
+        PM[pnpm Workspaces]
+        WS[pnpm-workspace.yaml]
+    end
+    
+    subgraph "Shared Resources"
+        PR[Centralized Prisma]
+        PC[Prisma Client]
+    end
+    
     subgraph "External"
         K[Telegram API]
         L[htreviews.org]
@@ -38,6 +48,11 @@ graph TB
     B --> C
     C --> D
     D --> E
+    PM --> WS
+    WS --> PR
+    PR --> PC
+    PC --> F
+    PC --> H
     E --> F
     E --> G
     E --> H
@@ -53,6 +68,10 @@ graph TB
     style C fill:#6b4fbb
     style D fill:#6b4fbb
     style E fill:#2496ed
+    style PM fill:#f6921e
+    style WS fill:#f6921e
+    style PR fill:#336791
+    style PC fill:#336791
     style F fill:#68a063
     style G fill:#0088cc
     style H fill:#e03535
@@ -103,8 +122,9 @@ graph TB
 ### Required Software (for local development)
 
 1. **Docker** - Version 20.10+
-2. **Docker Compose** - Version 2.0+
+2. **Docker Compose** - Version 2.20+
 3. **Git** - For version control
+4. **pnpm** - Version 9+ (for workspace management)
 
 ## Deployment Options
 
@@ -122,6 +142,9 @@ cp .env.example .env
 
 # Edit .env with your values
 nano .env
+
+# Install all workspace dependencies
+pnpm install
 
 # Start all services
 docker-compose up --build
@@ -248,7 +271,7 @@ git push -u origin main
 In Coolify dashboard for `hookah-wishlist-api` application, add:
 
 ```env
-# Database
+# Database (uses centralized Prisma)
 DATABASE_URL=postgresql://hookah_user:secure_password@postgres:5432/hookah_wishlist
 
 # API Configuration
@@ -294,7 +317,7 @@ SCRAPER_MAX_RETRIES=3
 SCRAPER_DELAY_BRAND=2000
 SCRAPER_DELAY_TOBACCO=1000
 
-# Database
+# Database (uses centralized Prisma)
 DATABASE_URL=postgresql://hookah_user:secure_password@postgres:5432/hookah_wishlist
 
 # Logging
@@ -313,9 +336,50 @@ VITE_API_URL=/api
 VITE_TELEGRAM_BOT_USERNAME=your_bot_username
 ```
 
-### Step 4: Configure GitHub Webhook
+### Step 4: Configure Build Commands
 
-#### 4.1 Enable Webhook in Coolify
+#### 4.1 API Build Command
+
+For API application in Coolify, configure build command:
+
+```bash
+# Build command
+pnpm install && pnpm build
+
+# Or with Prisma generation
+pnpm install && pnpm prisma generate && pnpm build
+```
+
+#### 4.2 Bot Build Command
+
+For Bot application in Coolify, configure build command:
+
+```bash
+# Build command
+pnpm install && pnpm build
+```
+
+#### 4.3 Scraper Build Command
+
+For Scraper application in Coolify, configure build command:
+
+```bash
+# Build command
+pnpm install && pnpm build
+```
+
+#### 4.4 Mini App Build Command
+
+For Mini App application in Coolify, configure build command:
+
+```bash
+# Build command
+pnpm install && pnpm build
+```
+
+### Step 5: Configure GitHub Webhook
+
+#### 5.1 Enable Webhook in Coolify
 
 1. In Coolify dashboard for `hookah-wishlist-api` application:
    - Go to "Resources" tab
@@ -325,7 +389,7 @@ VITE_TELEGRAM_BOT_USERNAME=your_bot_username
 2. Configure webhook settings:
    - **Repository**: Already selected during app creation
    - **Branch**: `main`
-   - **Build Command**: `npm run build && cd api && npx prisma generate && npx prisma migrate deploy`
+   - **Build Command**: `pnpm install && pnpm build`
    - **Events**: `push` (only trigger on push to main branch)
    - **Active**: ON
 
@@ -336,7 +400,7 @@ VITE_TELEGRAM_BOT_USERNAME=your_bot_username
    https://webhook.coolify.io/your-unique-id
    ```
 
-#### 4.2 Configure GitHub Repository Webhook
+#### 5.2 Configure GitHub Repository Webhook
 
 1. Go to your GitHub repository settings
 2. Navigate to "Webhooks" section
@@ -349,131 +413,6 @@ VITE_TELEGRAM_BOT_USERNAME=your_bot_username
    - **Branch**: `main`
    - **Active**: ON
 5. Click "Add webhook"
-
-### Step 5: Configure Docker Compose for Coolify
-
-#### 5.1 Create coolify.yml
-
-Create `coolify.yml` file in project root:
-
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: hookah-postgres
-    environment:
-      POSTGRES_USER: hookah_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: hookah_wishlist
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hookah_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: hookah-api
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://hookah_user:${POSTGRES_PASSWORD}@postgres:5432/hookah_wishlist
-      PORT: 3000
-      NODE_ENV: production
-      JWT_SECRET: ${JWT_SECRET}
-      BOT_API_KEY: ${BOT_API_KEY}
-      LOG_LEVEL: info
-    depends_on:
-      - postgres
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  bot:
-    build:
-      context: ./bot
-      dockerfile: Dockerfile
-    container_name: hookah-bot
-    environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      API_URL: http://api:3000/api/v1
-      API_KEY: ${BOT_API_KEY}
-      LOG_LEVEL: info
-    depends_on:
-      - api
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  scraper:
-    build:
-      context: ./scraper
-      dockerfile: Dockerfile
-    container_name: hookah-scraper
-    environment:
-      DATABASE_URL: postgresql://hookah_user:${POSTGRES_PASSWORD}@postgres:5432/hookah_wishlist
-      SCRAPER_SCHEDULE: "0 2 * * *"
-      SCRAPER_TIMEOUT: 60000
-      SCRAPER_MAX_RETRIES: 3
-      SCRAPER_DELAY_BRAND: 2000
-      SCRAPER_DELAY_TOBACCO: 1000
-      LOG_LEVEL: info
-    depends_on:
-      - postgres
-    healthcheck:
-      test: ["CMD", "node", "-e", "console.log('healthy')"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-
-  mini-app:
-    build:
-      context: ./mini-app
-      dockerfile: Dockerfile
-    container_name: hookah-mini-app
-    ports:
-      - "80:80"
-    environment:
-      VITE_API_URL: /api
-      VITE_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  postgres_data:
-```
-
-#### 5.2 Create .env.example File
-
-Create `.env.example` file in project root:
-
-```env
-# PostgreSQL
-POSTGRES_PASSWORD=your_secure_postgres_password_here
-
-# API
-JWT_SECRET=your_secure_jwt_secret_here
-BOT_API_KEY=your_secure_bot_api_key_here
-
-# Bot
-TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
-
-# Mini App
-TELEGRAM_BOT_USERNAME=your_bot_username
-```
 
 ### Step 6: Configure Telegram Bot
 
@@ -512,6 +451,8 @@ git push origin main
 
 2. Coolify will automatically:
    - Pull latest code from GitHub
+   - Install dependencies using `pnpm install`
+   - Generate Prisma Client using `pnpm prisma generate`
    - Build Docker images
    - Deploy all services
    - Start containers
@@ -552,6 +493,9 @@ cp .env.example .env
 
 # Edit .env with your configuration
 nano .env
+
+# Install all workspace dependencies
+pnpm install
 
 # Start all services
 docker-compose up --build
@@ -621,13 +565,90 @@ docker-compose up postgres api
 
 # In another terminal, run bot locally
 cd bot
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 
 # In another terminal, run mini-app locally
 cd mini-app
-npm install
-npm run dev
+pnpm install
+pnpm run dev
+```
+
+## Database Migrations
+
+### Centralized Prisma Setup
+
+The project uses centralized Prisma configuration at the project root:
+
+```
+project-root/
+├── prisma/
+│   ├── schema.prisma          # Shared database schema
+│   └── migrations/            # Shared migration files
+├── prisma.config.ts           # Prisma configuration
+├── api/
+│   └── package.json           # Imports @prisma/client
+├── scraper/
+│   └── package.json           # Imports @prisma/client
+└── pnpm-workspace.yaml         # Workspace configuration
+```
+
+### Running Migrations
+
+#### Local Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Generate Prisma Client (for all workspaces)
+pnpm prisma generate
+
+# Create migration
+pnpm prisma migrate dev --name add_scraper_fields
+
+# Run migrations
+pnpm prisma migrate deploy
+
+# Reset database (development only)
+pnpm prisma migrate reset
+```
+
+#### Docker Compose
+
+```bash
+# Run migrations in Docker Compose
+docker-compose exec api pnpm prisma migrate deploy
+
+# Or from root
+docker-compose exec api sh -c "cd /app && pnpm prisma migrate deploy"
+```
+
+#### Coolify Production
+
+The build command should include migration steps:
+
+```bash
+# Build command for Coolify
+pnpm install && pnpm prisma generate && pnpm prisma migrate deploy && pnpm build
+```
+
+### Migration Workflow
+
+```mermaid
+sequenceDiagram
+    participant DEV as Developer
+    participant PNPM as pnpm
+    participant PRISMA as Prisma
+    participant DB as PostgreSQL
+    
+    DEV->>PNPM: pnpm prisma migrate dev --name add_field
+    PNPM->>PRISMA: Create migration file
+    PRISMA-->>PNPM: Migration created
+    PNPM->>PRISMA: pnpm prisma migrate deploy
+    PRISMA->>DB: Execute migration SQL
+    DB-->>PRISMA: Migration applied
+    PRISMA-->>DEV: Success
 ```
 
 ## Deployment Workflow
@@ -639,17 +660,24 @@ sequenceDiagram
     participant DEV as Developer
     participant GH as GitHub
     participant CF as Coolify
+    participant PNPM as pnpm
+    participant PRISMA as Prisma
     participant APP as Application
     
     DEV->>GH: git push origin main
     GH->>CF: Webhook triggered
     CF->>CF: Pull latest code
-    CF->>CF: Build Docker images
-    CF->>CF: Deploy services
+    CF->>PNPM: pnpm install
+    PNPM-->>CF: Dependencies installed
+    CF->>PRISMA: pnpm prisma generate
+    PRISMA-->>CF: Client generated
+    CF->>PRISMA: pnpm prisma migrate deploy
+    PRISMA-->>CF: Migrations applied
+    CF->>CF: pnpm build
     CF->>APP: Start containers
     CF->>APP: Health checks
     CF-->>DEV: Deployment success
-    APP->>DEV: Application running
+    APP-->>CF: Application running
 ```
 
 ### Local Development Workflow
@@ -657,14 +685,17 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant DEV as Developer
+    participant PNPM as pnpm
     participant DC as Docker Compose
     participant APP as Application Containers
     
+    DEV->>PNPM: pnpm install
+    PNPM-->>DEV: Dependencies installed
     DEV->>DC: docker-compose up --build
     DC->>DC: Build Docker images
     DC->>DC: Start containers
     DC->>APP: Run services
-    APP->>DEV: Ready for development
+    APP-->>DEV: Ready for development
     DEV->>APP: Make code changes
     DEV->>DC: Restart specific service
     DC->>APP: Apply changes
@@ -730,6 +761,8 @@ docker-compose logs
 # Specific service
 docker-compose logs -f mini-app
 docker-compose logs -f api
+docker-compose logs -f bot
+docker-compose logs -f scraper
 ```
 
 #### 3. Resource Usage
@@ -796,7 +829,7 @@ Run backup:
 
 **Solutions**:
 1. Check Coolify logs for error messages
-2. Verify build command is correct
+2. Verify build command is correct (`pnpm install && pnpm build`)
 3. Check environment variables are set
 4. Verify Docker Compose file is valid
 5. Try manual deployment from Coolify dashboard
@@ -826,6 +859,7 @@ Run backup:
 3. Verify PostgreSQL password is correct
 4. Check Docker network connectivity
 5. Verify service dependencies in docker-compose.yml
+6. Ensure Prisma migrations have been run
 
 #### Issue 4: Bot Not Receiving Updates
 
@@ -892,9 +926,21 @@ Run backup:
 - Services fail to start
 
 **Solutions**:
-1. Check what's using the port: `lsof -i :8080`
+1. Check what's using port: `lsof -i :8080`
 2. Stop conflicting service
 3. Or change port in docker-compose.yml
+
+#### Issue 9: pnpm Workspace Issues
+
+**Symptoms**:
+- Cross-workspace imports not working
+- Dependencies not shared correctly
+
+**Solutions**:
+1. Verify `pnpm-workspace.yaml` is correct
+2. Run `pnpm install` from project root
+3. Check package.json files reference correct workspace names
+4. Verify Prisma schema path is correct
 
 ## Scaling Considerations
 
@@ -991,6 +1037,7 @@ Coolify makes horizontal scaling easy:
 
 - **Docker**: Free (open source)
 - **PostgreSQL**: Free (runs in container)
+- **pnpm**: Free (open source)
 - **No cloud costs**: Everything runs locally
 
 ### When to Upgrade
@@ -1099,11 +1146,14 @@ docker-compose up --build
 ### Deployment Checklist
 
 - [ ] GitHub repository created and configured
+- [ ] pnpm workspaces configured
 - [ ] Coolify account created (for production)
 - [ ] All applications created in Coolify (for production)
 - [ ] Environment variables configured
 - [ ] GitHub webhook configured (for production)
 - [ ] Docker Compose file created
+- [ ] Build commands configured (pnpm install && pnpm build)
+- [ ] Prisma migrations configured
 - [ ] Bot webhook configured
 - [ ] Mini App URL configured in BotFather
 - [ ] Initial deployment successful
@@ -1120,6 +1170,8 @@ This deployment guide provides:
 ✅ **Docker Compose** - All services in containers
 ✅ **Local Development** - Full local Docker Compose support
 ✅ **No local PostgreSQL** - Database runs in Docker
+✅ **pnpm Workspaces** - Monorepo management with shared dependencies
+✅ **Centralized Prisma** - Shared schema and migrations across API and scraper
 ✅ **Environment management** - Coolify handles secrets
 ✅ **Monitoring** - Built-in logging and health checks
 ✅ **Scaling** - Easy horizontal scaling in Coolify
@@ -1129,5 +1181,7 @@ This deployment guide provides:
 ✅ **Troubleshooting** - Common issues and solutions
 ✅ **Mini App nginx** - Static file serving with API proxy
 ✅ **Alternative Deployment** - Both Coolify and local Docker Compose
+✅ **Migration Workflow** - Prisma migration commands for development and production
+✅ **Build Commands** - pnpm-based build commands for all services
 
-Following this guide will result in a production-ready deployment of Hookah Wishlist System with automated deployments via Coolify and GitHub Webhooks, or a fully functional local development environment using Docker Compose, eliminating manual server management and local database installation.
+Following this guide will result in a production-ready deployment of Hookah Wishlist System with automated deployments via Coolify and GitHub Webhooks, or a fully functional local development environment using Docker Compose with pnpm workspaces and centralized Prisma configuration, eliminating manual server management and local database installation.

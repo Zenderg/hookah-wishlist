@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the technology choices for the Hookah Wishlist System, selected based on current industry trends (2025), community support, performance characteristics, and suitability for the project requirements. The system is designed for containerized deployment using Docker Compose and production deployment via Coolify platform.
+This document outlines the technology choices for the Hookah Wishlist System, selected based on current industry trends (2025), community support, performance characteristics, and suitability for the project requirements. The system is designed for containerized deployment using Docker Compose and production deployment via Coolify platform. The project uses **pnpm workspaces** for monorepo management with centralized Prisma configuration.
 
 ## Selection Criteria
 
@@ -14,13 +14,36 @@ The technology stack was evaluated based on:
 - **Ecosystem** - Rich library ecosystem for required features
 - **Maintenance** - Long-term viability and stability
 - **Containerization Ready** - Native support for Docker and container orchestration
+- **Monorepo Support** - Efficient workspace management for multi-package projects
 
 ## Technology Stack
 
+### Package Management
+
+#### Package Manager: pnpm 9+
+- **Justification**:
+  - Faster than npm and yarn due to efficient disk space usage (hard links)
+  - Strict dependency management prevents phantom dependencies
+  - Native workspace support for monorepo architecture
+  - Smaller node_modules size saves disk space and build time
+  - Better performance for CI/CD pipelines
+  - Excellent TypeScript support
+  - Compatible with all Node.js projects
+  - Supports shared dependencies across workspaces
+
+#### Workspace Configuration: pnpm-workspaces.yaml
+- **Justification**:
+  - Single repository for all project components
+  - Shared dependencies reduce duplication
+  - Unified version management
+  - Simplified CI/CD pipeline
+  - Easy to add new components
+  - Consistent tooling across all packages
+
 ### Backend
 
-#### Runtime: Node.js 20+ LTS
-- **Justification**: 
+#### Runtime: Node.js 22+ LTS
+- **Justification**:
   - Excellent performance for I/O-bound operations
   - Large ecosystem with mature libraries
   - Great for real-time features (WebSocket support)
@@ -29,7 +52,7 @@ The technology stack was evaluated based on:
   - Strong community and corporate backing (OpenJS Foundation)
   - Excellent Docker support
 
-#### Framework: Fastify 4+
+#### Framework: Fastify 5+
 - **Justification**:
   - Fastest Node.js web framework (benchmarks show 2-3x faster than Express)
   - Built-in JSON schema validation
@@ -47,7 +70,7 @@ The technology stack was evaluated based on:
   - Sufficient for the current requirements
   - Better client compatibility
 
-#### ORM: Prisma 7.2.0+
+#### ORM: Prisma 7.2.0+ (Centralized)
 - **Justification**:
   - Type-safe database client with excellent TypeScript integration
   - Modern, intuitive API design with improved performance in v7
@@ -58,6 +81,9 @@ The technology stack was evaluated based on:
   - Supports PostgreSQL, MySQL, SQLite, MongoDB
   - Enhanced TypeScript support with stricter type checking
   - Improved error messages and debugging experience
+  - **Centralized Configuration**: Single Prisma schema and migrations shared across API and scraper
+  - **Workspace Integration**: Seamless integration with pnpm workspaces
+  - **Shared Client**: Both API and scraper use the same Prisma Client instance
 
 #### Database: PostgreSQL 16+
 - **Justification**:
@@ -142,7 +168,7 @@ The technology stack was evaluated based on:
 
 ### Web Scraping
 
-#### Library: Playwright 1.40+
+#### Library: Playwright 1.57+
 - **Justification**:
   - Supports multiple browsers (Chromium, Firefox, WebKit)
   - Excellent for dynamic content (JavaScript-rendered pages)
@@ -152,8 +178,9 @@ The technology stack was evaluated based on:
   - Better anti-detection than Puppeteer
   - Active development by Microsoft
   - Container-friendly with Docker support
+  - **Fully Implemented**: Complete scraper logic with brand and tobacco scraping
 
-#### Scheduling: node-cron 3+
+#### Scheduling: node-cron 4+
 - **Justification**:
   - Simple cron job scheduling
   - Lightweight and dependency-free
@@ -161,6 +188,7 @@ The technology stack was evaluated based on:
   - Well-tested and stable
   - Easy to integrate with Node.js applications
   - Works well in containerized environments
+  - **Implemented**: Daily scraping schedule with configurable cron expression
 
 ### DevOps & Infrastructure
 
@@ -224,10 +252,12 @@ The technology stack was evaluated based on:
 
 | Component | Technology | Version | Purpose |
 |-----------|-----------|---------|---------|
-| **Backend Runtime** | Node.js | 20+ LTS | Server-side JavaScript runtime |
-| **Backend Framework** | Fastify | 4+ | Web framework and API server |
+| **Package Manager** | pnpm | 9+ | Fast, efficient package management with workspaces |
+| **Workspaces** | pnpm-workspaces | - | Monorepo management for multi-package project |
+| **Backend Runtime** | Node.js | 22+ LTS | Server-side JavaScript runtime |
+| **Backend Framework** | Fastify | 5+ | Web framework and API server |
 | **API Style** | REST | - | API architecture pattern |
-| **ORM** | Prisma | 7.2.0+ | Database ORM and migrations |
+| **ORM** | Prisma | 7.2.0+ | Database ORM and migrations (centralized) |
 | **Database** | PostgreSQL | 16+ | Primary database (via Docker) |
 | **Frontend Framework** | React | 19+ | UI framework for Mini App |
 | **Build Tool** | Vite | 7+ | Build tool and dev server |
@@ -237,8 +267,8 @@ The technology stack was evaluated based on:
 | **HTTP Client** | Axios | 1+ | HTTP requests |
 | **Telegram Bot** | Telegraf | 4+ | Telegram Bot API wrapper |
 | **Telegram Web App** | @telegram-apps/sdk | latest | Web App integration |
-| **Web Scraping** | Playwright | 1.40+ | Browser automation |
-| **Job Scheduling** | node-cron | 3+ | Cron job scheduler |
+| **Web Scraping** | Playwright | 1.57+ | Browser automation (implemented) |
+| **Job Scheduling** | node-cron | 4+ | Cron job scheduler (implemented) |
 | **Containerization** | Docker | latest | Container runtime |
 | **Orchestration** | Docker Compose | latest | Multi-container orchestration |
 | **Deployment Platform** | Coolify | latest | PaaS deployment platform |
@@ -250,6 +280,11 @@ The technology stack was evaluated based on:
 
 ```mermaid
 graph TB
+    subgraph "Package Management Layer"
+        PM[pnpm Workspaces]
+        WS[pnpm-workspaces.yaml]
+    end
+    
     subgraph "Client Layer"
         A[Telegram Bot]
         B[Telegram Mini App]
@@ -261,6 +296,8 @@ graph TB
     
     subgraph "Data Layer"
         D[PostgreSQL Database]
+        PC[Centralized Prisma]
+        PM[Prisma Migrations]
     end
     
     subgraph "Automation Layer"
@@ -274,6 +311,10 @@ graph TB
         I[GitHub Webhooks]
     end
     
+    PM --> PC
+    PC --> C
+    PC --> E
+    WS --> PM
     A --> C
     B --> C
     C --> D
@@ -285,6 +326,9 @@ graph TB
     H --> A
     H --> E
     
+    style PM fill:#f6921e
+    style PC fill:#336791
+    style WS fill:#f6921e
     style A fill:#0088cc
     style B fill:#0088cc
     style C fill:#68a063
@@ -296,7 +340,54 @@ graph TB
     style I fill:#2088ff
 ```
 
+## Monorepo Architecture
+
+### Workspace Structure
+
+The project uses pnpm workspaces to manage multiple packages:
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'api'
+  - 'scraper'
+  - 'bot'
+  - 'mini-app'
+```
+
+### Benefits of pnpm Workspaces
+
+1. **Shared Dependencies**: Common packages installed once at root
+2. **Faster Installs**: Hard links reduce disk usage and install time
+3. **Consistent Versions**: All workspaces use same dependency versions
+4. **Simplified CI/CD**: Single install command for all packages
+5. **Local Linking**: Workspaces can import each other without publishing
+6. **Type Safety**: TypeScript cross-references work across workspaces
+
+### Centralized Prisma Configuration
+
+Prisma configuration is centralized at project root:
+
+```
+project-root/
+├── prisma/
+│   ├── schema.prisma          # Shared database schema
+│   └── migrations/            # Shared migration files
+├── prisma.config.ts           # Prisma configuration
+├── api/
+│   └── package.json           # Imports @prisma/client
+├── scraper/
+│   └── package.json           # Imports @prisma/client
+└── pnpm-workspace.yaml         # Workspace configuration
+```
+
+Both API and scraper import Prisma Client from the same installation, ensuring schema consistency.
+
 ## Alternative Technologies Considered
+
+### Package Managers
+- **npm**: Replaced by pnpm for better performance and workspace support
+- **yarn**: Good alternative, but pnpm is faster and more efficient
 
 ### Backend Frameworks
 - **Express.js**: Rejected in favor of Fastify for better performance and TypeScript support
@@ -340,6 +431,7 @@ The chosen stack is designed to scale from MVP to production:
 4. **Database Scaling**: PostgreSQL supports read replicas and partitioning
 5. **Message Queue**: BullMQ can be added for background jobs (not needed for MVP)
 6. **Container Orchestration**: Docker Compose makes scaling straightforward
+7. **Workspace Scalability**: pnpm workspaces easily accommodate new packages
 
 ## Security Considerations
 
@@ -352,6 +444,7 @@ The chosen stack is designed to scale from MVP to production:
 7. **CORS**: Configured for Telegram domains only
 8. **Container Security**: Docker provides isolation and security boundaries
 9. **Secrets Management**: Coolify provides secure environment variable management
+10. **Dependency Security**: pnpm's strict mode prevents phantom dependencies
 
 ## Maintenance & Updates
 
@@ -360,6 +453,7 @@ The chosen stack is designed to scale from MVP to production:
 - **Security Patches**: Immediate updates for critical vulnerabilities
 - **Monitoring**: Logging and metrics for proactive issue detection
 - **Container Updates**: Easy to update Docker images and dependencies
+- **Workspace Management**: pnpm makes it easy to update all workspaces simultaneously
 
 ## Containerization Benefits
 
@@ -372,6 +466,17 @@ Using Docker Compose and Coolify provides:
 - **Rollback**: Quick rollback to previous versions via Coolify
 - **Cost Efficiency**: Better resource utilization compared to VPS
 - **Simplified Operations**: No manual server management
+
+## Monorepo Benefits
+
+Using pnpm workspaces provides:
+
+- **Unified Codebase**: All components in one repository
+- **Shared Dependencies**: Reduced duplication and faster installs
+- **Cross-Workspace Imports**: Easy to share code between packages
+- **Simplified CI/CD**: Single pipeline for all components
+- **Consistent Tooling**: Same linter, formatter, TypeScript config everywhere
+- **Easier Onboarding**: New developers clone one repo
 
 ## Conclusion
 
@@ -387,5 +492,9 @@ The selected technology stack provides:
 - ✅ Containerized architecture
 - ✅ Automated deployment via Coolify
 - ✅ No local PostgreSQL installation required
+- ✅ Efficient monorepo management with pnpm workspaces
+- ✅ Centralized Prisma configuration for schema consistency
+- ✅ Implemented scraper with Playwright and node-cron
+- ✅ Shared dependencies across workspaces
 
-This stack is well-suited for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment process.
+This stack is well-suited for building a clean, modern, and potentially scalable hookah tobacco wishlist system with streamlined deployment process and efficient monorepo management.
