@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.API_URL || 'http://api:3000/api/v1';
 
@@ -10,8 +10,16 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Add request interceptor to include API key header
 apiClient.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
+    const botApiKey = process.env.BOT_API_KEY;
+
+    if (botApiKey) {
+      config.headers = config.headers || {};
+      config.headers['X-API-Key'] = botApiKey;
+    }
+
     return config;
   },
   (error) => {

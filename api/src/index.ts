@@ -13,6 +13,7 @@ import { userRoutes } from './routes/users.js';
 import { tobaccoRoutes } from './routes/tobaccos.js';
 import { brandRoutes } from './routes/brands.js';
 import { wishlistRoutes } from './routes/wishlist.js';
+import { botRoutes } from './routes/bot.js';
 
 // Initialize Fastify server
 const fastify = Fastify({
@@ -68,6 +69,9 @@ await fastify.register(brandRoutes, { prefix: '/api/v1/brands' });
 
 // Register wishlist routes with prefix /api/v1/wishlist
 await fastify.register(wishlistRoutes, { prefix: '/api/v1/wishlist' });
+
+// Register bot routes with prefix /api/v1/bot
+await fastify.register(botRoutes, { prefix: '/api/v1/bot' });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string): Promise<void> => {

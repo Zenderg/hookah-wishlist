@@ -107,9 +107,9 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 2.5 Bot Endpoints
 
-- [ ] Create `/bot/wishlist/text` endpoint
-- [ ] Create `/bot/wishlist/summary` endpoint
-- [ ] Add API key authentication for bot
+- [X] Create `/bot/wishlist/text` endpoint
+- [X] Create `/bot/wishlist/summary` endpoint
+- [X] Add API key authentication for bot
 
 **Deliverables**:
 - All core API endpoints implemented
