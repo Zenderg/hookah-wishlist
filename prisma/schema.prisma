@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  telegramId BigInt   @unique
+  username  String?
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  wishlist  Wishlist?
+  
+  @@map("users")
+}
+
+model Brand {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  slug          String   @unique
+  description   String?
+  imageUrl      String?
+  htreviewsUrl  String?  @map("htreviews_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  tobaccos      Tobacco[]
+  
+  @@map("brands")
+}
+
+model Tobacco {
+  id            Int      @id @default(autoincrement())
+  name          String
+  slug          String
+  description   String?  @db.Text
+  imageUrl      String?  @map("image_url")
+  brandId       Int      @map("brand_id")
+  htreviewsUrl  String?  @map("htreviews_url")
+  metadata      Json?
+  scrapedAt     DateTime? @map("scraped_at")
+  price         Decimal? @db.Decimal(10, 2)
+  inStock       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  brand         Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  wishlistItems WishlistItem[]
+  
+  @@unique([brandId, slug])
+  @@index([brandId])
+  @@index([name])
+  @@index([slug])
+  @@map("tobaccos")
+}
+
+model Wishlist {
+  id        Int            @id @default(autoincrement())
+  userId    Int            @unique @map("user_id")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id          Int      @id @default(autoincrement())
+  wishlistId  Int      @map("wishlist_id")
+  tobaccoId   Int      @map("tobacco_id")
+  wishlist    Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  tobacco     Tobacco  @relation(fields: [tobaccoId], references: [id], onDelete: Cascade)
+  addedAt     DateTime @default(now()) @map("added_at")
+  notes       String?
+
+  @@unique([wishlistId, tobaccoId])
+  @@index([wishlistId])
+  @@index([tobaccoId])
+  @@map("wishlist_items")
+}

@@ -1,0 +1,30 @@
+{
+  "name": "hookah-wishlist",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for Hookah Wishlist System",
+  "workspaces": [
+    "api",
+    "scraper",
+    "bot",
+    "mini-app"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter './**' dev",
+    "build": "pnpm --filter './**' build",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@prisma/client": "^7.2.0",
+    "@types/node": "^25.0.3",
+    "prisma": "^7.2.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1"
+  }
+}

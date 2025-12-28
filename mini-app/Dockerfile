@@ -12,16 +12,27 @@ LABEL stage="builder"
 # Set working directory
 WORKDIR /app
 
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
 # Copy package files first for better layer caching
-COPY package*.json ./
+COPY mini-app/package*.json ./mini-app/
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Install dependencies with BuildKit cache mount support
-# --mount=type=cache,target=/root/.npm significantly speeds up builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+# --mount=type=cache,target=/root/.pnpm-store significantly speeds up builds
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY mini-app/src ./mini-app/src
+COPY mini-app/index.html ./mini-app/
+COPY mini-app/vite.config.ts ./mini-app/
+COPY mini-app/tsconfig*.json ./mini-app/
+COPY mini-app/postcss.config.js ./mini-app/
+COPY mini-app/tailwind.config.js ./mini-app/
 
 # Build application with environment variables
 ARG VITE_API_URL
@@ -29,7 +40,7 @@ ARG NODE_ENV=production
 ENV VITE_API_URL=${VITE_API_URL}
 ENV NODE_ENV=${NODE_ENV}
 
-RUN npm run build
+RUN pnpm --filter mini-app run build
 
 # ============================================
 # Stage 2: Serve with nginx
@@ -51,10 +62,10 @@ RUN mkdir -p /var/cache/nginx /var/log/nginx /run && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /run
 
 # Copy built assets from builder stage
-COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
+COPY --from=builder --chown=nginx:nginx /app/mini-app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY mini-app/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80

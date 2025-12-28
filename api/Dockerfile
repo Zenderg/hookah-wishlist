@@ -15,22 +15,34 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
 # Copy package files first for better layer caching
-COPY package*.json ./
+COPY api/package*.json ./api/
 
 # Install all dependencies (including devDependencies for build)
 # Use BuildKit cache mount for faster subsequent builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy source code and configuration files
+COPY api/src ./api/src
+COPY api/tsconfig.json ./api/
+
+# Copy shared Prisma schema, config and migrations from root directory
+COPY prisma/schema.prisma ./prisma/schema.prisma
+COPY prisma.config.ts ./prisma.config.ts
+COPY prisma/migrations ./prisma/migrations
 
 # Generate Prisma client BEFORE building TypeScript
-RUN npx prisma generate
+RUN pnpm prisma generate
 
-# Build the TypeScript application
-RUN npm run build
+# Build TypeScript application
+RUN pnpm --filter hookah-wishlist-api run build
 
 # ============================================
 # Stage 2: Production stage
@@ -54,19 +66,25 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     chown -R nodejs:nodejs /app
 
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
 # Copy package files
-COPY package*.json ./
+COPY api/package*.json ./api/
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Install only production dependencies
 # Use BuildKit cache mount for faster subsequent builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile --prod
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/api/dist ./api/dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Copy Prisma schema, migrations, and config from builder stage
+# Copy Prisma schema, config and migrations from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
@@ -81,7 +99,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application with proper signal handling
-# Run Prisma migrations before starting the API
+# Start application with proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["node", "/app/api/dist/index.js"]

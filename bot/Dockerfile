@@ -15,19 +15,27 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
 # Copy package files first for better layer caching
-COPY package*.json ./
+COPY bot/package*.json ./bot/
 
 # Install all dependencies (including devDependencies for build)
 # Use BuildKit cache mount for faster subsequent builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY bot/src ./bot/src
+COPY bot/tsconfig.json ./bot/
+COPY bot/.prettierrc ./bot/
 
 # Build the TypeScript application
-RUN npm run build
+RUN pnpm --filter hookah-wishlist-bot run build
 
 # ============================================
 # Stage 2: Production stage
@@ -51,16 +59,22 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     chown -R nodejs:nodejs /app
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
 # Copy package files
-COPY package*.json ./
+COPY bot/package*.json ./bot/
 
 # Install only production dependencies
 # Use BuildKit cache mount for faster builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile --prod
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/bot/dist ./bot/dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
@@ -73,4 +87,4 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
 
 # Start the application with proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npm", "start"]
+CMD ["node", "/app/bot/dist/index.js"]
