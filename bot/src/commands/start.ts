@@ -3,23 +3,35 @@ import { logger } from '../utils/logger.js';
 
 export const startCommand = async (ctx: Context) => {
   try {
+    const telegramId = ctx.from?.id;
+    const firstName = ctx.from?.first_name || 'there';
+
+    logger.info(`User ${telegramId} started the bot`);
+
+    // Create inline keyboard with action buttons
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '📋 View Wishlist', callback_data: 'action_view_wishlist' },
+          { text: '❓ Help', callback_data: 'action_help' },
+        ],
+        [{ text: '📱 Open Mini App', url: `https://t.me/${ctx.botInfo?.username}/app` }],
+      ],
+    };
+
     const welcomeMessage = `
-🎉 Welcome to Hookah Wishlist Bot!
+🎉 Welcome to Hookah Wishlist Bot, ${firstName}!
 
 I'll help you manage your hookah wishlist. Here's what you can do:
 
 📋 /list - View your wishlist
-➕ /add - Add items to your wishlist
-➖ /remove - Remove items from your wishlist
-🗑️ /clear - Clear your entire wishlist
-📱 /app - Open the Mini App
-❓ /help - Show this help message
+❓ /help - Show all available commands
 
-Let's get started! Try /help to see all available commands.
-    `;
+Use the buttons below to get started quickly!
+    `.trim();
 
-    await ctx.reply(welcomeMessage);
-    logger.info(`User ${ctx.from?.id} started the bot`);
+    await ctx.reply(welcomeMessage, { reply_markup: keyboard });
+    logger.info(`Welcome message sent to user ${telegramId}`);
   } catch (error) {
     logger.error('Error in start command:', error);
     await ctx.reply('Sorry, something went wrong. Please try again.');

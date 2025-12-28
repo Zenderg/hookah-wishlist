@@ -8,6 +8,7 @@ import { addCommand } from './commands/add.js';
 import { removeCommand } from './commands/remove.js';
 import { clearCommand } from './commands/clear.js';
 import { appCommand } from './commands/app.js';
+import { handleCallbackQuery } from './handlers/callbacks.js';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -54,6 +55,11 @@ bot.command('app', async (ctx) => {
   await appCommand(ctx);
 });
 
+// Handle callback queries from inline keyboards
+bot.on('callback_query', async (ctx) => {
+  await handleCallbackQuery(ctx);
+});
+
 bot.on('message', async (ctx) => {
   const messageText = 'text' in ctx.message ? ctx.message.text : undefined;
   logger.info(`Received message from user ${ctx.from?.id}: ${messageText}`);
@@ -91,9 +97,7 @@ logger.info('Shutdown handlers registered');
 const testNetworkConnectivity = async (): Promise<void> => {
   logger.info('Testing network connectivity to Telegram API...');
   try {
-    const response = await fetch(
-      'https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/getMe'
-    );
+    const response = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/getMe');
     if (response.ok) {
       logger.info('Network connectivity test passed. Telegram API is reachable.');
       const data = (await response.json()) as {
@@ -108,9 +112,7 @@ const testNetworkConnectivity = async (): Promise<void> => {
       }
     } else {
       logger.error('Network connectivity test failed. Status:', response.status);
-      throw new Error(
-        `Failed to connect to Telegram API: ${response.status}`
-      );
+      throw new Error(`Failed to connect to Telegram API: ${response.status}`);
     }
   } catch (error) {
     logger.error('Network connectivity test error:', error);

@@ -131,10 +131,10 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 3.2 Basic Commands
 
-- [ ] Implement `/start` command
-- [ ] Implement `/help` command
-- [ ] Implement `/list` command
-- [ ] Add inline keyboards
+- [X] Implement `/start` command
+- [X] Implement `/help` command
+- [X] Implement `/list` command
+- [X] Add inline keyboards
 
 #### 3.3 Wishlist Commands
 

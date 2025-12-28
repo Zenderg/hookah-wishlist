@@ -137,6 +137,9 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: ${NODE_ENV}
       LOG_LEVEL: ${LOG_LEVEL}
+      BOT_API_KEY: ${BOT_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
     
     # Wait for postgres and migrations to complete before starting
     depends_on:
@@ -197,6 +200,7 @@ services:
     environment:
       API_URL: ${API_URL}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      BOT_API_KEY: ${BOT_API_KEY}
       LOG_LEVEL: ${LOG_LEVEL}
       # Suppress punycode deprecation warning (temporary workaround for uri-js dependency)
       NODE_OPTIONS: "--no-deprecation"

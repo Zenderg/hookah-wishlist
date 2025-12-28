@@ -13,7 +13,7 @@ model User {
   firstName  String?
   lastName   String?
   createdAt  DateTime  @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime  @default(now())
   wishlists  Wishlist?
 
   @@map("users")
@@ -26,7 +26,7 @@ model Brand {
   description  String?
   imageUrl     String?
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime  @default(now())
   htreviewsUrl String?
   tobaccos     Tobacco[]
 
@@ -43,11 +43,11 @@ model Tobacco {
   price          Decimal?       @db.Decimal(10, 2)
   inStock        Boolean        @default(true)
   createdAt      DateTime       @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime       @default(now())
   htreviewsUrl   String?
   metadata       Json?
   scrapedAt      DateTime?
-  brands         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   wishlist_items WishlistItem[]
 
   @@unique([brandId, slug])
@@ -61,9 +61,9 @@ model Wishlist {
   id             Int            @id @default(autoincrement())
   userId         Int            @unique
   createdAt      DateTime       @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime       @default(now())
   wishlist_items WishlistItem[]
-  users          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("wishlists")
@@ -75,8 +75,8 @@ model WishlistItem {
   tobaccoId  Int
   addedAt    DateTime @default(now())
   notes      String?
-  tobaccos   Tobacco  @relation(fields: [tobaccoId], references: [id], onDelete: Cascade)
-  wishlists  Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  tobacco    Tobacco  @relation(fields: [tobaccoId], references: [id], onDelete: Cascade)
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
 
   @@unique([wishlistId, tobaccoId])
   @@index([tobaccoId])
