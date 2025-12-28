@@ -189,11 +189,11 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.4 Search Page
 
-- [ ] Create SearchPage component
-- [ ] Implement search input with debounce
-- [ ] Create TobaccoCard component
-- [ ] Display search results
-- [ ] Add to wishlist functionality
+- [X] Create SearchPage component
+- [X] Implement search input with debounce
+- [X] Create TobaccoCard component
+- [X] Display search results
+- [X] Add to wishlist functionality
 
 #### 4.5 Navigation
 

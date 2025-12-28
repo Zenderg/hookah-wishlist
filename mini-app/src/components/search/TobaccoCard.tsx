@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Plus, ShoppingBag } from 'lucide-react';
+import { Plus, Check, ShoppingBag } from 'lucide-react';
 
 export interface TobaccoCardProps {
   id: number;
@@ -9,6 +9,7 @@ export interface TobaccoCardProps {
   brand: string;
   description?: string;
   imageUrl?: string;
+  isAdded?: boolean;
   onAddToWishlist?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const TobaccoCard: React.FC<TobaccoCardProps> = ({
   brand,
   description,
   imageUrl,
+  isAdded = false,
   onAddToWishlist,
 }) => {
   return (
@@ -42,11 +44,18 @@ export const TobaccoCard: React.FC<TobaccoCardProps> = ({
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
-        {onAddToWishlist && (
-          <Button variant="primary" size="sm" onClick={onAddToWishlist}>
-            <Plus className="w-4 h-4 mr-1" />
-            Add
+        {isAdded ? (
+          <Button variant="secondary" size="sm" disabled>
+            <Check className="w-4 h-4 mr-1" />
+            Added
           </Button>
+        ) : (
+          onAddToWishlist && (
+            <Button variant="primary" size="sm" onClick={onAddToWishlist}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </Button>
+          )
         )}
       </CardFooter>
     </Card>
