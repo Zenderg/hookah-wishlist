@@ -181,11 +181,11 @@ This document outlines implementation plan for Minimum Viable Product (MVP) of H
 
 #### 4.3 Wishlist Page
 
-- [ ] Create WishlistPage component
-- [ ] Implement wishlist fetching
-- [ ] Create WishlistItem component
-- [ ] Add loading states
-- [ ] Add error handling
+- [X] Create WishlistPage component
+- [X] Implement wishlist fetching
+- [X] Create WishlistItem component
+- [X] Add loading states
+- [X] Add error handling
 
 #### 4.4 Search Page
 

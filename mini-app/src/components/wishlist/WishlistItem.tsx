@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Check, Trash2, ShoppingBag } from 'lucide-react';
+import { Check, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 
 export interface WishlistItemProps {
   id: number;
@@ -11,6 +11,7 @@ export interface WishlistItemProps {
   isPurchased?: boolean;
   onTogglePurchased?: () => void;
   onRemove?: () => void;
+  isRemoving?: boolean;
 }
 
 export const WishlistItem: React.FC<WishlistItemProps> = ({
@@ -20,9 +21,14 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
   isPurchased = false,
   onTogglePurchased,
   onRemove,
+  isRemoving = false,
 }) => {
   return (
-    <Card className={`transition-opacity ${isPurchased ? 'opacity-60' : ''}`}>
+    <Card
+      className={`transition-opacity ${isPurchased ? 'opacity-60' : ''} ${
+        isRemoving ? 'opacity-50' : ''
+      }`}
+    >
       <CardContent className="flex items-start gap-4">
         {imageUrl ? (
           <img
@@ -50,13 +56,27 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
       </CardContent>
       <CardFooter className="flex gap-2 justify-end">
         {onTogglePurchased && (
-          <Button variant="secondary" size="sm" onClick={onTogglePurchased}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onTogglePurchased}
+            disabled={isRemoving}
+          >
             {isPurchased ? 'Mark Unpurchased' : 'Mark Purchased'}
           </Button>
         )}
         {onRemove && (
-          <Button variant="danger" size="sm" onClick={onRemove}>
-            <Trash2 className="w-4 h-4" />
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onRemove}
+            disabled={isRemoving}
+          >
+            {isRemoving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
           </Button>
         )}
       </CardFooter>
