@@ -341,7 +341,7 @@ export async function scrapeTobaccoPage(
 
       try {
         const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-        for (const script of scripts) {
+        for (const script of Array.from(scripts)) {
           try {
             const data = JSON.parse((script as any).textContent || '');
             // Look for Product objects
