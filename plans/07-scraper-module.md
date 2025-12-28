@@ -64,25 +64,47 @@ graph TB
 
 ### Main Pages
 
-1. **Brands List**: `https://htreviews.org/tobaccos/brands`
+1. **Brands List**: `https://htreviews.org/tobaccos/brands?r=position&s=rating&d=desc`
    - Contains all tobacco brands
-   - Each brand links to its page
+   - Content loads incrementally as user scrolls down (infinite scroll)
+   - Query parameters control sorting and pagination
+   - Each brand links to its detail page
 
-2. **Brand Page**: `https://htreviews.org/tobaccos/{brand-slug}`
+2. **Brand Page**: `https://htreviews.org/tobaccos/{brand-slug}?r=position&s=rating&d=desc`
+   - Shows brand description and details
    - Lists all tobaccos for a brand
+   - Lists all lines (линейки) for a brand (for reference only)
+   - Content loads incrementally as user scrolls down (infinite scroll)
    - Each tobacco links to its detail page
 
-3. **Tobacco Detail**: `https://htreviews.org/tobaccos/{brand-slug}/{line-slug}/{tobacco-slug}`
+3. **Tobacco Detail**: `https://htreviews.org/tobaccos/{brand-slug}/{line-slug}/{tobacco-slug}?r=position&s=created&d=desc`
    - Detailed tobacco information
    - Image, description, ratings, etc.
+   - **Note**: Lines (линейки) are only used for URL structure, not stored in database
+
+### Important Notes
+
+- **Lines (Линейки)**: Lines are part of the URL structure but should NOT be scraped or stored in the database. They are only used to construct tobacco detail URLs.
+- **Infinite Scroll**: Both brands list and brand pages use infinite scroll - content loads as user scrolls down
+- **Query Parameters**: URLs include query parameters for sorting and pagination (e.g., `?r=position&s=rating&d=desc`)
 
 ### Example URLs
 
 ```
-Brands: https://htreviews.org/tobaccos/brands
-Brand: https://htreviews.org/tobaccos/sarma
-Tobacco: https://htreviews.org/tobaccos/sarma/klassicheskaya/zima
+# Brands List (with sorting parameters)
+Brands: https://htreviews.org/tobaccos/brands?r=position&s=rating&d=desc
+
+# Brand Page (with sorting parameters)
+Brand: https://htreviews.org/tobaccos/dogma?r=position&s=rating&d=desc
+
+# Tobacco Detail (with sorting parameters)
+Tobacco: https://htreviews.org/tobaccos/dogma/sigarnyy-monosort/san-andres?r=position&s=created&d=desc
 ```
+
+**URL Structure Breakdown**:
+- `dogma` - brand slug
+- `sigarnyy-monosort` - line slug (for URL structure only, not stored)
+- `san-andres` - tobacco slug
 
 ## Scraper Components
 
@@ -224,7 +246,7 @@ export class ScraperController {
 
 ### 3. Brand Scraper
 
-Scrapes list of brands from htreviews.org.
+Scrapes list of brands from htreviews.org with infinite scroll support.
 
 ```typescript
 // brand-scraper.ts
@@ -239,7 +261,7 @@ interface Brand {
 
 export class BrandScraper {
   private logger: Logger;
-  private readonly BRANDS_URL = 'https://htreviews.org/tobaccos/brands';
+  private readonly BRANDS_URL = 'https://htreviews.org/tobaccos/brands?r=position&s=rating&d=desc';
 
   constructor() {
     this.logger = new Logger('BrandScraper');
@@ -253,13 +275,46 @@ export class BrandScraper {
       this.logger.info(`Fetching brands from ${this.BRANDS_URL}`);
       await page.goto(this.BRANDS_URL, { waitUntil: 'networkidle' });
 
-      // Wait for brand list to load
-      await page.waitForSelector('.brand-list, .brands-grid', { timeout: 10000 });
+      // Wait for initial brand list to load
+      await page.waitForSelector('.brand-list, .brands-grid, a[href*="/tobaccos/"]', { timeout: 10000 });
 
-      // Extract brand information
+      // Extract initial brands
       brands.push(...await this.extractBrands(page));
 
-      this.logger.info(`Extracted ${brands.length} brands`);
+      // Handle infinite scroll - scroll down until no new brands appear
+      let previousCount = 0;
+      let scrollAttempts = 0;
+      const maxScrollAttempts = 50; // Prevent infinite loop
+
+      while (scrollAttempts < maxScrollAttempts) {
+        // Scroll to bottom
+        await page.evaluate(() => {
+          window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        // Wait for new content to load
+        await this.sleep(2000);
+
+        // Extract brands again
+        const currentBrands = await this.extractBrands(page);
+        const currentCount = currentBrands.length;
+
+        // Remove duplicates
+        const uniqueBrands = this.removeDuplicates([...brands, ...currentBrands]);
+        
+        // If no new brands found, we're done
+        if (uniqueBrands.length === previousCount) {
+          this.logger.info(`No new brands found after ${scrollAttempts} scrolls`);
+          break;
+        }
+
+        brands.length = 0;
+        brands.push(...uniqueBrands);
+        previousCount = uniqueBrands.length;
+        scrollAttempts++;
+      }
+
+      this.logger.info(`Extracted ${brands.length} brands total`);
       return brands;
     } catch (error) {
       this.logger.error('Failed to scrape brands:', error);
@@ -317,25 +372,30 @@ export class BrandScraper {
       }
     }
 
-    // Remove duplicates
-    const uniqueBrands = brands.filter((brand, index, self) =>
+    return brands;
+  }
+
+  private removeDuplicates(brands: Brand[]): Brand[] {
+    return brands.filter((brand, index, self) =>
       index === self.findIndex((b) => b.slug === brand.slug)
     );
-
-    return uniqueBrands;
   }
 
   private extractSlug(href: string): string | null {
     // Extract slug from URL like https://htreviews.org/tobaccos/sarma
-    const match = href.match(/\/tobaccos\/([^\/]+)/);
+    const match = href.match(/\/tobaccos\/([^\/\?]+)/);
     return match ? match[1] : null;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 ```
 
 ### 4. Tobacco Scraper
 
-Scrapes tobacco details for a specific brand.
+Scrapes tobacco details for a specific brand with infinite scroll support.
 
 ```typescript
 // tobacco-scraper.ts
@@ -364,16 +424,17 @@ export class TobaccoScraper {
     const tobaccos: Tobacco[] = [];
 
     try {
-      this.logger.info(`Fetching tobaccos from ${brand.htreviewsUrl}`);
-      await page.goto(brand.htreviewsUrl, { waitUntil: 'networkidle' });
+      // Construct brand page URL with sorting parameters
+      const brandUrl = `${brand.htreviewsUrl}?r=position&s=rating&d=desc`;
+      this.logger.info(`Fetching tobaccos from ${brandUrl}`);
+      await page.goto(brandUrl, { waitUntil: 'networkidle' });
 
       // Wait for tobacco list to load
-      await page.waitForSelector('.tobacco-list, .tobacco-grid', { timeout: 10000 });
+      await page.waitForSelector('.tobacco-list, .tobacco-grid, a[href*="/tobaccos/"]', { timeout: 10000 });
 
-      // Extract tobacco links
+      // Extract tobacco links with infinite scroll
       const tobaccoLinks = await this.extractTobaccoLinks(page, brand);
-
-      this.logger.info(`Found ${tobaccoLinks.length} tobacco links`);
+      this.logger.info(`Found ${tobaccoLinks.length} tobacco links total`);
 
       // Scrape each tobacco detail page
       for (const link of tobaccoLinks) {
@@ -403,8 +464,48 @@ export class TobaccoScraper {
   private async extractTobaccoLinks(
     page: Page,
     brand: Brand
-  ): Promise<Array<{ name: string; url: string; slug: string }>> {
-    const links: Array<{ name: string; url: string; slug: string }> = [];
+  ): Promise<Array<{ name: string; url: string; slug: string; lineSlug?: string }>> {
+    const links: Array<{ name: string; url: string; slug: string; lineSlug?: string }> = [];
+
+    // Extract initial tobacco links
+    const initialLinks = await this.extractLinksFromPage(page);
+    links.push(...initialLinks);
+
+    // Handle infinite scroll - scroll down until no new tobaccos appear
+    let previousCount = 0;
+    let scrollAttempts = 0;
+    const maxScrollAttempts = 50; // Prevent infinite loop
+
+    while (scrollAttempts < maxScrollAttempts) {
+      // Scroll to bottom
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      // Wait for new content to load
+      await this.sleep(2000);
+
+      // Extract links again
+      const currentLinks = await this.extractLinksFromPage(page);
+      const currentCount = currentLinks.length;
+
+      // If no new links found, we're done
+      if (currentCount === previousCount) {
+        this.logger.info(`No new tobaccos found after ${scrollAttempts} scrolls`);
+        break;
+      }
+
+      links.length = 0;
+      links.push(...currentLinks);
+      previousCount = currentCount;
+      scrollAttempts++;
+    }
+
+    return links;
+  }
+
+  private async extractLinksFromPage(page: Page): Promise<Array<{ name: string; url: string; slug: string; lineSlug?: string }>> {
+    const links: Array<{ name: string; url: string; slug: string; lineSlug?: string }> = [];
 
     // Look for tobacco cards or links
     const tobaccoCards = await page.$$('.tobacco-card, .tobacco-item, a[href*="/tobaccos/"]');
@@ -415,29 +516,51 @@ export class TobaccoScraper {
         const href = await card.getAttribute('href');
         
         if (name && href && href.includes('/tobaccos/')) {
-          // Skip brand pages
-          if (href.split('/').filter(Boolean).length <= 3) continue;
+          // Skip brand pages (only 2 path segments: /tobaccos/{brand})
+          const pathSegments = href.split('/').filter(Boolean);
+          if (pathSegments.length <= 3) continue;
 
-          links.push({
-            name: name.trim(),
-            url: `https://htreviews.org${href}`,
-            slug: this.extractSlug(href),
-          });
+          // Extract slugs from URL
+          // URL format: /tobaccos/{brand-slug}/{line-slug}/{tobacco-slug}
+          const urlParts = href.match(/\/tobaccos\/([^\/]+)\/([^\/]+)\/([^\/\?]+)/);
+          
+          if (urlParts) {
+            links.push({
+              name: name.trim(),
+              url: `https://htreviews.org${href}`,
+              slug: urlParts[3], // tobacco slug
+              lineSlug: urlParts[2], // line slug (for URL construction only, not stored)
+            });
+          }
         }
       } catch (error) {
         continue;
       }
     }
 
-    return links;
+    // Remove duplicates by tobacco slug
+    return this.removeDuplicateLinks(links);
+  }
+
+  private removeDuplicateLinks(links: Array<{ name: string; url: string; slug: string; lineSlug?: string }>): Array<{ name: string; url: string; slug: string; lineSlug?: string }> {
+    const seen = new Set<string>();
+    return links.filter(link => {
+      if (seen.has(link.slug)) {
+        return false;
+      }
+      seen.add(link.slug);
+      return true;
+    });
   }
 
   private async scrapeTobaccoDetail(
     page: Page,
-    link: { name: string; url: string; slug: string }
+    link: { name: string; url: string; slug: string; lineSlug?: string }
   ): Promise<Tobacco | null> {
     try {
-      await page.goto(link.url, { waitUntil: 'networkidle' });
+      // Construct detail URL with sorting parameters
+      const detailUrl = `${link.url}?r=position&s=created&d=desc`;
+      await page.goto(detailUrl, { waitUntil: 'networkidle' });
 
       // Wait for content to load
       await page.waitForSelector('.tobacco-detail, .product-detail', { timeout: 10000 });
@@ -524,12 +647,6 @@ export class TobaccoScraper {
     }
 
     return metadata;
-  }
-
-  private extractSlug(href: string): string {
-    // Extract slug from URL like https://htreviews.org/tobaccos/sarma/klassicheskaya/zima
-    const parts = href.split('/').filter(Boolean);
-    return parts[parts.length - 1] || '';
   }
 
   private sleep(ms: number): Promise<void> {
@@ -777,6 +894,9 @@ await this.sleep(2000);
 
 // Wait between tobaccos
 await this.sleep(1000);
+
+// Wait during infinite scroll
+await this.sleep(2000);
 ```
 
 ### Respect robots.txt
@@ -826,11 +946,12 @@ export const config = {
     delay: {
       brand: parseInt(process.env.SCRAPER_DELAY_BRAND || '2000', 10),
       tobacco: parseInt(process.env.SCRAPER_DELAY_TOBACCO || '1000', 10),
+      scroll: 2000, // Delay during infinite scroll
     },
   },
   target: {
     baseUrl: 'https://htreviews.org',
-    brandsUrl: 'https://htreviews.org/tobaccos/brands',
+    brandsUrl: 'https://htreviews.org/tobaccos/brands?r=position&s=rating&d=desc',
   },
 };
 ```
@@ -845,6 +966,7 @@ export const config = {
 - Errors encountered
 - Scrape duration
 - Success rate
+- Infinite scroll iterations
 
 ### Logging
 
@@ -926,11 +1048,43 @@ LOG_LEVEL=info
 4. **Environment Variables**: Store sensitive data in environment variables
 5. **Access Control**: Restrict scraper to internal network if possible
 
+## Important Implementation Notes
+
+### Infinite Scroll Handling
+
+Both brands list and brand pages use infinite scroll. The scraper must:
+
+1. **Initial Load**: Wait for initial content to load
+2. **Scroll Down**: Programmatically scroll to bottom of page
+3. **Wait**: Wait for new content to load (2-3 seconds)
+4. **Extract**: Extract new items from page
+5. **Repeat**: Continue until no new items appear
+6. **Deduplicate**: Remove duplicate items before adding to list
+
+### URL Structure
+
+- **Brands**: `https://htreviews.org/tobaccos/brands?r=position&s=rating&d=desc`
+- **Brand**: `https://htreviews.org/tobaccos/{brand-slug}?r=position&s=rating&d=desc`
+- **Tobacco Detail**: `https://htreviews.org/tobaccos/{brand-slug}/{line-slug}/{tobacco-slug}?r=position&s=created&d=desc`
+
+**Note**: Line slug (линейка) is only used for URL structure and should NOT be stored in the database.
+
+### Data to Store
+
+**Store in Database**:
+- ✅ Brands (name, slug, htreviewsUrl)
+- ✅ Tobaccos (name, slug, description, imageUrl, htreviewsUrl, metadata)
+
+**Do NOT Store**:
+- ❌ Lines (линейки) - only used for URL structure
+- ❌ Line descriptions - only for reference on brand pages
+
 ## Summary
 
 The scraper module provides:
 
 ✅ **Automated data collection** - Daily updates from htreviews.org
+✅ **Infinite scroll support** - Handles dynamically loaded content on brands and tobacco lists
 ✅ **Incremental updates** - Only adds new records, updates existing ones
 ✅ **Error handling** - Robust error handling and retry logic
 ✅ **Rate limiting** - Respects target website's limits
@@ -939,5 +1093,7 @@ The scraper module provides:
 ✅ **Containerized** - Runs in Docker container
 ✅ **Coolify deployment** - Automated deployment and management
 ✅ **Docker network** - Connects to PostgreSQL via Docker network
+✅ **Correct URL structure** - Uses proper URLs with sorting parameters
+✅ **No line storage** - Lines only used for URL construction, not stored in database
 
 The scraper ensures tobacco database stays up-to-date with minimal manual intervention.

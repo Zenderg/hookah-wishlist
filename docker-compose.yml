@@ -61,12 +61,62 @@ services:
       - backend
 
   # ============================================
+  # Prisma Migration Service
+  # ============================================
+  prisma-migrate:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: builder
+      args:
+        NODE_ENV: ${NODE_ENV}
+    container_name: hookah-prisma-migrate
+    
+    # Labels for better organization
+    labels:
+      - "com.hookah-wishlist.service=prisma-migrate"
+      - "com.hookah-wishlist.environment=development"
+    
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: ${NODE_ENV}
+    
+    # Wait for postgres to be healthy before running migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    # Run migrations and exit
+    command: ["pnpm", "prisma", "migrate", "deploy"]
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Connect to backend network
+    networks:
+      - backend
+
+  # ============================================
   # API Service
   # ============================================
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
       # Use BuildKit cache mounts for faster builds
       target: production
       cache_from:
@@ -88,10 +138,12 @@ services:
       NODE_ENV: ${NODE_ENV}
       LOG_LEVEL: ${LOG_LEVEL}
     
-    # Wait for postgres to be healthy before starting
+    # Wait for postgres and migrations to complete before starting
     depends_on:
       postgres:
         condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
     
     # Healthcheck using curl (installed in Dockerfile)
     healthcheck:
@@ -130,8 +182,8 @@ services:
   # ============================================
   bot:
     build:
-      context: ./bot
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: bot/Dockerfile
       target: production
       cache_from:
         - node:22.12-alpine
@@ -183,8 +235,8 @@ services:
   # ============================================
   scraper:
     build:
-      context: ./scraper
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: scraper/Dockerfile
       target: production
       cache_from:
         - node:22.12-alpine
@@ -198,6 +250,10 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SCRAPER_SCHEDULE: ${SCRAPER_SCHEDULE}
+      SCRAPER_TIMEOUT: ${SCRAPER_TIMEOUT}
+      SCRAPER_MAX_RETRIES: ${SCRAPER_MAX_RETRIES}
+      SCRAPER_DELAY_BRAND: ${SCRAPER_DELAY_BRAND}
+      SCRAPER_DELAY_TOBACCO: ${SCRAPER_DELAY_TOBACCO}
       LOG_LEVEL: ${LOG_LEVEL}
     
     # Wait for postgres to be healthy before starting
@@ -234,8 +290,8 @@ services:
   # ============================================
   mini-app:
     build:
-      context: ./mini-app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: mini-app/Dockerfile
       target: production
       cache_from:
         - node:22.12-alpine
