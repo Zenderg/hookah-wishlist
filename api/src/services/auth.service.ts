@@ -29,6 +29,12 @@ export class AuthService {
    * Creates user if not exists, updates if exists
    */
   async authenticateViaTelegram(telegramUser: TelegramUser): Promise<AuthResult> {
+    logger.info('[AUTH SERVICE] authenticateViaTelegram called', {
+      telegramId: telegramUser.id,
+      username: telegramUser.username,
+      firstName: telegramUser.first_name,
+    });
+
     try {
       // Convert TelegramUser to TelegramUserData
       const telegramData: TelegramUserData = {
@@ -38,10 +44,22 @@ export class AuthService {
         lastName: telegramUser.last_name,
       };
 
+      logger.info('[AUTH SERVICE] Converted TelegramUser to TelegramUserData', {
+        telegramId: telegramData.telegramId.toString(),
+        username: telegramData.username,
+        firstName: telegramData.firstName,
+        lastName: telegramData.lastName,
+      });
+
       // Create or update user using UserService
+      logger.info('[AUTH SERVICE] Calling userService.createOrUpdateUser');
       const user = await this.userService.createOrUpdateUser(telegramData);
 
-      logger.info('User authenticated successfully', { userId: user.id, telegramId: user.telegramId });
+      logger.info('[AUTH SERVICE] User authenticated successfully', {
+        userId: user.id,
+        telegramId: user.telegramId.toString(),
+        username: user.username,
+      });
 
       return {
         success: true,
@@ -56,10 +74,16 @@ export class AuthService {
         },
       };
     } catch (error) {
-      logger.error('Error authenticating user', { error, telegramId: telegramUser.id });
+      // Preserve the original error message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('[AUTH SERVICE] Error authenticating user', {
+        error: errorMessage,
+        telegramId: telegramUser.id,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return {
         success: false,
-        error: 'Failed to authenticate user',
+        error: errorMessage,
       };
     }
   }
@@ -68,15 +92,23 @@ export class AuthService {
    * Get user by database ID
    */
   async getUserById(userId: number): Promise<AuthResult> {
+    logger.info('[AUTH SERVICE] getUserById called', { userId });
+
     try {
       const user = await this.userService.getUserById(userId);
 
       if (!user) {
+        logger.warn('[AUTH SERVICE] User not found', { userId });
         return {
           success: false,
           error: 'User not found',
         };
       }
+
+      logger.info('[AUTH SERVICE] User found', {
+        userId: user.id,
+        telegramId: user.telegramId.toString(),
+      });
 
       return {
         success: true,
@@ -91,10 +123,16 @@ export class AuthService {
         },
       };
     } catch (error) {
-      logger.error('Error fetching user', { error, userId });
+      // Preserve the original error message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('[AUTH SERVICE] Error fetching user', {
+        error: errorMessage,
+        userId,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return {
         success: false,
-        error: 'Failed to fetch user',
+        error: errorMessage,
       };
     }
   }

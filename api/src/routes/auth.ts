@@ -25,12 +25,19 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<TelegramAuthRequest>(
     '/telegram',
     async (request: FastifyRequest<TelegramAuthRequest>, reply: FastifyReply) => {
+      logger.info('[AUTH ROUTE] POST /auth/telegram - Received request');
+
       try {
         const { initData } = request.body;
 
+        logger.info('[AUTH ROUTE] Request body received', {
+          initDataLength: initData?.length,
+          initDataPreview: initData?.substring(0, 100) + '...',
+        });
+
         // Validate input
         if (!initData) {
-          logger.warn('Missing initData in request');
+          logger.warn('[AUTH ROUTE] Missing initData in request');
           return reply.status(400).send({
             success: false,
             data: null,
@@ -44,7 +51,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         // Get bot token from environment
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (!botToken) {
-          logger.error('TELEGRAM_BOT_TOKEN not configured');
+          logger.error('[AUTH ROUTE] TELEGRAM_BOT_TOKEN not configured');
           return reply.status(500).send({
             success: false,
             data: null,
@@ -55,10 +62,23 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
+        logger.info('[AUTH ROUTE] Bot token configured, validating initData');
+
         // Validate Telegram initData
         const validation = validateInitData(initData, botToken);
+
+        logger.info('[AUTH ROUTE] Validation result', {
+          valid: validation.valid,
+          hasUser: !!validation.user,
+          error: validation.error,
+        });
+
         if (!validation.valid || !validation.user) {
-          logger.warn('Invalid Telegram initData', { error: validation.error });
+          logger.warn('[AUTH ROUTE] Invalid Telegram initData', {
+            error: validation.error,
+            initDataLength: initData.length,
+            initDataPreview: initData.substring(0, 200),
+          });
           return reply.status(401).send({
             success: false,
             data: null,
@@ -69,10 +89,27 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
+        logger.info('[AUTH ROUTE] Telegram user validated', {
+          telegramId: validation.user.id,
+          username: validation.user.username,
+          firstName: validation.user.first_name,
+        });
+
         // Authenticate user (create or update)
+        logger.info('[AUTH ROUTE] Calling authService.authenticateViaTelegram');
         const authResult = await authService.authenticateViaTelegram(validation.user);
+
+        logger.info('[AUTH ROUTE] Auth service result', {
+          success: authResult.success,
+          hasUser: !!authResult.user,
+          error: authResult.error,
+        });
+
         if (!authResult.success || !authResult.user) {
-          logger.error('Failed to authenticate user', { telegramId: validation.user.id });
+          logger.error('[AUTH ROUTE] Failed to authenticate user', {
+            telegramId: validation.user.id,
+            error: authResult.error,
+          });
           return reply.status(500).send({
             success: false,
             data: null,
@@ -90,9 +127,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           telegramId: authResult.user.telegramId,
         });
 
-        logger.info('User authenticated successfully', {
+        logger.info('[AUTH ROUTE] User authenticated successfully', {
           userId: authResult.user.id,
           telegramId: authResult.user.telegramId,
+          tokenLength: token.length,
         });
 
         return reply.status(200).send({
@@ -104,7 +142,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           error: null,
         });
       } catch (error) {
-        logger.error('Error in /auth/telegram endpoint', { error });
+        logger.error('[AUTH ROUTE] Error in /auth/telegram endpoint', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         return reply.status(500).send({
           success: false,
           data: null,
@@ -124,11 +165,13 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<RefreshTokenRequest>(
     '/refresh',
     async (request: FastifyRequest<RefreshTokenRequest>, reply: FastifyReply) => {
+      logger.info('[AUTH ROUTE] POST /auth/refresh - Received request');
+
       try {
         const authHeader = request.headers.authorization;
 
         if (!authHeader) {
-          logger.warn('Missing Authorization header in /refresh');
+          logger.warn('[AUTH ROUTE] Missing Authorization header in /refresh');
           return reply.status(401).send({
             success: false,
             data: null,
@@ -142,7 +185,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         // Extract Bearer token
         const match = authHeader.match(/^Bearer\s+(.+)$/);
         if (!match) {
-          logger.warn('Invalid Authorization header format in /refresh');
+          logger.warn('[AUTH ROUTE] Invalid Authorization header format in /refresh');
           return reply.status(401).send({
             success: false,
             data: null,
@@ -155,6 +198,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
         const token = match[1];
 
+        logger.info('[AUTH ROUTE] Token extracted, verifying');
+
         // Verify current token
         const jwt = (request.server as any).jwt;
         const decoded = jwt.verify(token) as {
@@ -162,10 +207,13 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           telegramId: number;
         };
 
+        logger.info('[AUTH ROUTE] Token verified', { userId: decoded.userId, telegramId: decoded.telegramId });
+
         // Get user data
         const userResult = await authService.getUserById(decoded.userId);
+
         if (!userResult.success || !userResult.user) {
-          logger.warn('User not found during token refresh', { userId: decoded.userId });
+          logger.warn('[AUTH ROUTE] User not found during token refresh', { userId: decoded.userId });
           return reply.status(404).send({
             success: false,
             data: null,
@@ -182,7 +230,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           telegramId: userResult.user.telegramId,
         });
 
-        logger.info('Token refreshed successfully', { userId: userResult.user.id });
+        logger.info('[AUTH ROUTE] Token refreshed successfully', { userId: userResult.user.id });
 
         return reply.status(200).send({
           success: true,
@@ -196,7 +244,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         // Handle JWT verification errors
         if (error instanceof Error) {
           if (error.name === 'TokenExpiredError') {
-            logger.warn('Token expired in /refresh');
+            logger.warn('[AUTH ROUTE] Token expired in /refresh');
             return reply.status(401).send({
               success: false,
               data: null,
@@ -208,7 +256,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           }
 
           if (error.name === 'JsonWebTokenError') {
-            logger.warn('Invalid token in /refresh');
+            logger.warn('[AUTH ROUTE] Invalid token in /refresh');
             return reply.status(401).send({
               success: false,
               data: null,
@@ -220,7 +268,9 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
           }
         }
 
-        logger.error('Error in /auth/refresh endpoint', { error });
+        logger.error('[AUTH ROUTE] Error in /auth/refresh endpoint', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         return reply.status(500).send({
           success: false,
           data: null,

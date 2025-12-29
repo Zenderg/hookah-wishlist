@@ -25,6 +25,11 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// Handle pool errors
+pool.on('error', (err) => {
+  logger.error('PostgreSQL pool error', { error: err.message });
+});
+
 // Create Prisma adapter
 const adapter = new PrismaPg(pool);
 
@@ -109,14 +114,35 @@ const start = async (): Promise<void> => {
     const port = Number(process.env.PORT) || 3000;
     const host = process.env.HOST || '0.0.0.0';
 
+    // Check if DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is not configured');
+    }
+
+    logger.info('Connecting to database...');
+
     // Test database connection
     await prisma.$connect();
     logger.info('Database connected successfully');
 
+    // Test database query to ensure connection is working
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info('Database query test passed');
+    } catch (queryError) {
+      logger.error('Database query test failed', {
+        error: queryError instanceof Error ? queryError.message : String(queryError),
+      });
+      throw new Error('Database connection test failed');
+    }
+
     await fastify.listen({ port, host });
     logger.info(`Server listening on ${host}:${port}`);
   } catch (error) {
-    logger.error('Failed to start server', { error });
+    logger.error('Failed to start server', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 };
