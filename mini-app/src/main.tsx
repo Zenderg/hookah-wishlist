@@ -34,14 +34,6 @@ const initializeAuth = async () => {
   } catch (error) {
     console.error('Authentication failed:', error);
     logout();
-    // Show error to user instead of white screen
-    document.getElementById('root')!.innerHTML = `
-      <div style="padding: 20px; text-align: center;">
-        <h2>Authentication Failed</h2>
-        <p>Please try opening the app again from the Telegram bot.</p>
-        <p style="color: #666; font-size: 14px;">Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
-      </div>
-    `;
   }
 };
 
