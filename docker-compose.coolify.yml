@@ -75,6 +75,7 @@ services:
       BOT_API_KEY: ${BOT_API_KEY}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     
     depends_on:
       postgres:

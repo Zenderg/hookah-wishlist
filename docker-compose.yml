@@ -90,6 +90,7 @@ services:
       BOT_API_KEY: ${BOT_API_KEY}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     
     # Wait for postgres to be healthy before starting
     depends_on:
