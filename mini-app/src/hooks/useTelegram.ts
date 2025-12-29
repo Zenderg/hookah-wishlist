@@ -58,7 +58,6 @@ export const useTelegram = () => {
 
       setIsReady(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Haptic feedback functions

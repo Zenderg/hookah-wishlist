@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Telegram theme variables */
+/* Telegram theme variables with fallbacks for non-Telegram environments */
 :root {
   --tg-theme-bg-color: #ffffff;
   --tg-theme-text-color: #000000;
@@ -32,13 +32,13 @@ body {
 
 /* Apply Telegram theme colors */
 body {
-  background-color: var(--tg-theme-bg-color);
-  color: var(--tg-theme-text-color);
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
 }
 
 /* Link styles */
 a {
-  color: var(--tg-theme-link-color);
+  color: var(--tg-theme-link-color, #2481cc);
   text-decoration: none;
 }
 
@@ -57,16 +57,16 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--tg-theme-secondary-bg-color);
+  background: var(--tg-theme-secondary-bg-color, #f1f1f1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--tg-theme-hint-color);
+  background: var(--tg-theme-hint-color, #999999);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--tg-theme-text-color);
+  background: var(--tg-theme-text-color, #000000);
 }
 
 /* Utility classes */
@@ -155,7 +155,7 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--tg-theme-button-color);
+  outline: 2px solid var(--tg-theme-button-color, #3390ec);
   outline-offset: 2px;
 }
 
@@ -183,4 +183,134 @@ input:focus-visible {
   will-change: transform, opacity;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* Error display styles */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
+}
+
+.error-title {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: var(--tg-theme-text-color, #000000);
+}
+
+.error-message {
+  background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.error-label {
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: var(--tg-theme-text-color, #000000);
+}
+
+.error-text {
+  margin-bottom: 16px;
+  color: var(--tg-theme-hint-color, #999999);
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.error-stack {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  overflow: auto;
+  max-height: 200px;
+  color: var(--tg-theme-hint-color, #999999);
+}
+
+.error-retry-button {
+  background-color: var(--tg-theme-button-color, #3390ec);
+  color: var(--tg-theme-button-text-color, #ffffff);
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.error-retry-button:hover {
+  opacity: 0.8;
+}
+
+/* Debug log styles */
+#debug-log {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px;
+  font-size: 11px;
+  font-family: monospace;
+  z-index: 9999;
+}
+
+.debug-log-entry {
+  margin: 4px 0;
+  padding: 4px;
+  font-size: 12px;
+  border-left: 3px solid;
+  padding-left: 8px;
+}
+
+.debug-log-info {
+  color: #3390ec;
+  border-left-color: #3390ec;
+}
+
+.debug-log-error {
+  color: #ff4444;
+  border-left-color: #ff4444;
+}
+
+.debug-log-success {
+  color: #00cc66;
+  border-left-color: #00cc66;
+}
+
+/* Loading indicator styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--tg-theme-secondary-bg-color, #f1f1f1);
+  border-top-color: var(--tg-theme-button-color, #3390ec);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: var(--tg-theme-hint-color, #999999);
 }

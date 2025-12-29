@@ -6,7 +6,7 @@ import { Profile } from './pages/Profile';
 import { WishlistPage } from './components/wishlist/WishlistPage';
 import { BottomNav } from './components/navigation/BottomNav';
 import { MainButtonProvider } from './contexts/MainButtonContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Page transition wrapper
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,6 +22,47 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Main App component with Router
 function App() {
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Handle initialization errors
+  useEffect(() => {
+    const handleInitializationError = (event: ErrorEvent) => {
+      console.error('[App] Initialization error:', event.error);
+      setHasError(true);
+      setErrorMessage(event.error?.message || 'Unknown initialization error');
+    };
+
+    window.addEventListener('error', handleInitializationError);
+
+    return () => {
+      window.removeEventListener('error', handleInitializationError);
+    };
+  }, []);
+
+  // Show error state if initialization failed
+  if (hasError) {
+    return (
+      <div className="error-container">
+        <h1 className="error-title">Initialization Error</h1>
+        <div className="error-message">
+          <p className="error-label">Error:</p>
+          <p className="error-text">{errorMessage}</p>
+          <p className="error-text">
+            The app failed to initialize. This could be due to a network issue or a problem with the
+            Telegram SDK. Please try again.
+          </p>
+        </div>
+        <button
+          className="error-retry-button"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <MainButtonProvider>
       <Router>

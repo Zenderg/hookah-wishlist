@@ -41,14 +41,18 @@ export const Profile: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Button variant="danger" className="w-full">
+        <Button
+          variant="danger"
+          className="w-full"
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>
 
         <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-blue-800">
-            This is a placeholder. Full profile page functionality will be implemented in later tasks.
+            This is a placeholder. Full profile page functionality will be implemented in later
+            tasks.
           </p>
         </div>
       </div>

@@ -48,9 +48,7 @@ export const TobaccoCard: React.FC<TobaccoCardProps> = ({
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-tg-text">{name}</h3>
           <p className="text-sm text-tg-hint">{brand}</p>
-          {description && (
-            <p className="text-sm text-tg-hint mt-1 line-clamp-2">{description}</p>
-          )}
+          {description && <p className="text-sm text-tg-hint mt-1 line-clamp-2">{description}</p>}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
