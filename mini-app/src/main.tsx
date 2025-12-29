@@ -81,13 +81,13 @@ const showLoadingIndicator = () => {
 // Initialize Telegram Web App with error handling
 const initializeTelegram = () => {
   try {
-    logToUI('Initializing Telegram SDK...', 'info');
+    logToUI('[STEP 1] Initializing Telegram SDK...', 'info');
     init();
-    logToUI('Telegram SDK initialized successfully', 'success');
+    logToUI('[STEP 1] Telegram SDK initialized successfully', 'success');
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logToUI(`Failed to initialize Telegram SDK: ${errorMessage}`, 'error');
+    logToUI(`[STEP 1] Failed to initialize Telegram SDK: ${errorMessage}`, 'error');
     console.error('[TELEGRAM] Initialization failed:', error);
     return false;
   }
@@ -95,41 +95,46 @@ const initializeTelegram = () => {
 
 // Initialize authentication on app load
 const initializeAuth = async () => {
+  logToUI('[STEP 2] Starting authentication initialization...', 'info');
+  
   const { setToken, setUser, logout } = useAuthStore.getState();
 
   // Check if token exists in localStorage
   const existingToken = localStorage.getItem('token');
   if (existingToken) {
-    logToUI('Existing token found in localStorage', 'success');
+    logToUI('[STEP 2] Existing token found in localStorage', 'success');
     setToken(existingToken);
     return;
   }
 
-  logToUI('No existing token, attempting Telegram authentication', 'info');
+  logToUI('[STEP 2] No existing token, attempting Telegram authentication', 'info');
 
   // Authenticate with Telegram initData
   try {
+    logToUI('[STEP 2] Retrieving initData from Telegram...', 'info');
     const initData = retrieveRawInitData();
     if (!initData) {
-      logToUI('No initData available from Telegram', 'error');
+      logToUI('[STEP 2] No initData available from Telegram (running outside Telegram?)', 'error');
+      logToUI('[STEP 2] App will render without authentication', 'info');
       return;
     }
 
     logToUI(
-      `Retrieved initData from Telegram: length=${initData.length}, hasUser=${initData.includes('user=')}, hasHash=${initData.includes('hash=')}`,
+      `[STEP 2] Retrieved initData from Telegram: length=${initData.length}, hasUser=${initData.includes('user=')}, hasHash=${initData.includes('hash=')}`,
       'info'
     );
 
+    logToUI('[STEP 2] Calling authenticateWithTelegram API...', 'info');
     const { token, user } = await authenticateWithTelegram(initData);
     logToUI(
-      `Authentication successful: userId=${user.id}, telegramId=${user.telegramId}, username=${user.username}`,
+      `[STEP 2] Authentication successful: userId=${user.id}, telegramId=${user.telegramId}, username=${user.username}`,
       'success'
     );
     setToken(token);
     setUser(user);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logToUI(`Authentication failed: ${errorMessage}`, 'error');
+    logToUI(`[STEP 2] Authentication failed: ${errorMessage}`, 'error');
     console.error('[AUTH] Authentication failed:', error);
     if (error instanceof Error) {
       console.error('[AUTH] Error details:', {
@@ -139,34 +144,44 @@ const initializeAuth = async () => {
       });
     }
     logout();
+    logToUI('[STEP 2] App will render without authentication', 'info');
   }
 };
 
 // Main initialization function
 const initializeApp = async () => {
   // Show loading indicator immediately
+  logToUI('[INIT] Starting app initialization...', 'info');
   showLoadingIndicator();
 
   // Initialize Telegram SDK
-  initializeTelegram();
+  const telegramInitialized = initializeTelegram();
+  logToUI(`[INIT] Telegram initialization completed: ${telegramInitialized}`, telegramInitialized ? 'success' : 'error');
 
   // Initialize authentication
+  logToUI('[INIT] Starting authentication...', 'info');
   await initializeAuth();
+  logToUI('[INIT] Authentication initialization completed', 'success');
 
   // Render React app
   try {
-    logToUI('Rendering React application...', 'info');
-    ReactDOM.createRoot(document.getElementById('root')!).render(
+    logToUI('[STEP 3] Rendering React application...', 'info');
+    const rootElement = document.getElementById('root');
+    if (!rootElement) {
+      throw new Error('Root element not found');
+    }
+    
+    ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <ErrorBoundary>
           <App />
         </ErrorBoundary>
       </React.StrictMode>
     );
-    logToUI('React application rendered successfully', 'success');
+    logToUI('[STEP 3] React application rendered successfully', 'success');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logToUI(`Failed to render React application: ${errorMessage}`, 'error');
+    logToUI(`[STEP 3] Failed to render React application: ${errorMessage}`, 'error');
     console.error('[RENDER] Failed to render app:', error);
 
     // Show error in UI
@@ -187,6 +202,9 @@ const initializeApp = async () => {
           <h1 style="color: #ff4444; margin-bottom: 16px;">Application Error</h1>
           <p style="margin-bottom: 20px; color: var(--tg-theme-hint-color, #999999);">
             Failed to load the application. Please try again.
+          </p>
+          <p style="margin-bottom: 20px; color: var(--tg-theme-hint-color, #999999); font-size: 14px;">
+            Error: ${errorMessage}
           </p>
           <button onclick="window.location.reload()" style="
             background-color: var(--tg-theme-button-color, #3390ec);
@@ -221,4 +239,8 @@ const initializeApp = async () => {
 };
 
 // Start initialization
-initializeApp();
+logToUI('[SYSTEM] App initialization started', 'info');
+initializeApp().catch((error) => {
+  logToUI(`[SYSTEM] Unhandled error in initializeApp: ${error}`, 'error');
+  console.error('[SYSTEM] Unhandled error:', error);
+});
