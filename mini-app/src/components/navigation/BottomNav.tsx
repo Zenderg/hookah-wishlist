@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Search, Layout, User } from 'lucide-react';
+import { Home, Search, Heart, Layout, User } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -27,16 +27,11 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isActive }) => {
 
 export const BottomNav: React.FC = () => {
   const location = useLocation();
-  const isWishlistPage = location.pathname === '/wishlist';
-
-  // Don't show navigation on wishlist page
-  if (isWishlistPage) {
-    return null;
-  }
 
   const navItems = [
     { to: '/', icon: <Home className="w-6 h-6" />, label: 'Home' },
     { to: '/search', icon: <Search className="w-6 h-6" />, label: 'Search' },
+    { to: '/wishlist', icon: <Heart className="w-6 h-6" />, label: 'Wishlist' },
     { to: '/brands', icon: <Layout className="w-6 h-6" />, label: 'Brands' },
     { to: '/profile', icon: <User className="w-6 h-6" />, label: 'Profile' },
   ];

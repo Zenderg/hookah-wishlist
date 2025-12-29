@@ -44,3 +44,14 @@ export async function removeFromWishlist(itemId: number): Promise<{ message: str
   const response = await api.delete(`/wishlist/items/${itemId}`);
   return response.data.data;
 }
+
+/**
+ * Update wishlist item
+ */
+export async function updateWishlistItem(
+  itemId: number,
+  data: { isPurchased?: boolean }
+): Promise<ApiWishlistItem> {
+  const response = await api.patch(`/wishlist/items/${itemId}`, data);
+  return response.data.data;
+}

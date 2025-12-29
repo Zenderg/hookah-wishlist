@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { WishlistItem } from './WishlistItem';
 import { Button } from '../ui/Button';
 import { Plus, RefreshCw, ShoppingBag } from 'lucide-react';
-import { fetchWishlist, removeFromWishlist } from '../../services/wishlist';
+import { fetchWishlist, removeFromWishlist, updateWishlistItem } from '../../services/wishlist';
 import { useTelegram } from '../../hooks/useTelegram';
+import { useMainButton } from '../../contexts/MainButtonContext';
+import { useWishlistStore } from '../../stores/wishlist';
 import type { WishlistItem as ApiWishlistItem } from '../../types';
 
 export interface WishlistPageProps {
@@ -11,30 +13,53 @@ export interface WishlistPageProps {
 }
 
 export const WishlistPage: React.FC<WishlistPageProps> = ({ onAddItem }) => {
-  const [items, setItems] = useState<ApiWishlistItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { items, isLoading, error, setItems, setLoading, setError, removeItem, updateItem } =
+    useWishlistStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const { hapticImpact, hapticNotification } = useTelegram();
+  const { showMainButton, hideMainButton, setMainButtonLoading } = useMainButton();
 
   const loadWishlist = async (showRefreshing = false) => {
     try {
       if (showRefreshing) {
         setIsRefreshing(true);
       } else {
-        setIsLoading(true);
+        setLoading(true);
       }
       setError(null);
 
       const response = await fetchWishlist();
-      setItems(response.items);
+
+      // Convert API items to store format
+      const storeItems = response.items.map((apiItem: ApiWishlistItem) => ({
+        id: apiItem.id,
+        tobaccoId: apiItem.tobaccoId,
+        customName: apiItem.customName,
+        customBrand: apiItem.customBrand,
+        isPurchased: apiItem.isPurchased,
+        purchasedAt: apiItem.purchasedAt ? new Date(apiItem.purchasedAt) : undefined,
+        createdAt: new Date(apiItem.createdAt),
+        tobacco: apiItem.tobacco
+          ? {
+              id: apiItem.tobacco.id,
+              name: apiItem.tobacco.name,
+              brand:
+                typeof apiItem.tobacco.brand === 'string'
+                  ? apiItem.tobacco.brand
+                  : apiItem.tobacco.brand?.name || 'Unknown Brand',
+              imageUrl: apiItem.tobacco.imageUrl,
+            }
+          : undefined,
+      }));
+
+      setItems(storeItems);
     } catch (err) {
       console.error('Failed to load wishlist:', err);
       setError('Failed to load wishlist. Please try again.');
       hapticNotification('error');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
       setIsRefreshing(false);
     }
   };
@@ -42,6 +67,21 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onAddItem }) => {
   useEffect(() => {
     loadWishlist();
   }, []);
+
+  useEffect(() => {
+    if (onAddItem) {
+      showMainButton('Add Item', () => {
+        hapticImpact('light');
+        onAddItem();
+      });
+    } else {
+      hideMainButton();
+    }
+
+    return () => {
+      hideMainButton();
+    };
+  }, [onAddItem, showMainButton, hideMainButton, hapticImpact]);
 
   const handleRefresh = () => {
     hapticImpact('light');
@@ -53,7 +93,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onAddItem }) => {
       setRemovingId(itemId);
       hapticImpact('medium');
       await removeFromWishlist(itemId);
-      setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      removeItem(itemId);
       hapticNotification('success');
     } catch (err) {
       console.error('Failed to remove item:', err);
@@ -66,23 +106,18 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onAddItem }) => {
     }
   };
 
-  const getItemDisplayName = (item: ApiWishlistItem): string => {
-    // API returns tobacco with nested brand
-    if (item.tobacco) {
-      return item.tobacco.name;
+  const handleTogglePurchased = async (itemId: number, isPurchased: boolean) => {
+    try {
+      hapticImpact('light');
+      await updateWishlistItem(itemId, { isPurchased: !isPurchased });
+      updateItem(itemId, { isPurchased: !isPurchased });
+      hapticNotification('success');
+    } catch (err) {
+      console.error('Failed to update item:', err);
+      setError('Failed to update item. Please try again.');
+      hapticNotification('error');
+      loadWishlist(true);
     }
-    return 'Unknown Item';
-  };
-
-  const getItemBrand = (item: ApiWishlistItem): string => {
-    if (item.tobacco?.brand) {
-      return typeof item.tobacco.brand === 'string' ? item.tobacco.brand : item.tobacco.brand.name;
-    }
-    return 'Unknown Brand';
-  };
-
-  const getItemImageUrl = (item: ApiWishlistItem): string | undefined => {
-    return item.tobacco?.imageUrl;
   };
 
   return (
@@ -164,12 +199,13 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onAddItem }) => {
               <WishlistItem
                 key={item.id}
                 id={item.id}
-                name={getItemDisplayName(item)}
-                brand={getItemBrand(item)}
-                imageUrl={getItemImageUrl(item)}
-                isPurchased={false}
+                name={item.tobacco?.name || item.customName || 'Unknown Item'}
+                brand={item.tobacco?.brand || item.customBrand || 'Unknown Brand'}
+                imageUrl={item.tobacco?.imageUrl}
+                isPurchased={item.isPurchased}
                 onRemove={() => handleRemove(item.id)}
                 isRemoving={removingId === item.id}
+                onTogglePurchased={() => handleTogglePurchased(item.id, item.isPurchased)}
               />
             ))}
           </div>

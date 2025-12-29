@@ -1,29 +1,38 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 import { TobaccoCard } from './TobaccoCard';
-import { Search, X, AlertCircle } from 'lucide-react';
+import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { searchTobaccos } from '../../services/tobacco';
 import { useTelegram } from '../../hooks/useTelegram';
+import { useMainButton } from '../../contexts/MainButtonContext';
 import type { Tobacco } from '../../types';
 
 export interface SearchPageProps {
   onAddToWishlist?: (tobaccoId: number) => Promise<void>;
   isItemInWishlist?: (tobaccoId: number) => boolean;
+  isAddingItem?: (tobaccoId: number) => boolean;
 }
 
-export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemInWishlist }) => {
+export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemInWishlist, isAddingItem }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Tobacco[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
   const { hapticImpact, hapticNotification } = useTelegram();
+  const { showMainButton, hideMainButton, setMainButtonLoading } = useMainButton();
+  const [selectedTobacco, setSelectedTobacco] = useState<Tobacco | null>(null);
 
   // Debounce search query (500ms delay)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -46,10 +55,12 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemI
       try {
         const response = await searchTobaccos({
           q: debouncedQuery,
-          page: 1,
+          page: currentPage,
           limit: 20,
         });
         setSearchResults(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setTotalResults(response.pagination.total);
       } catch (err) {
         console.error('Search error:', err);
         setError('Failed to search tobaccos. Please try again.');
@@ -61,7 +72,40 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemI
     };
 
     performSearch();
-  }, [debouncedQuery, hapticNotification]);
+  }, [debouncedQuery, currentPage, hapticNotification]);
+
+  // Show/hide MainButton based on selected tobacco
+  useEffect(() => {
+    if (selectedTobacco && onAddToWishlist) {
+      showMainButton('Add to Wishlist', async () => {
+        setMainButtonLoading(true);
+        try {
+          await onAddToWishlist(selectedTobacco.id);
+          setSelectedTobacco(null);
+          hapticNotification('success');
+        } catch (err) {
+          console.error('Failed to add to wishlist:', err);
+          hapticNotification('error');
+        } finally {
+          setMainButtonLoading(false);
+        }
+      });
+    } else {
+      hideMainButton();
+    }
+
+    // Clean up by hiding MainButton on unmount
+    return () => {
+      hideMainButton();
+    };
+  }, [
+    selectedTobacco,
+    onAddToWishlist,
+    showMainButton,
+    hideMainButton,
+    setMainButtonLoading,
+    hapticNotification,
+  ]);
 
   const handleClearSearch = useCallback(() => {
     hapticImpact('light');
@@ -71,21 +115,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemI
     setError(null);
   }, [hapticImpact]);
 
-  const handleAddToWishlist = useCallback(
-    async (tobaccoId: number) => {
-      if (onAddToWishlist) {
-        try {
-          await onAddToWishlist(tobaccoId);
-          hapticNotification('success');
-        } catch (err) {
-          console.error('Failed to add to wishlist:', err);
-          setError('Failed to add to wishlist. Please try again.');
-          hapticNotification('error');
-        }
-      }
-    },
-    [onAddToWishlist, hapticNotification]
-  );
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      hapticImpact('light');
+      setCurrentPage(newPage);
+      window.scrollTo(0, 0);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-tg-bg p-4 pb-20">
@@ -158,7 +194,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemI
         {!isLoading && hasSearched && searchResults.length > 0 && (
           <>
             <p className="text-sm text-tg-hint mb-4">
-              Found {searchResults.length} {searchResults.length === 1 ? 'result' : 'results'}
+              Found {totalResults} {totalResults === 1 ? 'result' : 'results'}
             </p>
             <div className="space-y-3">
               {searchResults.map((tobacco) => (
@@ -170,10 +206,40 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onAddToWishlist, isItemI
                   description={tobacco.description}
                   imageUrl={tobacco.imageUrl}
                   isAdded={isItemInWishlist?.(tobacco.id)}
-                  onAddToWishlist={() => handleAddToWishlist(tobacco.id)}
+                  isLoading={isAddingItem?.(tobacco.id)}
+                  onAddToWishlist={() => setSelectedTobacco(tobacco)}
                 />
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {hasSearched && searchResults.length > 0 && totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <p className="text-sm text-tg-hint">
+                  Page {currentPage} of {totalPages} ({totalResults} results)
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

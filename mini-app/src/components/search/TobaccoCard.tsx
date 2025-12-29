@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Plus, Check, ShoppingBag } from 'lucide-react';
+import { Plus, Check, ShoppingBag, Loader2 } from 'lucide-react';
 import { useTelegram } from '../../hooks/useTelegram';
 
 export interface TobaccoCardProps {
@@ -11,6 +11,7 @@ export interface TobaccoCardProps {
   description?: string;
   imageUrl?: string;
   isAdded?: boolean;
+  isLoading?: boolean;
   onAddToWishlist?: () => void;
 }
 
@@ -20,6 +21,7 @@ export const TobaccoCard: React.FC<TobaccoCardProps> = ({
   description,
   imageUrl,
   isAdded = false,
+  isLoading = false,
   onAddToWishlist,
 }) => {
   const { hapticImpact } = useTelegram();
@@ -60,6 +62,15 @@ export const TobaccoCard: React.FC<TobaccoCardProps> = ({
           >
             <Check className="w-4 h-4 mr-1" />
             Added
+          </Button>
+        ) : isLoading ? (
+          <Button
+            variant="primary"
+            size="sm"
+            disabled
+          >
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            Adding...
           </Button>
         ) : (
           onAddToWishlist && (
