@@ -44,69 +44,106 @@ The hookah-wishlist system follows a three-tier architecture:
 
 ## Project Structure
 
+The project is organized as a monorepo with independent subprojects:
+
 ```
 hookah-wishlist/
-├── src/
-│   ├── bot/                    # Telegram bot implementation
-│   │   ├── commands/           # Command handlers
-│   │   │   ├── start.ts
-│   │   │   ├── search.ts
-│   │   │   ├── wishlist.ts
-│   │   │   ├── add.ts
-│   │   │   ├── remove.ts
-│   │   │   └── help.ts
-│   │   ├── handlers/           # Event handlers
-│   │   ├── middleware/         # Bot middleware
-│   │   ├── bot.ts             # Main bot setup
-│   │   └── session.ts         # Session management
-│   ├── api/                    # Backend API
-│   │   ├── routes/            # API routes
-│   │   │   ├── wishlist.ts
-│   │   │   ├── search.ts
-│   │   │   └── tobacco.ts
-│   │   ├── controllers/       # Request controllers
-│   │   ├── middleware/        # Express middleware
-│   │   └── server.ts          # API server setup
-│   ├── services/              # Business logic
-│   │   ├── wishlist.service.ts
-│   │   ├── search.service.ts
-│   │   └── hookah-db.service.ts
-│   ├── models/                # Data models
-│   │   ├── user.ts
-│   │   ├── wishlist.ts
-│   │   └── tobacco.ts
-│   ├── storage/               # Data persistence
-│   │   ├── storage.interface.ts
-│   │   ├── memory.storage.ts
-│   │   └── file.storage.ts
-│   └── utils/                 # Utility functions
-│       ├── logger.ts
-│       ├── validators.ts
-│       └── formatters.ts
-├── mini-app/                  # Mini-app frontend
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── pages/            # Page components
-│   │   ├── services/         # API services
-│   │   ├── hooks/            # Custom hooks
-│   │   ├── utils/            # Utilities
-│   │   └── App.tsx
-│   ├── public/               # Static assets
-│   └── package.json
-├── tests/                     # Test files
+├── backend/                  # Backend subproject
+│   ├── package.json         # Backend dependencies
+│   ├── Dockerfile           # Backend Dockerfile
+│   ├── tsconfig.json        # Backend TypeScript config
+│   ├── .dockerignore        # Backend Docker ignore
+│   └── src/                 # Backend source code
+│       ├── bot/             # Telegram bot implementation
+│       │   ├── commands/    # Command handlers
+│       │   │   ├── start.ts
+│       │   │   ├── search.ts
+│       │   │   ├── wishlist.ts
+│       │   │   ├── add.ts
+│       │   │   ├── remove.ts
+│       │   │   └── help.ts
+│       │   ├── handlers/    # Event handlers
+│       │   ├── middleware/  # Bot middleware
+│       │   ├── bot.ts       # Main bot setup
+│       │   └── session.ts   # Session management
+│       ├── api/             # Backend API
+│       │   ├── routes/      # API routes
+│       │   │   ├── wishlist.ts
+│       │   │   ├── search.ts
+│       │   │   └── index.ts
+│       │   ├── controllers/ # Request controllers
+│       │   │   ├── search.controller.ts
+│       │   │   └── wishlist.controller.ts
+│       │   ├── middleware/  # Express middleware
+│       │   │   ├── auth.ts
+│       │   │   └── errorHandler.ts
+│       │   └── server.ts    # API server setup
+│       ├── services/        # Business logic
+│       │   ├── wishlist.service.ts
+│       │   ├── search.service.ts
+│       │   └── hookah-db.service.ts
+│       ├── models/          # Data models
+│       │   ├── user.ts
+│       │   ├── wishlist.ts
+│       │   └── tobacco.ts
+│       ├── storage/         # Data persistence
+│       │   ├── storage.interface.ts
+│       │   ├── file.storage.ts
+│       │   └── index.ts
+│       ├── utils/           # Utility functions
+│       │   └── logger.ts
+│       └── index.ts         # Backend entry point
+├── mini-app/                # Mini-app frontend subproject
+│   ├── package.json         # Frontend dependencies
+│   ├── Dockerfile           # Frontend Dockerfile
+│   ├── .dockerignore        # Frontend Docker ignore
+│   ├── tsconfig.json        # Frontend TypeScript config
+│   ├── vite.config.ts       # Vite configuration
+│   ├── tailwind.config.js   # Tailwind CSS configuration
+│   ├── postcss.config.js    # PostCSS configuration
+│   ├── index.html           # HTML entry point
+│   ├── src/                 # Frontend source code
+│   │   ├── components/     # React components
+│   │   │   ├── Header.tsx
+│   │   │   ├── SearchBar.tsx
+│   │   │   ├── SearchResults.tsx
+│   │   │   ├── TabNavigation.tsx
+│   │   │   ├── TobaccoCard.tsx
+│   │   │   └── Wishlist.tsx
+│   │   ├── services/       # API services
+│   │   │   └── api.ts
+│   │   ├── store/          # State management
+│   │   │   └── useStore.ts
+│   │   ├── types/          # TypeScript types
+│   │   │   └── index.ts
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── pages/          # Page components
+│   │   ├── utils/          # Utility functions
+│   │   ├── App.tsx         # Main App component
+│   │   ├── main.tsx        # React entry point
+│   │   └── index.css       # Global styles
+│   └── public/             # Static assets
+│       └── vite.svg
+├── tests/                   # Test files
 │   ├── unit/
 │   ├── integration/
 │   └── e2e/
-├── docker/                    # Docker configurations
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── .env.example              # Environment variables template
-├── package.json              # Node.js dependencies
-├── tsconfig.json             # TypeScript configuration
-└── README.md
+├── data/                    # Data storage directory
+├── docker/                  # Additional Docker configurations
+├── .env.example             # Environment variables template
+├── package.json             # Root monorepo manager
+├── docker-compose.yml       # Docker Compose configuration
+├── .dockerignore           # Root Docker ignore
+├── .gitignore              # Git ignore rules
+└── README.md               # Project documentation
 ```
 
 ## Key Technical Decisions
+
+### Monorepo Structure
+- **Independent Subprojects**: Each subproject has its own package.json, Dockerfile, and configuration
+- **Root Management**: Root package.json provides scripts for managing both subprojects
+- **Docker Compose**: Orchestrates both services with separate Dockerfiles
 
 ### Backend Framework
 - **Express.js** for REST API (widely adopted, extensive middleware ecosystem)

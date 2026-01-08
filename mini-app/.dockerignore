@@ -4,14 +4,9 @@ dist
 .gitignore
 .env
 *.log
-tests
-coverage
 .vscode
 .idea
 .DS_Store
 *.swp
 *.swo
 *~
-.kilocode
-backend
-mini-app

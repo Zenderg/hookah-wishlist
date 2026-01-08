@@ -12,6 +12,3 @@ coverage
 *.swp
 *.swo
 *~
-.kilocode
-backend
-mini-app
