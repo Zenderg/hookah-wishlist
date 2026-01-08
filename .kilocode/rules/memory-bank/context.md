@@ -9,6 +9,7 @@ Project setup is complete. All core functionality has been implemented including
 - Search service integrated with hookah-db API
 - React mini-app with Tailwind CSS and Zustand state management
 - Docker configuration for containerized deployment
+- Nginx reverse proxy for unified access on port 80
 
 The project is ready for development, testing, and deployment.
 
@@ -36,6 +37,17 @@ The project is ready for development, testing, and deployment.
   - Root package.json serves as monorepo manager with orchestration scripts
   - Updated docker-compose.yml to reference new Dockerfiles
   - Moved all backend code from src/ to backend/src/
+- **Implemented Nginx reverse proxy for unified access**
+  - Created docker/nginx/nginx.conf with comprehensive routing configuration
+  - Configured path-based routing: /api/* → backend, /webhook → backend, /mini-app/* → frontend
+  - Added security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
+  - Enabled gzip compression for better performance
+  - Configured proper proxy headers and timeouts
+  - Updated docker-compose.yml to add Nginx service using nginx:alpine
+  - Removed direct port exposure from backend and frontend (now using internal networking)
+  - Nginx listens on port 80 externally, routes to internal services
+  - Added health check endpoint at /health
+  - Validated configuration with docker-compose config
 
 ## Implementation Status
 
@@ -49,10 +61,10 @@ The project is ready for development, testing, and deployment.
 - ✅ Docker: Independent multi-stage builds for backend and frontend
 - ✅ Monorepo Structure: Independent subprojects with own package.json and Dockerfiles
 - ✅ Documentation: Comprehensive README.md
+- ✅ Nginx Reverse Proxy: Unified access on port 80 with path-based routing
 
 **Pending Implementation:**
-- ⏳ Nginx reverse proxy service in docker-compose.yml for unified access on port 80
-- ⏳ Docker volumes for persistent SQLite database storage
+- ⏳ Docker volumes for persistent SQLite database storage (partially configured in docker-compose.yml)
 - ⏳ Telegram authentication implementation (user ID verification via initData)
 
 ## Next Steps
@@ -63,17 +75,16 @@ The project is ready for development, testing, and deployment.
 2. Obtain Telegram Bot Token from @BotFather
 3. Obtain hookah-db API key from hookah-db service provider
 4. Update .env file with bot token, API key, and configuration
-5. Configure Docker volumes for persistent SQLite database storage
-6. Implement Nginx reverse proxy service in docker-compose.yml
-7. Implement Telegram authentication with initData verification
-8. Start development servers:
+5. Configure Docker volumes for persistent SQLite database storage (already partially configured)
+6. Implement Telegram authentication with initData verification
+7. Start development servers:
    - Both: `npm run dev` (from root)
    - Backend only: `npm run dev:backend`
    - Mini-app only: `npm run dev:mini-app`
-9. Test bot commands with actual Telegram bot
-10. Test mini-app functionality with backend API
-11. Deploy using Docker Compose or manual deployment
-12. Consider adding advanced features:
+8. Test bot commands with actual Telegram bot
+9. Test mini-app functionality with backend API
+10. Deploy using Docker Compose or manual deployment
+11. Consider adding advanced features:
     - Pagination for search results
     - Advanced filtering (by brand, flavor, strength)
     - Tobacco images in mini-app

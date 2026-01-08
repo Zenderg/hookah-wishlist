@@ -52,11 +52,14 @@ The hookah-wishlist system follows a four-tier architecture with reverse proxy:
    - Provides enhanced user experience
 
 4. **Reverse Proxy Layer**
-   - Nginx service in docker-compose
+   - Nginx service in docker-compose (nginx:alpine)
    - Unified access point on port 80
-   - Routes requests to backend and mini-app
+   - Routes requests to backend and mini-app via path-based routing
    - Handles SSL/TLS termination (future)
    - Provides load balancing capabilities
+   - Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+   - Gzip compression for better performance
+   - Health check endpoint at /health
 
 5. **External Integration Layer**
    - hookah-db API client
@@ -189,9 +192,13 @@ hookah-wishlist/
 - **Tailwind CSS** for styling (utility-first, small bundle)
 
 ### Reverse Proxy
-- **Nginx** as reverse proxy in docker-compose
+- **Nginx** as reverse proxy in docker-compose (nginx:alpine image)
 - Single entry point on port 80
-- Routes to backend API and mini-app
+- Path-based routing to backend API and mini-app
+- Internal networking: backend and frontend ports not exposed externally
+- Security headers for enhanced protection
+- Gzip compression for better performance
+- Health check endpoint for monitoring
 - Future: SSL/TLS termination and load balancing
 
 ### Data Storage
@@ -250,9 +257,10 @@ class CommandFactory {
 
 ### 5. Reverse Proxy Pattern
 Nginx routes requests to appropriate services:
-- `/api/*` → Backend API server
-- `/mini-app/*` → Mini-app static files
-- `/webhook` → Telegram bot webhook (if using webhook mode)
+- `/api/*` → Backend API server (port 3000, internal)
+- `/mini-app/*` → Mini-app service (port 5173, internal)
+- `/webhook` → Telegram bot webhook (backend, internal)
+- `/health` → Health check endpoint
 
 ## Component Relationships
 
@@ -277,11 +285,13 @@ Nginx routes requests to appropriate services:
 8. Mini-app receives updated data
 
 **Reverse Proxy Flow:**
-1. Client makes request to port 80
+1. Client makes request to port 80 (Nginx)
 2. Nginx receives request
 3. Nginx routes based on path:
-   - `/api/*` → Backend service (port 3000)
-   - `/mini-app/*` → Mini-app service (port 5173)
+   - `/api/*` → Backend service (internal port 3000)
+   - `/mini-app/*` → Mini-app service (internal port 5173)
+   - `/webhook` → Backend service (internal port 3000)
+   - `/health` → Nginx health check
 4. Service processes request
 5. Response returned through Nginx to client
 
@@ -323,8 +333,19 @@ Nginx routes requests to appropriate services:
 
 ### Nginx Reverse Proxy
 - Single entry point on port 80
-- Path-based routing to services
-- Static file serving for mini-app
+- Path-based routing to services:
+  - `/api/*` → Backend API (internal port 3000)
+  - `/mini-app/*` → Mini-app frontend (internal port 5173)
+  - `/webhook` → Telegram bot webhook (backend, internal port 3000)
+  - `/health` → Health check endpoint
+- Security headers:
+  - X-Frame-Options: SAMEORIGIN
+  - X-Content-Type-Options: nosniff
+  - X-XSS-Protection: 1; mode=block
+- Gzip compression for text-based content
+- Proper proxy headers (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto)
+- Timeout configurations (60s for connect, send, read)
+- Access and error logging
 - Future: SSL/TLS termination
 
 ### Persistent Storage
@@ -340,9 +361,10 @@ Nginx routes requests to appropriate services:
 3. **Error Messages**: Don't expose sensitive information
 4. **Environment Variables**: Store sensitive data securely
 5. **Reverse Proxy**: Adds security layer and hides internal service ports
-6. **Data Isolation**: Each user's data isolated by Telegram user ID
-7. **API Key Security**: Securely store and use hookah-db API key
-8. **Database Security**: SQLite file permissions and proper connection handling
+6. **Security Headers**: Nginx adds X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+7. **Data Isolation**: Each user's data isolated by Telegram user ID
+8. **API Key Security**: Securely store and use hookah-db API key
+9. **Database Security**: SQLite file permissions and proper connection handling
 
 ## Scalability Considerations
 
@@ -351,3 +373,5 @@ Nginx routes requests to appropriate services:
 3. **Database Migration**: Easy transition from SQLite to PostgreSQL/MongoDB
 4. **Load Balancing**: Nginx can distribute load across multiple instances
 5. **Persistent Storage**: Docker volumes ensure data survives scaling events
+6. **Gzip Compression**: Reduces bandwidth usage and improves response times
+7. **Internal Networking**: Services communicate internally, reducing external exposure

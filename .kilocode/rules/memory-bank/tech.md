@@ -29,9 +29,12 @@
 - **Orchestration**: Docker Compose
 
 ### Reverse Proxy
-- **Server**: Nginx
+- **Server**: Nginx (nginx:alpine image)
 - **Role**: Reverse proxy for unified access on port 80
 - **Routing**: Path-based routing to backend and mini-app services
+- **Internal Networking**: Backend and frontend ports not exposed externally
+- **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+- **Compression**: Gzip compression for text-based content
 - **Future**: SSL/TLS termination and load balancing
 
 ### Persistent Storage
@@ -207,29 +210,37 @@ docker-compose down -v
 services:
   backend:
     build: ./backend
-    ports:
-      - "3000:3000"
+    # Remove port exposure - use internal networking only
+    # ports:
+    #   - "3000:3000"
     volumes:
-      - data:/app/data  # Persistent storage for SQLite database
+      - ./data:/app/data  # Persistent storage for SQLite database
     environment:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/wishlist.db
       - HOOKEH_DB_API_KEY=${HOOKEH_DB_API_KEY}
+    # Expose port internally for Nginx
+    expose:
+      - "3000"
 
-  mini-app:
+  frontend:
     build: ./mini-app
-    ports:
-      - "5173:5173"
+    # Remove port exposure - use internal networking only
+    # ports:
+    #   - "5173:5173"
+    # Expose port internally for Nginx
+    expose:
+      - "5173"
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
-      - mini-app
+      - frontend
 
 volumes:
   data:  # Persistent volume for SQLite database
@@ -296,7 +307,9 @@ volumes:
 
 ## Nginx Configuration
 
-### Basic Reverse Proxy Setup
+### Implemented Reverse Proxy Setup
+
+The project uses a comprehensive Nginx configuration located at [`docker/nginx/nginx.conf`](docker/nginx/nginx.conf):
 
 ```nginx
 events {
@@ -308,37 +321,123 @@ http {
         server backend:3000;
     }
 
-    upstream mini-app {
-        server mini-app:5173;
+    upstream frontend {
+        server frontend:5173;
     }
+
+    # Logging
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
 
     server {
         listen 80;
         server_name localhost;
 
-        # API routes
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+
+        # API routes - proxy to backend
         location /api/ {
             proxy_pass http://backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
 
-        # Mini-app routes
-        location /mini-app/ {
-            proxy_pass http://mini-app;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-
-        # Telegram webhook
+        # Telegram webhook - proxy to backend
         location /webhook {
             proxy_pass http://backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+
+        # Mini-app routes - proxy to frontend (Vite dev server)
+        location /mini-app/ {
+            proxy_pass http://frontend/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+
+        # Health check endpoint
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        # Root endpoint
+        location / {
+            return 200 "Hookah Wishlist API is running. Use /api/ for backend or /mini-app/ for frontend.\n";
+            add_header Content-Type text/plain;
         }
     }
 }
 ```
+
+### Key Features
+
+- **Path-based Routing**: Routes requests based on URL path
+  - `/api/*` → Backend service (port 3000, internal)
+  - `/mini-app/*` → Frontend service (port 5173, internal)
+  - `/webhook` → Backend service (port 3000, internal)
+  - `/health` → Health check endpoint
+  - `/` → Root endpoint with usage instructions
+
+- **Security Headers**:
+  - X-Frame-Options: SAMEORIGIN
+  - X-Content-Type-Options: nosniff
+  - X-XSS-Protection: 1; mode=block
+
+- **Gzip Compression**: Compresses text-based content for better performance
+
+- **Proxy Headers**: Proper forwarding of Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto
+
+- **Timeouts**: 60s for connect, send, and read operations
+
+- **Logging**: Access and error logs enabled
+
+- **Internal Networking**: Backend and frontend ports not exposed externally
 
 ## Persistent Storage
 
