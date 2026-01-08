@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      target: backend
+    container_name: hookah-wishlist-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
+      - HOOKEH_DB_API_URL=${HOOKEH_DB_API_URL:-https://hdb.coolify.dknas.org}
+      - API_RATE_LIMIT=${API_RATE_LIMIT:-100}
+      - STORAGE_TYPE=${STORAGE_TYPE:-file}
+      - STORAGE_PATH=/app/data
+      - MINI_APP_URL=${MINI_APP_URL}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - hookah-network
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    container_name: hookah-wishlist-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - hookah-network
+    depends_on:
+      - backend
+
+networks:
+  hookah-network:
+    driver: bridge
+
+volumes:
+  data:
