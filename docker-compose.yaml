@@ -6,8 +6,6 @@ services:
       context: .
       target: backend
     container_name: hookah-wishlist-backend
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -29,8 +27,6 @@ services:
       context: .
       target: frontend
     container_name: hookah-wishlist-frontend
-    ports:
-      - "5173:5173"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
