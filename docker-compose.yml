@@ -1,12 +1,11 @@
+version: '3.8'
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: hookah-wishlist-backend
-    # Remove port exposure - use internal networking only
-    # ports:
-    #   - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -14,26 +13,29 @@ services:
       - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
       - HOOKEH_DB_API_URL=${HOOKEH_DB_API_URL:-https://hdb.coolify.dknas.org}
       - API_RATE_LIMIT=${API_RATE_LIMIT:-100}
-      - STORAGE_TYPE=${STORAGE_TYPE:-file}
+      - STORAGE_TYPE=sqlite
+      - DATABASE_PATH=/app/data/wishlist.db
       - STORAGE_PATH=/app/data
       - MINI_APP_URL=${MINI_APP_URL}
     volumes:
-      - ./data:/app/data
+      - hookah-wishlist-data:/app/data
     restart: unless-stopped
     networks:
       - hookah-network
-    # Expose port internally for Nginx
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
       context: ./mini-app
       dockerfile: Dockerfile
     container_name: hookah-wishlist-frontend
-    # Remove port exposure - use internal networking only
-    # ports:
-    #   - "5173:5173"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -41,9 +43,14 @@ services:
       - hookah-network
     depends_on:
       - backend
-    # Expose port internally for Nginx
     expose:
       - "5173"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   nginx:
     image: nginx:alpine
@@ -64,4 +71,5 @@ networks:
     driver: bridge
 
 volumes:
-  data:
+  hookah-wishlist-data:
+    driver: local

@@ -11,6 +11,7 @@ Project setup is complete. All core functionality has been implemented including
 - Docker configuration for containerized deployment
 - Nginx reverse proxy for unified access on port 80
 - **Telegram authentication with initData verification (HMAC-SHA256)**
+- **Docker volumes configuration for persistent SQLite database storage**
 
 The project is ready for development, testing, and deployment.
 
@@ -63,6 +64,15 @@ The project is ready for development, testing, and deployment.
   - Created TESTING_SUMMARY.md with complete test results
   - All TypeScript compilation successful with no errors
   - Authentication flow verified and production-ready
+- **Implemented Docker volumes configuration for persistent SQLite database storage**
+  - Replaced bind mount with named volume `hookah-wishlist-data:/app/data`
+  - Added `DATABASE_PATH=/app/data/wishlist.db` environment variable
+  - Fixed `STORAGE_TYPE=sqlite` in backend service
+  - Added healthchecks for backend and frontend services
+  - Updated backend/Dockerfile to create `/app/data` directory with proper permissions
+  - Created comprehensive DOCKER_VOLUMES.md documentation
+  - **Removed backup scripts and backup service** (user preference: no automated backups needed)
+  - Configuration validated with `docker-compose config`
 
 ## Implementation Status
 
@@ -78,9 +88,12 @@ The project is ready for development, testing, and deployment.
 - ✅ Documentation: Comprehensive README.md
 - ✅ Nginx Reverse Proxy: Unified access on port 80 with path-based routing
 - ✅ Telegram Authentication: initData verification with HMAC-SHA256 and replay attack prevention
+- ✅ Docker Volumes: Named volume `hookah-wishlist-data` for persistent SQLite database storage
 
 **Pending Implementation:**
-- ⏳ Docker volumes for persistent SQLite database storage (partially configured in docker-compose.yml)
+- ⏳ Install dependencies in each subproject
+- ⏳ Configure environment variables (bot token, API key)
+- ⏳ Testing and deployment
 
 ## Next Steps
 
@@ -90,16 +103,21 @@ The project is ready for development, testing, and deployment.
 2. Obtain Telegram Bot Token from @BotFather
 3. Obtain hookah-db API key from hookah-db service provider
 4. Update .env file with bot token, API key, and configuration
-5. Configure Docker volumes for persistent SQLite database storage (already partially configured)
-6. Start development servers:
+5. Start development servers:
    - Both: `npm run dev` (from root)
    - Backend only: `npm run dev:backend`
    - Mini-app only: `npm run dev:mini-app`
-7. Test bot commands with actual Telegram bot
-8. Test mini-app functionality with backend API in Telegram environment
-9. Deploy using Docker Compose or manual deployment
-10. Consider adding advanced features:
+6. Test bot commands with actual Telegram bot
+7. Test mini-app functionality with backend API in Telegram environment
+8. Deploy using Docker Compose or manual deployment
+9. Consider adding advanced features:
     - Pagination for search results
     - Advanced filtering (by brand, flavor, strength)
     - Tobacco images in mini-app
     - Unit and integration tests
+
+## User Preferences
+
+- **No automated backups**: User explicitly does not want backup scripts or automated backup services
+- **Manual backups only**: If needed, user will perform manual backups using Docker commands
+- **Simplified setup**: Prefers minimal configuration without backup complexity

@@ -10,6 +10,14 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine AS production
 WORKDIR /app
+
+# Create data directory with proper permissions
+RUN mkdir -p /app/data && \
+    chown -R node:node /app/data
+
+# Switch to non-root user
+USER node
+
 COPY package*.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist

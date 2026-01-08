@@ -73,6 +73,7 @@ The hookah-wishlist system follows a four-tier architecture with reverse proxy:
    - SQLite database with WAL mode for wishlists
    - Survives container restarts and deployments
    - Mounted at `/app/data` in backend container
+   - Manual backups only (user preference: no automated backups)
 
 ## Project Structure
 
@@ -172,6 +173,7 @@ hookah-wishlist/
 ├── .gitignore              # Git ignore rules
 ├── README.md               # Project documentation
 ├── TESTING_SUMMARY.md      # Test results and verification
+├── DOCKER_VOLUMES.md       # Docker volumes documentation
 └── .kilocode/             # Kilo Code configuration
     └── rules/              # Custom rules and memory bank
         └── memory-bank/     # Memory bank files
@@ -225,6 +227,7 @@ hookah-wishlist/
 - Mounted at `/app/data` in backend container
 - Survives container restarts and deployments
 - Future: PostgreSQL or MongoDB for scalability
+- **Backup Strategy**: Manual backups only (user preference: no automated backups)
 
 ### State Management
 - Bot: Session-based storage (Telegram user ID as key)
@@ -406,6 +409,7 @@ sequenceDiagram
 - SQLite database with WAL mode
 - Mounted at `/app/data` in backend container
 - Survives container restarts and deployments
+- Manual backups only (user preference: no automated backups)
 
 ## Security Considerations
 

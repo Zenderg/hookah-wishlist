@@ -44,6 +44,7 @@
 - **Database**: SQLite with WAL mode for better performance and concurrency
 - **Mount Point**: `/app/data` in backend container
 - **Survival**: Survives container restarts and deployments
+- **Backup Strategy**: Manual backups only (user preference: no automated backups)
 
 ## Development Setup
 
@@ -220,10 +221,11 @@ services:
     # ports:
     #   - "3000:3000"
     volumes:
-      - ./data:/app/data  # Persistent storage for SQLite database
+      - hookah-wishlist-data:/app/data  # Named volume for persistent storage
     environment:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/wishlist.db
+      - STORAGE_TYPE=sqlite
       - HOOKEH_DB_API_KEY=${HOOKEH_DB_API_KEY}
     # Expose port internally for Nginx
     expose:
@@ -249,7 +251,7 @@ services:
       - frontend
 
 volumes:
-  data:  # Persistent volume for SQLite database
+  hookah-wishlist-data:  # Named volume for persistent SQLite database storage
 ```
 
 ## Technical Constraints
@@ -529,15 +531,15 @@ docker volume rm hookah-wishlist-data
 
 - **Development**: `./data/wishlist.db` (local directory)
 - **Production**: `/app/data/wishlist.db` (mounted Docker volume)
-- **Backup**: Regular backups of Docker volume recommended
+- **Backup**: Manual backups only (user preference: no automated backups)
 
-### Data Backup Strategy
+### Manual Backup Strategy
 
 ```bash
-# Backup database volume
+# Backup database volume (manual)
 docker run --rm -v hookah-wishlist-data:/data -v $(pwd):/backup alpine tar czf /backup/data-backup-$(date +%Y%m%d).tar.gz /data
 
-# Restore database volume
+# Restore database volume (manual)
 docker run --rm -v hookah-wishlist-data:/data -v $(pwd):/backup alpine tar xzf /backup/data-backup-YYYYMMDD.tar.gz -C /
 
 # Direct database backup (if database file is accessible)
