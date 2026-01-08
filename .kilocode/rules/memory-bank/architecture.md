@@ -43,13 +43,14 @@ The hookah-wishlist system follows a four-tier architecture with reverse proxy:
    - Business logic for wishlist management
    - Data persistence layer
    - Integration with hookah-db API
-   - Telegram authentication via initData verification
+   - Telegram authentication via initData verification (HMAC-SHA256)
 
 3. **Mini-App Frontend Layer**
    - Web application embedded in Telegram
    - Rich UI for tobacco browsing and wishlist management
    - Communicates with backend via API
    - Provides enhanced user experience
+   - Integrates with Telegram Web Apps API for authentication
 
 4. **Reverse Proxy Layer**
    - Nginx service in docker-compose (nginx:alpine)
@@ -106,7 +107,7 @@ hookah-wishlist/
 │       │   │   ├── search.controller.ts
 │       │   │   └── wishlist.controller.ts
 │       │   ├── middleware/  # Express middleware
-│       │   │   ├── auth.ts  # Telegram authentication
+│       │   │   ├── auth.ts  # Telegram authentication (initData verification)
 │       │   │   └── errorHandler.ts
 │       │   └── server.ts    # API server setup
 │       ├── services/        # Business logic
@@ -133,6 +134,7 @@ hookah-wishlist/
 │   ├── tailwind.config.js   # Tailwind CSS configuration
 │   ├── postcss.config.js    # PostCSS configuration
 │   ├── index.html           # HTML entry point
+│   ├── TELEGRAM_INTEGRATION.md  # Telegram integration guide
 │   ├── src/                 # Frontend source code
 │   │   ├── components/     # React components
 │   │   │   ├── Header.tsx
@@ -142,7 +144,7 @@ hookah-wishlist/
 │   │   │   ├── TobaccoCard.tsx
 │   │   │   └── Wishlist.tsx
 │   │   ├── services/       # API services
-│   │   │   └── api.ts
+│   │   │   └── api.ts      # API service with Telegram Web Apps integration
 │   │   ├── store/          # State management
 │   │   │   └── useStore.ts
 │   │   ├── types/          # TypeScript types
@@ -168,7 +170,16 @@ hookah-wishlist/
 ├── docker-compose.yml       # Docker Compose configuration
 ├── .dockerignore           # Root Docker ignore
 ├── .gitignore              # Git ignore rules
-└── README.md               # Project documentation
+├── README.md               # Project documentation
+├── TESTING_SUMMARY.md      # Test results and verification
+└── .kilocode/             # Kilo Code configuration
+    └── rules/              # Custom rules and memory bank
+        └── memory-bank/     # Memory bank files
+            ├── brief.md
+            ├── product.md
+            ├── context.md
+            ├── architecture.md
+            └── tech.md
 ```
 
 ## Key Technical Decisions
@@ -190,6 +201,13 @@ hookah-wishlist/
 - **React** with TypeScript for mini-app
 - **Vite** for build tooling (fast HMR, modern)
 - **Tailwind CSS** for styling (utility-first, small bundle)
+
+### Telegram Authentication
+- **initData Verification**: HMAC-SHA256 signature verification for secure user authentication
+- **Constant-Time Comparison**: Prevents timing attacks using `crypto.timingSafeEqual()`
+- **Replay Attack Prevention**: Timestamp validation with 24-hour maximum age
+- **Development Mode Fallback**: Mock init data for local testing without Telegram environment
+- **TypeScript Support**: @twa-dev/types for type-safe Telegram Web Apps API integration
 
 ### Reverse Proxy
 - **Nginx** as reverse proxy in docker-compose (nginx:alpine image)
@@ -262,6 +280,18 @@ Nginx routes requests to appropriate services:
 - `/webhook` → Telegram bot webhook (backend, internal)
 - `/health` → Health check endpoint
 
+### 6. Authentication Middleware Pattern
+Telegram authentication implemented as Express middleware:
+```typescript
+interface AuthenticatedRequest extends Request {
+  telegramUser?: {
+    userId: string;
+    user: TelegramUser;
+    initData: string;
+  };
+}
+```
+
 ## Component Relationships
 
 ### Data Flow
@@ -276,13 +306,35 @@ Nginx routes requests to appropriate services:
 
 **Mini-App Flow:**
 1. User opens mini-app in Telegram
-2. Mini-app receives Telegram user ID via Web Apps API
-3. Mini-app fetches data from backend API (through reverse proxy)
-4. User interacts with UI
-5. Mini-app sends requests to backend API (with Telegram user ID in headers)
-6. Backend validates Telegram user ID and processes request
-7. Backend updates SQLite database
+2. Mini-app receives Telegram user context via Web Apps API
+3. Mini-app extracts initData from Telegram.WebApp.initData
+4. Mini-app sends API requests with X-Telegram-Init-Data header
+5. Backend validates initData using HMAC-SHA256 verification
+6. Backend extracts user_id from validated initData
+7. Backend processes request and updates SQLite database
 8. Mini-app receives updated data
+
+**Authentication Flow:**
+```mermaid
+sequenceDiagram
+    participant User
+    participant MiniApp
+    participant Backend
+    participant TelegramAPI
+
+    User->>MiniApp: Opens mini-app
+    MiniApp->>TelegramAPI: Get initData
+    TelegramAPI-->>MiniApp: initData (with user_id, auth_date, hash)
+    MiniApp->>Backend: API request with X-Telegram-Init-Data header
+    Backend->>Backend: Extract initData from header
+    Backend->>Backend: Parse initData parameters
+    Backend->>Backend: Create data-check-string
+    Backend->>Backend: Calculate HMAC-SHA256 with bot token
+    Backend->>Backend: Compare hashes (constant-time)
+    Backend->>Backend: Validate auth_date (24h max)
+    Backend->>Backend: Extract user_id from initData
+    Backend-->>MiniApp: Response (200 OK or 401 Unauthorized)
+```
 
 **Reverse Proxy Flow:**
 1. Client makes request to port 80 (Nginx)
@@ -300,12 +352,12 @@ Nginx routes requests to appropriate services:
 1. **Wishlist Retrieval**
    - `/wishlist` command → `WishlistService.getWishlist(userId)` → `SQLiteStorage.get(userId)`
    - API: `GET /api/v1/wishlist` → `WishlistController.get` → `WishlistService.getWishlist`
-   - Authentication: Telegram user ID extracted from initData or bot message
+   - Authentication: Telegram user ID extracted and validated from initData
 
 2. **Add to Wishlist**
    - `/add [tobacco_id]` command → `WishlistService.addItem(userId, tobaccoId)` → Validate → `SQLiteStorage.update(userId, wishlist)`
    - API: `POST /api/v1/wishlist` → `WishlistController.add` → `WishlistService.addItem`
-   - Authentication: Telegram user ID validated via initData
+   - Authentication: Telegram user ID validated via initData verification
 
 3. **Tobacco Search**
    - `/search [query]` command → `SearchService.search(query)` → `HookahDbService.search(query)` → Format results
@@ -330,6 +382,7 @@ Nginx routes requests to appropriate services:
 - Backend API for data operations
 - Shared authentication via Telegram user ID
 - Reverse proxy for unified access
+- initData extraction and HMAC verification
 
 ### Nginx Reverse Proxy
 - Single entry point on port 80
@@ -356,15 +409,17 @@ Nginx routes requests to appropriate services:
 
 ## Security Considerations
 
-1. **Authentication**: Telegram user ID verification via initData
-2. **Input Validation**: Sanitize all user inputs
-3. **Error Messages**: Don't expose sensitive information
-4. **Environment Variables**: Store sensitive data securely
-5. **Reverse Proxy**: Adds security layer and hides internal service ports
-6. **Security Headers**: Nginx adds X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
-7. **Data Isolation**: Each user's data isolated by Telegram user ID
-8. **API Key Security**: Securely store and use hookah-db API key
-9. **Database Security**: SQLite file permissions and proper connection handling
+1. **Authentication**: Telegram user ID verification via initData with HMAC-SHA256
+2. **Timing Attack Prevention**: Constant-time hash comparison using `crypto.timingSafeEqual()`
+3. **Replay Attack Prevention**: Timestamp validation with 24-hour maximum age
+4. **Input Validation**: Sanitize all user inputs
+5. **Error Messages**: Don't expose sensitive information
+6. **Environment Variables**: Store sensitive data securely
+7. **Reverse Proxy**: Adds security layer and hides internal service ports
+8. **Security Headers**: Nginx adds X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+9. **Data Isolation**: Each user's data isolated by Telegram user ID
+10. **API Key Security**: Securely store and use hookah-db API key
+11. **Database Security**: SQLite file permissions and proper connection handling
 
 ## Scalability Considerations
 
@@ -375,3 +430,52 @@ Nginx routes requests to appropriate services:
 5. **Persistent Storage**: Docker volumes ensure data survives scaling events
 6. **Gzip Compression**: Reduces bandwidth usage and improves response times
 7. **Internal Networking**: Services communicate internally, reducing external exposure
+8. **Authentication Performance**: HMAC verification is fast and scalable with proper caching
+
+## Telegram Authentication Implementation
+
+### Authentication Middleware
+
+The authentication middleware is implemented in [`backend/src/api/middleware/auth.ts`](backend/src/api/middleware/auth.ts):
+
+**Key Features:**
+- Extracts initData from `X-Telegram-Init-Data` header or query parameters
+- Parses URL-encoded initData parameters
+- Verifies HMAC-SHA256 signature using bot token's secret key
+- Validates timestamp to prevent replay attacks (24-hour max age)
+- Extracts and validates user_id from initData
+- Adds user information to `req.telegramUser` object
+
+**Error Codes:**
+- `MISSING_INIT_DATA` - No initData provided
+- `MISSING_BOT_TOKEN` - Server configuration error
+- `INVALID_SIGNATURE` - HMAC verification failed
+- `EXPIRED_AUTH_DATA` - Timestamp too old or invalid
+- `MISSING_USER_DATA` - User parameter missing
+- `INVALID_USER_DATA` - User data parsing failed
+- `AUTHENTICATION_FAILED` - General authentication error
+
+### Frontend Integration
+
+The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/api.ts`](mini-app/src/services/api.ts):
+
+**Key Features:**
+- Automatic initData extraction from `Telegram.WebApp.initData`
+- Development mode fallback with mock authentication data
+- Request interceptor adds `X-Telegram-Init-Data` header to all API requests
+- Response interceptor handles authentication errors (401, 403, 404, 429, 500+)
+- Utility methods for Telegram Web Apps API integration
+
+**Utility Methods:**
+- `initializeTelegram()`: Initializes Telegram Web Apps API
+- `isTelegramAvailable()`: Checks if app is running in Telegram
+- `getTelegramUser()`: Retrieves current Telegram user information
+- `createMockInitData()`: Generates mock init data for development testing
+
+### Security Measures
+
+1. **HMAC-SHA256 Verification**: Prevents tampering with initData
+2. **Constant-Time Comparison**: Prevents timing attacks
+3. **Timestamp Validation**: Prevents replay attacks
+4. **Input Validation**: All user inputs validated before use
+5. **Error Message Safety**: No sensitive information in error responses

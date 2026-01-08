@@ -12,12 +12,14 @@
 - **Bot Library**: node-telegram-bot-api
 - **API**: Telegram Bot API
 - **Web Apps**: Telegram Web Apps API
+- **Type Definitions**: @twa-dev/types for TypeScript support
 
 ### Frontend (Mini-App)
 - **Framework**: React with TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
 - **State Management**: Zustand
+- **HTTP Client**: Axios
 
 ### External Services
 - **Data Source**: hookah-db API (https://hdb.coolify.dknas.org)
@@ -77,6 +79,7 @@ DATABASE_PATH=./data/wishlist.db
 
 # Mini-App Configuration
 MINI_APP_URL=https://your-domain.com/mini-app
+VITE_API_URL=http://localhost:3000
 
 # Reverse Proxy Configuration
 NGINX_PORT=80
@@ -165,6 +168,9 @@ mkdir -p docker/nginx
 - `typescript` - TypeScript compiler
 - `@types/react` - React type definitions
 - `@types/react-dom` - React DOM type definitions
+
+**Telegram Integration**
+- `@twa-dev/types` - TypeScript type definitions for Telegram Web Apps API
 
 ## Build & Deployment
 
@@ -299,7 +305,7 @@ volumes:
 3. **HTTPS**: Use HTTPS for all communications
 4. **Dependencies**: Regularly update and audit dependencies
 5. **Error Handling**: Never expose stack traces to users
-6. **Authentication**: Verify Telegram user IDs via initData
+6. **Authentication**: Verify Telegram user IDs via initData with HMAC-SHA256
 7. **API Key Security**: Securely store and use hookah-db API key
 8. **Reverse Proxy**: Use Nginx to hide internal service ports
 9. **Data Isolation**: Each user's data isolated by Telegram user ID
@@ -633,3 +639,51 @@ Implement proper error handling for hookah-db API calls:
 - Implement caching to reduce API calls
 - Use exponential backoff for retries
 - Monitor API usage and adjust request frequency
+
+## Telegram Authentication Implementation
+
+### Authentication Middleware
+
+The authentication middleware is implemented in [`backend/src/api/middleware/auth.ts`](backend/src/api/middleware/auth.ts):
+
+**Key Features:**
+- Extracts initData from `X-Telegram-Init-Data` header or query parameters
+- Parses URL-encoded initData parameters
+- Verifies HMAC-SHA256 signature using bot token's secret key
+- Validates timestamp to prevent replay attacks (24-hour max age)
+- Extracts and validates user_id from initData
+- Adds user information to `req.telegramUser` object
+
+**Error Codes:**
+- `MISSING_INIT_DATA` - No initData provided
+- `MISSING_BOT_TOKEN` - Server configuration error
+- `INVALID_SIGNATURE` - HMAC verification failed
+- `EXPIRED_AUTH_DATA` - Timestamp too old or invalid
+- `MISSING_USER_DATA` - User parameter missing
+- `INVALID_USER_DATA` - User data parsing failed
+- `AUTHENTICATION_FAILED` - General authentication error
+
+### Frontend Integration
+
+The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/api.ts`](mini-app/src/services/api.ts):
+
+**Key Features:**
+- Automatic initData extraction from `Telegram.WebApp.initData`
+- Development mode fallback with mock authentication data
+- Request interceptor adds `X-Telegram-Init-Data` header to all API requests
+- Response interceptor handles authentication errors (401, 403, 404, 429, 500+)
+- Utility methods for Telegram Web Apps API integration
+
+**Utility Methods:**
+- `initializeTelegram()`: Initializes Telegram Web Apps API
+- `isTelegramAvailable()`: Checks if app is running in Telegram
+- `getTelegramUser()`: Retrieves current Telegram user information
+- `createMockInitData()`: Generates mock init data for development testing
+
+### Security Measures
+
+1. **HMAC-SHA256 Verification**: Prevents tampering with initData
+2. **Constant-Time Comparison**: Prevents timing attacks
+3. **Timestamp Validation**: Prevents replay attacks
+4. **Input Validation**: All user inputs validated before use
+5. **Error Message Safety**: No sensitive information in error responses

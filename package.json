@@ -29,5 +29,8 @@
   "workspaces": [
     "backend",
     "mini-app"
-  ]
+  ],
+  "devDependencies": {
+    "@twa-dev/types": "^8.0.2"
+  }
 }

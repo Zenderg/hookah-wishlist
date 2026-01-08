@@ -35,17 +35,17 @@ export const useStore = create<StoreState>((set) => ({
       const wishlist = await apiService.getWishlist();
       set({ wishlist, isLoading: false });
     } catch (error: any) {
-      set({ error: error.response?.data?.error || 'Failed to fetch wishlist', isLoading: false });
+      set({ error: error.message || 'Failed to fetch wishlist', isLoading: false });
     }
   },
 
   addToWishlist: async (tobaccoId: string, notes?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const result = await apiService.addToWishlist(tobaccoId, notes);
-      set({ wishlist: result.wishlist, isLoading: false });
+      const wishlist = await apiService.addToWishlist(tobaccoId, notes);
+      set({ wishlist, isLoading: false });
     } catch (error: any) {
-      set({ error: error.response?.data?.error || 'Failed to add to wishlist', isLoading: false });
+      set({ error: error.message || 'Failed to add to wishlist', isLoading: false });
       throw error;
     }
   },
@@ -53,10 +53,10 @@ export const useStore = create<StoreState>((set) => ({
   removeFromWishlist: async (tobaccoId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const result = await apiService.removeFromWishlist(tobaccoId);
-      set({ wishlist: result.wishlist, isLoading: false });
+      const wishlist = await apiService.removeFromWishlist(tobaccoId);
+      set({ wishlist, isLoading: false });
     } catch (error: any) {
-      set({ error: error.response?.data?.error || 'Failed to remove from wishlist', isLoading: false });
+      set({ error: error.message || 'Failed to remove from wishlist', isLoading: false });
       throw error;
     }
   },
@@ -67,7 +67,7 @@ export const useStore = create<StoreState>((set) => ({
       await apiService.clearWishlist();
       set({ wishlist: null, isLoading: false });
     } catch (error: any) {
-      set({ error: error.response?.data?.error || 'Failed to clear wishlist', isLoading: false });
+      set({ error: error.message || 'Failed to clear wishlist', isLoading: false });
     }
   },
 
@@ -81,7 +81,7 @@ export const useStore = create<StoreState>((set) => ({
         isLoading: false 
       });
     } catch (error: any) {
-      set({ error: error.response?.data?.error || 'Failed to search', isLoading: false });
+      set({ error: error.message || 'Failed to search', isLoading: false });
     }
   },
 

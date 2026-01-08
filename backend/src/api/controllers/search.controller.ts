@@ -8,7 +8,7 @@ export class SearchController {
     try {
       const { query, page = 1, pageSize = 20 } = req.query;
 
-      logger.info(`API: Search for query "${query}" by user ${req.userId}`);
+      logger.info(`API: Search for query "${query}" by user ${req.telegramUser?.userId}`);
 
       if (!query || typeof query !== 'string') {
         res.status(400).json({ error: 'query parameter is required' });

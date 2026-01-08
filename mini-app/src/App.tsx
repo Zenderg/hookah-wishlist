@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
+import { apiService } from './services/api';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import SearchResults from './components/SearchResults';
@@ -12,16 +13,22 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search');
 
   useEffect(() => {
-    // Initialize Telegram WebApp
-    const tg = (window as any).Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-
-    // Set theme
-    document.body.style.backgroundColor = tg.backgroundColor || '#ffffff';
+    // Initialize Telegram WebApp using the API service
+    const webApp = apiService.initializeTelegram();
+    
+    if (webApp) {
+      // Set theme based on Telegram's theme
+      document.body.style.backgroundColor = webApp.backgroundColor || '#ffffff';
+    } else {
+      // Development mode: use default theme
+      document.body.style.backgroundColor = '#ffffff';
+      console.warn('Telegram Web Apps API not available - running in development mode');
+    }
 
     // Fetch initial wishlist
-    fetchWishlist();
+    fetchWishlist().catch((error) => {
+      console.error('Failed to fetch wishlist:', error);
+    });
   }, [fetchWishlist]);
 
   return (

@@ -10,6 +10,7 @@ Project setup is complete. All core functionality has been implemented including
 - React mini-app with Tailwind CSS and Zustand state management
 - Docker configuration for containerized deployment
 - Nginx reverse proxy for unified access on port 80
+- **Telegram authentication with initData verification (HMAC-SHA256)**
 
 The project is ready for development, testing, and deployment.
 
@@ -48,6 +49,20 @@ The project is ready for development, testing, and deployment.
   - Nginx listens on port 80 externally, routes to internal services
   - Added health check endpoint at /health
   - Validated configuration with docker-compose config
+- **Implemented Telegram authentication with initData verification**
+  - Created comprehensive HMAC-SHA256 signature verification in backend/src/api/middleware/auth.ts
+  - Implemented constant-time comparison to prevent timing attacks
+  - Added timestamp validation (24-hour max age) to prevent replay attacks
+  - Updated controllers to use req.telegramUser!.userId instead of req.userId
+  - Integrated Telegram Web Apps API in mini-app/src/services/api.ts
+  - Added @twa-dev/types for TypeScript support
+  - Implemented automatic initData extraction and X-Telegram-Init-Data header injection
+  - Added development mode fallback with mock authentication data
+  - Comprehensive error handling for authentication failures
+  - Created TELEGRAM_INTEGRATION.md documentation
+  - Created TESTING_SUMMARY.md with complete test results
+  - All TypeScript compilation successful with no errors
+  - Authentication flow verified and production-ready
 
 ## Implementation Status
 
@@ -62,10 +77,10 @@ The project is ready for development, testing, and deployment.
 - ✅ Monorepo Structure: Independent subprojects with own package.json and Dockerfiles
 - ✅ Documentation: Comprehensive README.md
 - ✅ Nginx Reverse Proxy: Unified access on port 80 with path-based routing
+- ✅ Telegram Authentication: initData verification with HMAC-SHA256 and replay attack prevention
 
 **Pending Implementation:**
 - ⏳ Docker volumes for persistent SQLite database storage (partially configured in docker-compose.yml)
-- ⏳ Telegram authentication implementation (user ID verification via initData)
 
 ## Next Steps
 
@@ -76,15 +91,14 @@ The project is ready for development, testing, and deployment.
 3. Obtain hookah-db API key from hookah-db service provider
 4. Update .env file with bot token, API key, and configuration
 5. Configure Docker volumes for persistent SQLite database storage (already partially configured)
-6. Implement Telegram authentication with initData verification
-7. Start development servers:
+6. Start development servers:
    - Both: `npm run dev` (from root)
    - Backend only: `npm run dev:backend`
    - Mini-app only: `npm run dev:mini-app`
-8. Test bot commands with actual Telegram bot
-9. Test mini-app functionality with backend API
-10. Deploy using Docker Compose or manual deployment
-11. Consider adding advanced features:
+7. Test bot commands with actual Telegram bot
+8. Test mini-app functionality with backend API in Telegram environment
+9. Deploy using Docker Compose or manual deployment
+10. Consider adding advanced features:
     - Pagination for search results
     - Advanced filtering (by brand, flavor, strength)
     - Tobacco images in mini-app

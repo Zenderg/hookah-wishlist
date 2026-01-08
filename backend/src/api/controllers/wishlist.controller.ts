@@ -6,7 +6,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 export class WishlistController {
   async getWishlist(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.userId!;
+      const userId = req.telegramUser!.userId;
 
       logger.info(`API: Get wishlist for user ${userId}`);
 
@@ -36,7 +36,7 @@ export class WishlistController {
 
   async addItem(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.userId!;
+      const userId = req.telegramUser!.userId;
       const { tobaccoId, notes } = req.body;
 
       logger.info(`API: Add tobacco ${tobaccoId} to wishlist for user ${userId}`);
@@ -71,7 +71,7 @@ export class WishlistController {
 
   async removeItem(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.userId!;
+      const userId = req.telegramUser!.userId;
       const { tobaccoId } = req.params;
 
       logger.info(`API: Remove tobacco ${tobaccoId} from wishlist for user ${userId}`);
@@ -111,7 +111,7 @@ export class WishlistController {
 
   async clearWishlist(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.userId!;
+      const userId = req.telegramUser!.userId;
 
       logger.info(`API: Clear wishlist for user ${userId}`);
 
