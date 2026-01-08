@@ -112,7 +112,7 @@ mkdir -p docker/nginx
 - `dotenv` - Environment variable management
 
 **Database & Storage**
-- `better-sqlite3` - SQLite database driver (synchronous, faster than sqlite3)
+- `better-sqlite3` v12.5.0 - SQLite database driver (synchronous, faster than sqlite3)
 - `sqlite3` (alternative) - SQLite database driver (asynchronous)
 
 **Utilities**
@@ -128,7 +128,7 @@ mkdir -p docker/nginx
 - `@types/node` - Node.js type definitions
 - `@types/express` - Express type definitions
 - `@types/node-telegram-bot-api` - Bot API type definitions
-- `@types/better-sqlite3` - SQLite type definitions
+- `@types/better-sqlite3` v7.6.13 - SQLite type definitions
 
 **Testing**
 - `jest` - Testing framework
@@ -352,6 +352,48 @@ The project uses SQLite for persistent data storage:
   - Development: `./data/wishlist.db` (project root)
   - Production: `/app/data/wishlist.db` (container, using named volume)
 
+### Database Schema
+
+**wishlists table:**
+```sql
+CREATE TABLE wishlists (
+  user_id TEXT PRIMARY KEY NOT NULL,
+  items TEXT NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+  created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+)
+```
+
+**Indexes:**
+- `idx_wishlists_updated_at` on `updated_at` column for performance optimization
+
+### SQLite Implementation Details
+
+**WAL Mode Configuration:**
+- `journal_mode = WAL` - Enables WAL for better concurrency
+- `synchronous = NORMAL` - Balanced performance and safety
+- `cache_size = -64000` - 64MB cache for faster queries
+- `temp_store = MEMORY` - Temporary tables stored in memory
+
+**Benefits of WAL Mode:**
+- Better concurrency (readers don't block writers)
+- Faster write performance
+- Reduced disk I/O
+- Better durability
+
+**Storage Implementation:**
+- File: `backend/src/storage/sqlite.storage.ts`
+- Implements Storage<T> interface with get(), set(), delete(), exists(), clear() methods
+- In-memory caching layer for frequently accessed data
+- Automatic directory creation and database initialization
+- Comprehensive error handling with logging
+- Additional utility methods: getStats(), close(), checkpoint(), clearCache()
+
+**Storage Selection:**
+- Default: SQLite storage (recommended for production)
+- Alternative: File-based JSON storage (for testing or migration)
+- Controlled via `STORAGE_TYPE` environment variable
+
 ### Database Features
 
 - **Persistent Storage**: Data persists across server restarts
@@ -360,6 +402,7 @@ The project uses SQLite for persistent data storage:
 - **Fast Queries**: Optimized with indexes
 - **WAL Mode**: Better concurrency and performance
 - **ACID Compliant**: Reliable transactions
+- **In-Memory Caching**: Reduces database queries for frequently accessed data
 
 ### Docker Volume Management
 

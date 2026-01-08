@@ -5,7 +5,7 @@
 Project setup is complete. All core functionality has been implemented including:
 - Telegram bot with command handlers for search, wishlist management, add/remove operations
 - RESTful API server for mini-app communication with authentication
-- File-based storage layer with caching for wishlists
+- SQLite database storage with WAL mode and in-memory caching for wishlists
 - Search service integrated with hookah-db API
 - React mini-app with Tailwind CSS and Zustand state management
 - Docker configuration for containerized deployment
@@ -17,7 +17,15 @@ The project is ready for development, testing, and deployment.
 - Completed full project initialization and implementation
 - Implemented all bot commands with service integration (start, help, search, wishlist, add, remove)
 - Created complete API server with authentication middleware and error handling
-- Implemented file-based JSON storage with in-memory caching
+- **Migrated from file-based JSON storage to SQLite database with WAL mode**
+  - Installed better-sqlite3 v12.5.0 and @types/better-sqlite3 v7.6.13
+  - Created backend/src/storage/sqlite.storage.ts with WAL mode, in-memory caching, and error handling
+  - Implemented wishlists table schema with user_id, items (JSON), updated_at, created_at
+  - Added database initialization with automatic directory creation and WAL mode optimization
+  - Updated backend/src/storage/index.ts to export SQLite storage as default
+  - Verified all services (wishlist.service.ts, search.service.ts, hookah-db.service.ts) are compatible
+  - Comprehensive testing: 7/7 tests passed (100% success rate)
+  - TypeScript compilation successful with no errors
 - Built React mini-app with search, wishlist, and tab navigation components
 - Created Docker configuration for multi-stage builds
 - Fixed all TypeScript compilation errors for both backend and mini-app
@@ -35,7 +43,7 @@ The project is ready for development, testing, and deployment.
 - ✅ Backend: Node.js + Express + TypeScript (in backend/ subproject)
 - ✅ Telegram Bot: node-telegram-bot-api with all commands
 - ✅ API Server: RESTful endpoints with authentication
-- ✅ Storage Layer: File-based JSON storage with caching
+- ✅ Storage Layer: SQLite database with WAL mode and in-memory caching
 - ✅ Services: Search, wishlist, and hookah-db API integration
 - ✅ Mini-App: React + Vite + Tailwind CSS + Zustand (in mini-app/ subproject)
 - ✅ Docker: Independent multi-stage builds for backend and frontend
@@ -46,7 +54,6 @@ The project is ready for development, testing, and deployment.
 - ⏳ Nginx reverse proxy service in docker-compose.yml for unified access on port 80
 - ⏳ Docker volumes for persistent SQLite database storage
 - ⏳ Telegram authentication implementation (user ID verification via initData)
-- ⏳ Migration from file-based JSON storage to SQLite database with WAL mode
 
 ## Next Steps
 
@@ -56,18 +63,17 @@ The project is ready for development, testing, and deployment.
 2. Obtain Telegram Bot Token from @BotFather
 3. Obtain hookah-db API key from hookah-db service provider
 4. Update .env file with bot token, API key, and configuration
-5. Implement Nginx reverse proxy service in docker-compose.yml
-6. Configure Docker volumes for persistent SQLite database storage
-7. Migrate storage layer from file-based JSON to SQLite database with WAL mode
-8. Implement Telegram authentication with initData verification
-9. Start development servers:
+5. Configure Docker volumes for persistent SQLite database storage
+6. Implement Nginx reverse proxy service in docker-compose.yml
+7. Implement Telegram authentication with initData verification
+8. Start development servers:
    - Both: `npm run dev` (from root)
    - Backend only: `npm run dev:backend`
    - Mini-app only: `npm run dev:mini-app`
-10. Test bot commands with actual Telegram bot
-11. Test mini-app functionality with backend API
-12. Deploy using Docker Compose or manual deployment
-13. Consider adding advanced features:
+9. Test bot commands with actual Telegram bot
+10. Test mini-app functionality with backend API
+11. Deploy using Docker Compose or manual deployment
+12. Consider adding advanced features:
     - Pagination for search results
     - Advanced filtering (by brand, flavor, strength)
     - Tobacco images in mini-app
