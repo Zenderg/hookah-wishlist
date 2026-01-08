@@ -42,11 +42,11 @@ The project is ready for development, testing, and deployment.
 - ✅ Monorepo Structure: Independent subprojects with own package.json and Dockerfiles
 - ✅ Documentation: Comprehensive README.md
 
-**Ready for:**
-- Development and testing
-- Deployment to production
-- Adding additional features (pagination, filtering, etc.)
-- Integration testing with actual Telegram bot
+**Pending Implementation:**
+- ⏳ Nginx reverse proxy service in docker-compose.yml for unified access on port 80
+- ⏳ Docker volumes for persistent SQLite database storage
+- ⏳ Telegram authentication implementation (user ID verification via initData)
+- ⏳ Migration from file-based JSON storage to SQLite database with WAL mode
 
 ## Next Steps
 
@@ -54,19 +54,21 @@ The project is ready for development, testing, and deployment.
    - `cd backend && npm install`
    - `cd ../mini-app && npm install`
 2. Obtain Telegram Bot Token from @BotFather
-3. Update .env file with bot token and configuration
-4. Start development servers:
+3. Obtain hookah-db API key from hookah-db service provider
+4. Update .env file with bot token, API key, and configuration
+5. Implement Nginx reverse proxy service in docker-compose.yml
+6. Configure Docker volumes for persistent SQLite database storage
+7. Migrate storage layer from file-based JSON to SQLite database with WAL mode
+8. Implement Telegram authentication with initData verification
+9. Start development servers:
    - Both: `npm run dev` (from root)
    - Backend only: `npm run dev:backend`
    - Mini-app only: `npm run dev:mini-app`
-5. Test bot commands with actual Telegram bot
-6. Test mini-app functionality with backend API
-7. Deploy using Docker Compose or manual deployment
-8. Consider adding advanced features:
-   - Pagination for search results
-   - Advanced filtering (by brand, flavor, strength)
-   - Tobacco images in mini-app
-   - Offline caching for mini-app
-   - Rate limiting for API endpoints
-   - Monitoring and metrics
-   - Unit and integration tests
+10. Test bot commands with actual Telegram bot
+11. Test mini-app functionality with backend API
+12. Deploy using Docker Compose or manual deployment
+13. Consider adding advanced features:
+    - Pagination for search results
+    - Advanced filtering (by brand, flavor, strength)
+    - Tobacco images in mini-app
+    - Unit and integration tests

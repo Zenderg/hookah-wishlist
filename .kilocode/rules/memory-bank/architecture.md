@@ -2,7 +2,7 @@
 
 ## System Architecture
 
-The hookah-wishlist system follows a three-tier architecture:
+The hookah-wishlist system follows a four-tier architecture with reverse proxy:
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -15,6 +15,19 @@ The hookah-wishlist system follows a three-tier architecture:
          └─────────────▶│  Mini-App       │
                         │  (Web Frontend) │
                         └─────────────────┘
+                        ▲
+                        │
+               ┌────────┴────────┐
+               │  Nginx Reverse  │
+               │     Proxy      │
+               │   (Port 80)     │
+               └─────────────────┘
+                        │
+               ┌────────┴────────┐
+               │  Docker Volumes │
+               │ (Persistent     │
+               │   Storage)      │
+               └─────────────────┘
 ```
 
 ### Components
@@ -30,6 +43,7 @@ The hookah-wishlist system follows a three-tier architecture:
    - Business logic for wishlist management
    - Data persistence layer
    - Integration with hookah-db API
+   - Telegram authentication via initData verification
 
 3. **Mini-App Frontend Layer**
    - Web application embedded in Telegram
@@ -37,10 +51,24 @@ The hookah-wishlist system follows a three-tier architecture:
    - Communicates with backend via API
    - Provides enhanced user experience
 
-4. **External Integration Layer**
+4. **Reverse Proxy Layer**
+   - Nginx service in docker-compose
+   - Unified access point on port 80
+   - Routes requests to backend and mini-app
+   - Handles SSL/TLS termination (future)
+   - Provides load balancing capabilities
+
+5. **External Integration Layer**
    - hookah-db API client
    - Data fetching and caching
    - Error handling and retry logic
+   - API key authentication via `X-API-Key` header
+
+6. **Persistent Storage Layer**
+   - Docker volumes for data persistence
+   - SQLite database with WAL mode for wishlists
+   - Survives container restarts and deployments
+   - Mounted at `/app/data` in backend container
 
 ## Project Structure
 
@@ -75,7 +103,7 @@ hookah-wishlist/
 │       │   │   ├── search.controller.ts
 │       │   │   └── wishlist.controller.ts
 │       │   ├── middleware/  # Express middleware
-│       │   │   ├── auth.ts
+│       │   │   ├── auth.ts  # Telegram authentication
 │       │   │   └── errorHandler.ts
 │       │   └── server.ts    # API server setup
 │       ├── services/        # Business logic
@@ -88,7 +116,7 @@ hookah-wishlist/
 │       │   └── tobacco.ts
 │       ├── storage/         # Data persistence
 │       │   ├── storage.interface.ts
-│       │   ├── file.storage.ts
+│       │   ├── sqlite.storage.ts
 │       │   └── index.ts
 │       ├── utils/           # Utility functions
 │       │   └── logger.ts
@@ -128,8 +156,10 @@ hookah-wishlist/
 │   ├── unit/
 │   ├── integration/
 │   └── e2e/
-├── data/                    # Data storage directory
+├── data/                    # Data storage directory (mounted as volume)
 ├── docker/                  # Additional Docker configurations
+│   └── nginx/              # Nginx configuration
+│       └── nginx.conf      # Nginx reverse proxy config
 ├── .env.example             # Environment variables template
 ├── package.json             # Root monorepo manager
 ├── docker-compose.yml       # Docker Compose configuration
@@ -143,7 +173,7 @@ hookah-wishlist/
 ### Monorepo Structure
 - **Independent Subprojects**: Each subproject has its own package.json, Dockerfile, and configuration
 - **Root Management**: Root package.json provides scripts for managing both subprojects
-- **Docker Compose**: Orchestrates both services with separate Dockerfiles
+- **Docker Compose**: Orchestrates all services including reverse proxy
 
 ### Backend Framework
 - **Express.js** for REST API (widely adopted, extensive middleware ecosystem)
@@ -158,19 +188,28 @@ hookah-wishlist/
 - **Vite** for build tooling (fast HMR, modern)
 - **Tailwind CSS** for styling (utility-first, small bundle)
 
+### Reverse Proxy
+- **Nginx** as reverse proxy in docker-compose
+- Single entry point on port 80
+- Routes to backend API and mini-app
+- Future: SSL/TLS termination and load balancing
+
 ### Data Storage
-- Initial: In-memory storage for simplicity
-- Production: File-based JSON storage or SQLite
+- **Persistent Docker Volumes** for production deployment
+- **SQLite database** with WAL mode for better performance and concurrency
+- Mounted at `/app/data` in backend container
+- Survives container restarts and deployments
 - Future: PostgreSQL or MongoDB for scalability
 
 ### State Management
 - Bot: Session-based storage (Telegram user ID as key)
-- Mini-App: React Context API or Zustand
+- Mini-App: Zustand for state management
 
 ### API Design
 - RESTful API with JSON responses
 - Versioning: `/api/v1/` prefix
-- Authentication: Telegram user ID verification
+- Authentication: Telegram user ID verification via initData
+- hookah-db API: API key authentication via `X-API-Key` header
 
 ## Design Patterns
 
@@ -209,6 +248,12 @@ class CommandFactory {
 }
 ```
 
+### 5. Reverse Proxy Pattern
+Nginx routes requests to appropriate services:
+- `/api/*` → Backend API server
+- `/mini-app/*` → Mini-app static files
+- `/webhook` → Telegram bot webhook (if using webhook mode)
+
 ## Component Relationships
 
 ### Data Flow
@@ -218,26 +263,39 @@ class CommandFactory {
 2. Bot receives update via webhook/polling
 3. Command handler processes request
 4. Handler calls service layer
-5. Service interacts with storage and hookah-db API
+5. Service interacts with SQLite database and hookah-db API
 6. Response formatted and sent back to user
 
 **Mini-App Flow:**
 1. User opens mini-app in Telegram
-2. Mini-app fetches data from backend API
-3. User interacts with UI
-4. Mini-app sends requests to backend API
-5. Backend processes and updates storage
-6. Mini-app receives updated data
+2. Mini-app receives Telegram user ID via Web Apps API
+3. Mini-app fetches data from backend API (through reverse proxy)
+4. User interacts with UI
+5. Mini-app sends requests to backend API (with Telegram user ID in headers)
+6. Backend validates Telegram user ID and processes request
+7. Backend updates SQLite database
+8. Mini-app receives updated data
+
+**Reverse Proxy Flow:**
+1. Client makes request to port 80
+2. Nginx receives request
+3. Nginx routes based on path:
+   - `/api/*` → Backend service (port 3000)
+   - `/mini-app/*` → Mini-app service (port 5173)
+4. Service processes request
+5. Response returned through Nginx to client
 
 ### Critical Implementation Paths
 
 1. **Wishlist Retrieval**
-   - `/wishlist` command → `WishlistService.getWishlist(userId)` → `Storage.get(userId)`
+   - `/wishlist` command → `WishlistService.getWishlist(userId)` → `SQLiteStorage.get(userId)`
    - API: `GET /api/v1/wishlist` → `WishlistController.get` → `WishlistService.getWishlist`
+   - Authentication: Telegram user ID extracted from initData or bot message
 
 2. **Add to Wishlist**
-   - `/add [tobacco_id]` command → `WishlistService.addItem(userId, tobaccoId)` → Validate → `Storage.update(userId, wishlist)`
+   - `/add [tobacco_id]` command → `WishlistService.addItem(userId, tobaccoId)` → Validate → `SQLiteStorage.update(userId, wishlist)`
    - API: `POST /api/v1/wishlist` → `WishlistController.add` → `WishlistService.addItem`
+   - Authentication: Telegram user ID validated via initData
 
 3. **Tobacco Search**
    - `/search [query]` command → `SearchService.search(query)` → `HookahDbService.search(query)` → Format results
@@ -249,29 +307,47 @@ class CommandFactory {
 - Webhook for receiving updates
 - Inline buttons for interactive responses
 - Mini-app integration via Web Apps API
+- initData for authentication in mini-app
 
 ### hookah-db API
 - HTTP client with retry logic
 - Response caching to reduce API calls
 - Error handling for API failures
+- API key authentication via `X-API-Key` header
 
 ### Mini-App Integration
 - Telegram Web Apps API for user context
 - Backend API for data operations
 - Shared authentication via Telegram user ID
+- Reverse proxy for unified access
+
+### Nginx Reverse Proxy
+- Single entry point on port 80
+- Path-based routing to services
+- Static file serving for mini-app
+- Future: SSL/TLS termination
+
+### Persistent Storage
+- Docker volumes for data persistence
+- SQLite database with WAL mode
+- Mounted at `/app/data` in backend container
+- Survives container restarts and deployments
 
 ## Security Considerations
 
 1. **Authentication**: Telegram user ID verification via initData
 2. **Input Validation**: Sanitize all user inputs
-3. **Rate Limiting**: Prevent API abuse
-4. **Error Messages**: Don't expose sensitive information
-5. **Environment Variables**: Store sensitive data securely
+3. **Error Messages**: Don't expose sensitive information
+4. **Environment Variables**: Store sensitive data securely
+5. **Reverse Proxy**: Adds security layer and hides internal service ports
+6. **Data Isolation**: Each user's data isolated by Telegram user ID
+7. **API Key Security**: Securely store and use hookah-db API key
+8. **Database Security**: SQLite file permissions and proper connection handling
 
 ## Scalability Considerations
 
 1. **Horizontal Scaling**: Stateless bot and API design
-2. **Caching**: Redis for frequently accessed data
-3. **Database Migration**: Easy transition from file storage to database
-4. **Load Balancing**: Multiple bot instances with webhook
-5. **Monitoring**: Logging and metrics for performance tracking
+2. **Caching**: In-memory caching for frequently accessed data
+3. **Database Migration**: Easy transition from SQLite to PostgreSQL/MongoDB
+4. **Load Balancing**: Nginx can distribute load across multiple instances
+5. **Persistent Storage**: Docker volumes ensure data survives scaling events
