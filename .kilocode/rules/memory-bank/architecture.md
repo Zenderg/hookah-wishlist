@@ -77,12 +77,13 @@ The hookah-wishlist system follows a four-tier architecture with reverse proxy:
 
 ## Project Structure
 
-The project is organized as a monorepo with independent subprojects:
+The project is organized with independent subprojects - there is no monorepo structure:
 
 ```
 hookah-wishlist/
-├── backend/                  # Backend subproject
-│   ├── package.json         # Backend dependencies
+├── backend/                  # Backend subproject (completely independent)
+│   ├── package.json         # Backend dependencies (no shared dependencies)
+│   ├── package-lock.json    # Backend lock file
 │   ├── Dockerfile           # Backend Dockerfile
 │   ├── tsconfig.json        # Backend TypeScript config
 │   ├── .dockerignore        # Backend Docker ignore
@@ -126,8 +127,9 @@ hookah-wishlist/
 │       ├── utils/           # Utility functions
 │       │   └── logger.ts
 │       └── index.ts         # Backend entry point
-├── mini-app/                # Mini-app frontend subproject
-│   ├── package.json         # Frontend dependencies
+├── mini-app/                # Mini-app frontend subproject (completely independent)
+│   ├── package.json         # Frontend dependencies (no shared dependencies)
+│   ├── package-lock.json    # Frontend lock file
 │   ├── Dockerfile           # Frontend Dockerfile
 │   ├── .dockerignore        # Frontend Docker ignore
 │   ├── tsconfig.json        # Frontend TypeScript config
@@ -167,8 +169,7 @@ hookah-wishlist/
 │   └── nginx/              # Nginx configuration
 │       └── nginx.conf      # Nginx reverse proxy config
 ├── .env.example             # Environment variables template
-├── package.json             # Root monorepo manager
-├── docker-compose.yml       # Docker Compose configuration
+├── docker-compose.yml       # Docker Compose configuration (orchestrates independent subprojects)
 ├── .dockerignore           # Root Docker ignore
 ├── .gitignore              # Git ignore rules
 ├── README.md               # Project documentation
@@ -186,10 +187,12 @@ hookah-wishlist/
 
 ## Key Technical Decisions
 
-### Monorepo Structure
-- **Independent Subprojects**: Each subproject has its own package.json, Dockerfile, and configuration
-- **Root Management**: Root package.json provides scripts for managing both subprojects
-- **Docker Compose**: Orchestrates all services including reverse proxy
+### Independent Subprojects
+- **Complete Isolation**: Each subproject (backend/ and mini-app/) has its own package.json, package-lock.json, Dockerfile, and configuration
+- **No Shared Dependencies**: Subprojects are completely independent with no shared dependencies or scripts
+- **No Root Package Management**: No root package.json or package-lock.json - each subproject must be managed independently
+- **Docker Compose**: Orchestrates all services including reverse proxy, but each subproject is built and deployed independently
+- **Independent Development**: Each subproject can be developed, tested, and deployed independently
 
 ### Backend Framework
 - **Express.js** for REST API (widely adopted, extensive middleware ecosystem)

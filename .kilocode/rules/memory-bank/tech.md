@@ -88,8 +88,11 @@ NGINX_PORT=80
 
 ### Project Initialization
 
+Each subproject must be initialized independently:
+
 ```bash
-# Initialize Node.js project
+# Backend subproject initialization
+cd backend
 npm init -y
 
 # Install core dependencies
@@ -101,9 +104,27 @@ npm install -D typescript @types/node @types/express ts-node nodemon @types/bett
 # Initialize TypeScript
 npx tsc --init
 
-# Create project structure (see architecture.md)
+# Create backend project structure (see architecture.md)
 mkdir -p src/{bot/{commands,handlers,middleware},api/{routes,controllers,middleware},services,models,storage,utils}
-mkdir -p mini-app/src/{components,pages,services,hooks,utils}
+
+# Mini-app subproject initialization
+cd ../mini-app
+npm init -y
+
+# Install core dependencies
+npm install react react-dom vite zustand axios
+
+# Install development dependencies
+npm install -D typescript @types/react @types/react-dom tailwindcss postcss autoprefixer
+
+# Initialize Vite
+npm create vite@latest . -- --template react-ts
+
+# Create mini-app project structure (see architecture.md)
+mkdir -p src/{components,pages,services,hooks,utils,store,types}
+
+# Create test directories
+cd ..
 mkdir -p tests/{unit,integration,e2e}
 mkdir -p docker/nginx
 ```
@@ -177,22 +198,30 @@ mkdir -p docker/nginx
 
 ### Development Mode
 
+Each subproject must be started independently:
+
 ```bash
 # Start backend with hot reload
+cd backend
 npm run dev
 
 # Start mini-app with hot reload
-cd mini-app && npm run dev
+cd ../mini-app
+npm run dev
 ```
 
 ### Production Build
 
+Each subproject must be built independently:
+
 ```bash
 # Build backend
+cd backend
 npm run build
 
 # Build mini-app
-cd mini-app && npm run build
+cd ../mini-app
+npm run build
 ```
 
 ### Docker Deployment

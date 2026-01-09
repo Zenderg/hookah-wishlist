@@ -21,6 +21,7 @@ Telegram bot with mini-app for managing hookah tobacco wishlist, solving the pro
 - **Telegram Authentication**: Secure user identification via Telegram user ID
 - **Reverse Proxy**: Unified access to all services on port 80
 - **Persistent Storage**: SQLite database with Docker volumes for data persistence
+- **Independent Subprojects**: Backend and mini-app are completely isolated with their own dependencies and configurations
 
 ## Technology Stack
 - **Runtime**: Node.js
@@ -30,6 +31,7 @@ Telegram bot with mini-app for managing hookah tobacco wishlist, solving the pro
 - **Data Source**: hookah-db API (https://hdb.coolify.dknas.org) with API key authentication
 - **Platform**: Telegram Bot API + Mini Apps
 - **Storage**: SQLite database with persistent Docker volumes
+- **Architecture**: Independent subprojects (backend/ and mini-app/) with complete isolation
 
 ## Significance
-Eliminates friction in tracking hookah tobacco preferences by leveraging Telegram's familiar interface, making wishlist management effortless and accessible anywhere. Provides secure authentication and reliable data persistence for production deployment.
+Eliminates friction in tracking hookah tobacco preferences by leveraging Telegram's familiar interface, making wishlist management effortless and accessible anywhere. Provides secure authentication and reliable data persistence for production deployment. The independent subproject architecture allows for flexible development and deployment of each component.

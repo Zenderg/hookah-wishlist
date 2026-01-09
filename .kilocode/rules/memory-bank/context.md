@@ -33,12 +33,13 @@ The project is ready for development, testing, and deployment.
 - Created Docker configuration for multi-stage builds
 - Fixed all TypeScript compilation errors for both backend and mini-app
 - Created comprehensive README.md with setup and deployment instructions
-- **Restructured project to monorepo with independent subprojects** (backend/ and mini-app/)
-  - Each subproject now has its own package.json with separate dependencies
+- **Restructured project to independent subprojects** (backend/ and mini-app/)
+  - Each subproject has its own package.json with separate dependencies
   - Each subproject has its own Dockerfile for independent containerization
-  - Root package.json serves as monorepo manager with orchestration scripts
+  - Removed root package.json and package-lock.json - no monorepo structure
   - Updated docker-compose.yml to reference new Dockerfiles
   - Moved all backend code from src/ to backend/src/
+  - Subprojects are completely isolated with no shared dependencies or scripts
 - **Implemented Nginx reverse proxy for unified access**
   - Created docker/nginx/nginx.conf with comprehensive routing configuration
   - Configured path-based routing: /api/* → backend, /webhook → backend, /mini-app/* → frontend
@@ -73,6 +74,11 @@ The project is ready for development, testing, and deployment.
   - Created comprehensive DOCKER_VOLUMES.md documentation
   - **Removed backup scripts and backup service** (user preference: no automated backups needed)
   - Configuration validated with `docker-compose config`
+- **Removed root package.json and package-lock.json**
+  - No monorepo structure or root-level package management
+  - Each subproject is completely independent with its own package.json
+  - No shared dependencies or scripts between subprojects
+  - Each subproject must be managed and deployed independently
 
 ## Implementation Status
 
@@ -84,29 +90,29 @@ The project is ready for development, testing, and deployment.
 - ✅ Services: Search, wishlist, and hookah-db API integration
 - ✅ Mini-App: React + Vite + Tailwind CSS + Zustand (in mini-app/ subproject)
 - ✅ Docker: Independent multi-stage builds for backend and frontend
-- ✅ Monorepo Structure: Independent subprojects with own package.json and Dockerfiles
+- ✅ Independent Subprojects: Complete isolation with own package.json and Dockerfiles
 - ✅ Documentation: Comprehensive README.md
 - ✅ Nginx Reverse Proxy: Unified access on port 80 with path-based routing
 - ✅ Telegram Authentication: initData verification with HMAC-SHA256 and replay attack prevention
 - ✅ Docker Volumes: Named volume `hookah-wishlist-data` for persistent SQLite database storage
+- ✅ Root Package Removal: No monorepo structure, complete subproject isolation
 
 **Pending Implementation:**
-- ⏳ Install dependencies in each subproject
+- ⏳ Install dependencies in each subproject independently
 - ⏳ Configure environment variables (bot token, API key)
 - ⏳ Testing and deployment
 
 ## Next Steps
 
-1. Install dependencies in each subproject:
+1. Install dependencies in each subproject independently:
    - `cd backend && npm install`
    - `cd ../mini-app && npm install`
 2. Obtain Telegram Bot Token from @BotFather
 3. Obtain hookah-db API key from hookah-db service provider
 4. Update .env file with bot token, API key, and configuration
-5. Start development servers:
-   - Both: `npm run dev` (from root)
-   - Backend only: `npm run dev:backend`
-   - Mini-app only: `npm run dev:mini-app`
+5. Start development servers independently:
+   - Backend: `cd backend && npm run dev`
+   - Mini-app: `cd mini-app && npm run dev`
 6. Test bot commands with actual Telegram bot
 7. Test mini-app functionality with backend API in Telegram environment
 8. Deploy using Docker Compose or manual deployment
@@ -121,3 +127,4 @@ The project is ready for development, testing, and deployment.
 - **No automated backups**: User explicitly does not want backup scripts or automated backup services
 - **Manual backups only**: If needed, user will perform manual backups using Docker commands
 - **Simplified setup**: Prefers minimal configuration without backup complexity
+- **Independent subprojects**: Complete isolation between backend and mini-app with no shared dependencies

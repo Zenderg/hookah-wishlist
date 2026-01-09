@@ -52,12 +52,18 @@ cd hookah-wishlist
 
 ### 2. Install dependencies
 
+**Important**: The backend and mini-app are completely independent subprojects. You must install dependencies separately in each subproject.
+
 ```bash
 # Install backend dependencies
+cd backend
 npm install
+cd ..
 
 # Install mini-app dependencies
-cd mini-app && npm install && cd ..
+cd mini-app
+npm install
+cd ..
 ```
 
 ### 3. Configure environment variables
@@ -83,9 +89,12 @@ Edit `.env` and set:
 
 ## Development
 
+**Important**: The backend and mini-app are completely independent. You must run them separately.
+
 ### Start the backend
 
 ```bash
+cd backend
 npm run dev
 ```
 
@@ -102,15 +111,23 @@ The mini-app will be available at http://localhost:5173.
 
 ### Build for production
 
+**Important**: Each subproject must be built separately.
+
 ```bash
 # Build backend
+cd backend
 npm run build
+cd ..
 
 # Build mini-app
-cd mini-app && npm run build
+cd mini-app
+npm run build
+cd ..
 ```
 
 ## Docker Deployment
+
+The project uses Docker Compose to orchestrate the backend, frontend, and Nginx reverse proxy as independent services.
 
 ### Build and start all services
 
@@ -128,6 +145,12 @@ docker-compose logs -f
 
 ```bash
 docker-compose down
+```
+
+### Rebuild services
+
+```bash
+docker-compose build
 ```
 
 ## Persistent Storage
@@ -198,25 +221,25 @@ For comprehensive information about Docker volumes setup, configuration, and man
 ### Required Variables
 
 ```bash
-# Telegram Bot Configuration
+# Telegram Bot Configuration (Backend)
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_WEBHOOK_URL=https://your-domain.com/webhook
 
-# Server Configuration
+# Server Configuration (Backend)
 PORT=3000
 NODE_ENV=production
 
-# hookah-db API Configuration
+# hookah-db API Configuration (Backend)
 HOOKEH_DB_API_URL=https://hdb.coolify.dknas.org
 HOOKEH_DB_API_KEY=your_hookah_db_api_key_here
 API_RATE_LIMIT=100
 
-# Storage Configuration
+# Storage Configuration (Backend)
 STORAGE_TYPE=sqlite
 DATABASE_PATH=/app/data/wishlist.db
 STORAGE_PATH=/app/data
 
-# Mini-App Configuration
+# Mini-App Configuration (Frontend)
 MINI_APP_URL=https://your-domain.com/mini-app
 ```
 
@@ -226,7 +249,7 @@ For complete environment variable documentation, see [`.env.example`](.env.examp
 
 ```
 hookah-wishlist/
-├── backend/                  # Backend subproject
+├── backend/                  # Backend subproject (independent)
 │   ├── src/
 │   │   ├── bot/             # Telegram bot implementation
 │   │   ├── api/             # REST API
@@ -234,18 +257,18 @@ hookah-wishlist/
 │   │   ├── models/          # Data models
 │   │   ├── storage/         # Data persistence (SQLite)
 │   │   └── utils/           # Utility functions
-│   ├── package.json
-│   ├── Dockerfile
-│   └── tsconfig.json
-├── mini-app/                # Mini-app frontend subproject
+│   ├── package.json         # Backend dependencies (independent)
+│   ├── Dockerfile           # Backend Dockerfile (independent)
+│   └── tsconfig.json        # Backend TypeScript config
+├── mini-app/                # Mini-app frontend subproject (independent)
 │   ├── src/
 │   │   ├── components/      # React components
 │   │   ├── services/        # API services
 │   │   ├── store/           # State management
 │   │   └── types/           # TypeScript types
-│   ├── package.json
-│   ├── Dockerfile
-│   └── vite.config.ts
+│   ├── package.json         # Frontend dependencies (independent)
+│   ├── Dockerfile           # Frontend Dockerfile (independent)
+│   └── vite.config.ts       # Vite configuration
 ├── docker/                  # Docker configurations
 │   └── nginx/
 │       └── nginx.conf       # Nginx reverse proxy config
@@ -256,6 +279,38 @@ hookah-wishlist/
 ├── .env.example             # Environment variables template
 ├── README.md                # This file
 └── DOCKER_VOLUMES.md        # Docker volumes documentation
+```
+
+## Important Notes
+
+### Independent Subprojects
+
+The backend and mini-app are **completely independent subprojects**:
+
+- Each has its own [`package.json`](backend/package.json) with separate dependencies
+- Each has its own [`Dockerfile`](backend/Dockerfile) for independent containerization
+- Each must be installed, built, and run separately
+- There is **no root package.json** or monorepo structure
+- Docker Compose orchestrates the independent services together
+
+### Development Workflow
+
+For local development, you need to run both subprojects separately:
+
+```bash
+# Terminal 1: Backend
+cd backend
+npm run dev
+
+# Terminal 2: Mini-app
+cd mini-app
+npm run dev
+```
+
+For production deployment, use Docker Compose to orchestrate all services:
+
+```bash
+docker-compose up -d
 ```
 
 ## Reverse Proxy
