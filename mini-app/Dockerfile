@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -13,10 +13,14 @@ COPY index.html ./
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
+
+# Install a simple HTTP server
+RUN npm install -g serve
+
+# Copy built files
 COPY --from=builder /app/dist ./dist
+
 EXPOSE 5173
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
+CMD ["serve", "-s", "dist", "-l", "5173"]

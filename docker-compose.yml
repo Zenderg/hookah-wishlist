@@ -12,6 +12,7 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
       - HOOKEH_DB_API_URL=${HOOKEH_DB_API_URL:-https://hdb.coolify.dknas.org}
+      - HOOKEH_DB_API_KEY=${HOOKEH_DB_API_KEY}
       - API_RATE_LIMIT=${API_RATE_LIMIT:-100}
       - STORAGE_TYPE=sqlite
       - DATABASE_PATH=/app/data/wishlist.db

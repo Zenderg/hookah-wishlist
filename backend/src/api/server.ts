@@ -27,6 +27,11 @@ export function createServer(): Application {
     next();
   });
 
+  // Health check endpoint (root level)
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // API routes
   app.use('/api', apiRoutes);
 
@@ -34,8 +39,8 @@ export function createServer(): Application {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('mini-app/dist'));
     
-    // SPA fallback
-    app.get('*', (_req, res) => {
+    // SPA fallback - catch all routes that don't match API routes
+    app.get(/.*/, (_req, res) => {
       res.sendFile('index.html', { root: 'mini-app/dist' });
     });
   }
