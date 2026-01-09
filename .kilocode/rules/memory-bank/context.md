@@ -12,10 +12,21 @@ Project setup is complete. All core functionality has been implemented including
 - Nginx reverse proxy for unified access on port 80
 - **Telegram authentication with initData verification (HMAC-SHA256)**
 - **Docker volumes configuration for persistent SQLite database storage**
+- **Dependencies installed in both subprojects (backend and mini-app)**
 
 The project is ready for development, testing, and deployment.
 
 ## Recent Changes
+
+- **Installed dependencies in both subprojects** (2025-01-09)
+  - Backend: Installed 742 packages in backend/node_modules/
+    - Key dependencies: express (v5.2.1), node-telegram-bot-api (v0.67.0), axios (v1.13.2), dotenv (v17.2.3), better-sqlite3 (v12.5.0), typescript (v5.9.3)
+    - Development dependencies: @types packages, jest, eslint, prettier, nodemon, ts-node, supertest, ts-jest
+    - Note: 7 vulnerabilities detected (4 moderate, 1 high, 2 critical) - can be addressed with `npm audit fix --force`
+  - Mini-app: Installed 221 packages in mini-app/node_modules/
+    - Key dependencies: react (v18.3.1), react-dom (v18.3.1), vite (v6.0.7), zustand (v5.0.2), axios (v1.13.2), tailwindcss (v4.1.18), @twa-dev/types (v8.0.2)
+    - Zero vulnerabilities found
+  - Both subprojects verified and ready for development
 
 - Completed full project initialization and implementation
 - Implemented all bot commands with service integration (start, help, search, wishlist, add, remove)
@@ -103,27 +114,25 @@ The project is ready for development, testing, and deployment.
 - ✅ Docker Volumes: Named volume `hookah-wishlist-data` for persistent SQLite database storage
 - ✅ Root Package Removal: No monorepo structure, complete subproject isolation
 - ✅ Documentation Reorganization: Additional documentation moved to docs/ directory
+- ✅ **Dependencies Installation: All dependencies installed in both backend and mini-app subprojects**
 
 **Pending Implementation:**
-- ⏳ Install dependencies in each subproject independently
 - ⏳ Configure environment variables (bot token, API key)
 - ⏳ Testing and deployment
 
 ## Next Steps
 
-1. Install dependencies in each subproject independently:
-   - `cd backend && npm install`
-   - `cd ../mini-app && npm install`
-2. Obtain Telegram Bot Token from @BotFather
-3. Obtain hookah-db API key from hookah-db service provider
-4. Update .env file with bot token, API key, and configuration
-5. Start development servers independently:
+1. Configure environment variables:
+   - Obtain Telegram Bot Token from @BotFather
+   - Obtain hookah-db API key from hookah-db service provider
+   - Update .env file with bot token, API key, and configuration
+2. Start development servers independently:
    - Backend: `cd backend && npm run dev`
    - Mini-app: `cd mini-app && npm run dev`
-6. Test bot commands with actual Telegram bot
-7. Test mini-app functionality with backend API in Telegram environment
-8. Deploy using Docker Compose or manual deployment
-9. Consider adding advanced features:
+3. Test bot commands with actual Telegram bot
+4. Test mini-app functionality with backend API in Telegram environment
+5. Deploy using Docker Compose or manual deployment
+6. Consider adding advanced features:
     - Pagination for search results
     - Advanced filtering (by brand, flavor, strength)
     - Tobacco images in mini-app
