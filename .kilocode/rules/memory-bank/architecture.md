@@ -168,13 +168,14 @@ hookah-wishlist/
 ├── docker/                  # Additional Docker configurations
 │   └── nginx/              # Nginx configuration
 │       └── nginx.conf      # Nginx reverse proxy config
+├── docs/                    # Additional documentation
+│   ├── TESTING_SUMMARY.md   # Test results and verification
+│   └── DOCKER_VOLUMES.md   # Docker volumes documentation
 ├── .env.example             # Environment variables template
 ├── docker-compose.yml       # Docker Compose configuration (orchestrates independent subprojects)
 ├── .dockerignore           # Root Docker ignore
 ├── .gitignore              # Git ignore rules
 ├── README.md               # Project documentation
-├── TESTING_SUMMARY.md      # Test results and verification
-├── DOCKER_VOLUMES.md       # Docker volumes documentation
 └── .kilocode/             # Kilo Code configuration
     └── rules/              # Custom rules and memory bank
         └── memory-bank/     # Memory bank files

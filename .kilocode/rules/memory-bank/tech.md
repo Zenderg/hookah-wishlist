@@ -718,3 +718,22 @@ The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/ap
 3. **Timestamp Validation**: Prevents replay attacks
 4. **Input Validation**: All user inputs validated before use
 5. **Error Message Safety**: No sensitive information in error responses
+
+## Documentation Structure
+
+The project documentation is organized as follows:
+
+- **[`README.md`](README.md)** - Main project documentation (root directory)
+- **[`docs/TESTING_SUMMARY.md`](docs/TESTING_SUMMARY.md)** - Test results and verification
+- **[`docs/DOCKER_VOLUMES.md`](docs/DOCKER_VOLUMES.md)** - Docker volumes documentation
+- **[`mini-app/TELEGRAM_INTEGRATION.md`](mini-app/TELEGRAM_INTEGRATION.md)** - Telegram integration guide (mini-app specific)
+- **[`.kilocode/rules/memory-bank/`](.kilocode/rules/memory-bank/)** - Memory bank files for project context
+
+### Documentation Organization
+
+- **Root directory**: Contains only [`README.md`](README.md) as the main project documentation
+- **docs/**: Contains additional documentation files (TESTING_SUMMARY.md, DOCKER_VOLUMES.md)
+- **mini-app/**: Contains mini-app specific documentation (TELEGRAM_INTEGRATION.md)
+- **Memory Bank**: Located in [`.kilocode/rules/memory-bank/`](.kilocode/rules/memory-bank/) for project context and architecture
+
+This organization keeps the root directory clean while maintaining easy access to all documentation.

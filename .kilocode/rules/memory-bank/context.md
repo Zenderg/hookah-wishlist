@@ -61,7 +61,7 @@ The project is ready for development, testing, and deployment.
   - Implemented automatic initData extraction and X-Telegram-Init-Data header injection
   - Added development mode fallback with mock authentication data
   - Comprehensive error handling for authentication failures
-  - Created TELEGRAM_INTEGRATION.md documentation
+  - Created TELEGRAM_INTEGRATION.md documentation (in mini-app/ directory)
   - Created TESTING_SUMMARY.md with complete test results
   - All TypeScript compilation successful with no errors
   - Authentication flow verified and production-ready
@@ -79,6 +79,12 @@ The project is ready for development, testing, and deployment.
   - Each subproject is completely independent with its own package.json
   - No shared dependencies or scripts between subprojects
   - Each subproject must be managed and deployed independently
+- **Reorganized documentation structure**
+  - Moved TESTING_SUMMARY.md from root to docs/TESTING_SUMMARY.md
+  - Moved DOCKER_VOLUMES.md from root to docs/DOCKER_VOLUMES.md
+  - Created docs/ directory for additional documentation
+  - README.md remains in root as main project documentation
+  - TELEGRAM_INTEGRATION.md remains in mini-app/ directory as it's specific to the mini-app
 
 ## Implementation Status
 
@@ -96,6 +102,7 @@ The project is ready for development, testing, and deployment.
 - ✅ Telegram Authentication: initData verification with HMAC-SHA256 and replay attack prevention
 - ✅ Docker Volumes: Named volume `hookah-wishlist-data` for persistent SQLite database storage
 - ✅ Root Package Removal: No monorepo structure, complete subproject isolation
+- ✅ Documentation Reorganization: Additional documentation moved to docs/ directory
 
 **Pending Implementation:**
 - ⏳ Install dependencies in each subproject independently
@@ -128,3 +135,4 @@ The project is ready for development, testing, and deployment.
 - **Manual backups only**: If needed, user will perform manual backups using Docker commands
 - **Simplified setup**: Prefers minimal configuration without backup complexity
 - **Independent subprojects**: Complete isolation between backend and mini-app with no shared dependencies
+- **Clean root directory**: Prefers documentation files organized in docs/ directory rather than scattered in root

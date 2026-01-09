@@ -108,7 +108,7 @@ The project uses SQLite with Write-Ahead Logging (WAL) mode for better performan
 
 ### Docker Compose Configuration
 
-The volume configuration is defined in [`docker-compose.yml`](docker-compose.yml):
+The volume configuration is defined in [`docker-compose.yml`](../docker-compose.yml):
 
 ```yaml
 services:
@@ -525,7 +525,7 @@ docker run --rm \
    ```
 
 2. **Adjust WAL settings:**
-   In [`backend/src/storage/sqlite.storage.ts`](backend/src/storage/sqlite.storage.ts):
+   In [`backend/src/storage/sqlite.storage.ts`](../backend/src/storage/sqlite.storage.ts):
    ```typescript
    db.pragma('wal_autocheckpoint = 1000'); // Checkpoint every 1000 pages
    ```
@@ -775,16 +775,16 @@ A: SQLite with WAL mode creates three files:
 
 All three files must be in same volume for proper operation.
 
-**Q: Can I access database directly on the host?**
+**Q: Can I access database directly on host?**
 
-A: With named volumes, you cannot access files directly on the host. Use Docker commands to inspect or backup volumes:
+A: With named volumes, you cannot access files directly on host. Use Docker commands to inspect or backup volumes:
 ```bash
 docker run --rm -v hookah-wishlist-data:/data alpine:latest ls -la /data
 ```
 
 **Q: How do I migrate data from bind mount to named volume?**
 
-A: Follow the migration strategy in the [Development vs Production](#development-vs-production) section. The key steps are:
+A: Follow to migration strategy in [Development vs Production](#development-vs-production) section. The key steps are:
 1. Backup existing data
 2. Create named volume
 3. Restore data to named volume
@@ -852,7 +852,7 @@ Space requirements depend on:
 
 **Q: Can I use a different database instead of SQLite?**
 
-A: Yes, the architecture supports migration to PostgreSQL or MongoDB for production scaling. See the architecture documentation for details on database migration.
+A: Yes, architecture supports migration to PostgreSQL or MongoDB for production scaling. See architecture documentation for details on database migration.
 
 ### Security Questions
 
@@ -880,14 +880,14 @@ A: Best practices:
 - [Docker Volumes Documentation](https://docs.docker.com/storage/volumes/)
 - [SQLite WAL Mode](https://www.sqlite.org/wal.html)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Architecture Documentation](plans/docker-volumes-architecture.md)
+- [Architecture Documentation](../plans/docker-volumes-architecture.md)
 
 ---
 
 ## Appendix A: Complete docker-compose.yml
 
-See [`docker-compose.yml`](docker-compose.yml) for complete configuration.
+See [`docker-compose.yml`](../docker-compose.yml) for complete configuration.
 
 ## Appendix B: Environment Variables
 
-See [`.env.example`](.env.example) for complete list of environment variables.
+See [`.env.example`](../.env.example) for complete list of environment variables.
