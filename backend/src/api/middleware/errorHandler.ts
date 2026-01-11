@@ -7,6 +7,38 @@ export interface ApiError extends Error {
 }
 
 export function errorHandler(err: ApiError, req: Request, res: Response, _next: NextFunction): void {
+  // Handle null or undefined errors gracefully
+  if (err == null) {
+    logger.error('API Error:', {
+      message: 'Unknown error (null/undefined)',
+      statusCode: undefined,
+      details: undefined,
+      path: req.path,
+      method: req.method,
+    });
+
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+    return;
+  }
+
+  // Handle non-Error objects
+  if (!(err instanceof Error)) {
+    logger.error('API Error:', {
+      message: 'Unknown error type',
+      statusCode: undefined,
+      details: err,
+      path: req.path,
+      method: req.method,
+    });
+
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+    return;
+  }
+
   logger.error('API Error:', {
     message: err.message,
     statusCode: err.statusCode,

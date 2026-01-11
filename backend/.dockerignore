@@ -12,3 +12,6 @@ coverage
 *.swp
 *.swo
 *~
+coverage
+data
+logs

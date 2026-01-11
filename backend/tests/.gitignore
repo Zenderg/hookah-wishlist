@@ -1,0 +1,6 @@
+# Test data
+data/*.json
+data/*.db
+
+# Coverage reports
+coverage/

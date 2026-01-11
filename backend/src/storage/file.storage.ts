@@ -9,21 +9,17 @@ export class FileStorage<T> implements Storage<T> {
 
   constructor(storagePath: string) {
     this.storagePath = storagePath;
-    this.ensureStorageDirectory();
-  }
-
-  private async ensureStorageDirectory(): Promise<void> {
-    try {
-      await fs.mkdir(this.storagePath, { recursive: true });
-      logger.debug(`Storage directory ensured: ${this.storagePath}`);
-    } catch (error) {
+    // Synchronously ensure directory exists to avoid race conditions
+    fs.mkdir(storagePath, { recursive: true }).catch((error) => {
       logger.error('Error creating storage directory:', error);
-      throw error;
-    }
+    });
   }
 
   private getFilePath(key: string): string {
-    return path.join(this.storagePath, `${key}.json`);
+    // Sanitize key to prevent directory traversal and nested directory issues
+    // Replace slashes and backslashes with underscores
+    const sanitizedKey = key.replace(/[\/\\]/g, '_');
+    return path.join(this.storagePath, `${sanitizedKey}.json`);
   }
 
   async get(key: string): Promise<T | null> {

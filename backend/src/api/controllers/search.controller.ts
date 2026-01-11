@@ -10,7 +10,7 @@ export class SearchController {
 
       logger.info(`API: Search for query "${query}" by user ${req.telegramUser?.userId}`);
 
-      if (!query || typeof query !== 'string') {
+      if (!query || typeof query !== 'string' || !query.trim()) {
         res.status(400).json({ error: 'query parameter is required' });
         return;
       }

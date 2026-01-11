@@ -29,6 +29,10 @@ export const helpCommand = () => {
 • Open the mini-app for a visual interface
     `;
 
-    await bot.sendMessage(chatId, helpMessage);
+    try {
+      await bot.sendMessage(chatId, helpMessage);
+    } catch (error) {
+      logger.error('Error sending help message:', error);
+    }
   });
 };

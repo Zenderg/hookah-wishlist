@@ -24,6 +24,10 @@ This bot helps you manage your hookah tobacco wishlist. Never forget which tobac
 💡 Tip: Use the mini-app for a better experience!
     `;
 
-    await bot.sendMessage(chatId, welcomeMessage);
+    try {
+      await bot.sendMessage(chatId, welcomeMessage);
+    } catch (error) {
+      logger.error('Error sending start message:', error);
+    }
   });
 };

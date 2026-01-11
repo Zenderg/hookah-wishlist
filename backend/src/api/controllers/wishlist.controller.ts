@@ -6,9 +6,14 @@ import { AuthenticatedRequest } from '../middleware/auth';
 export class WishlistController {
   async getWishlist(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.telegramUser!.userId;
+      const userId = req.telegramUser?.userId;
 
       logger.info(`API: Get wishlist for user ${userId}`);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized: Invalid user' });
+        return;
+      }
 
       const wishlist = await wishlistService.getWishlistWithDetails(userId);
 
@@ -36,10 +41,15 @@ export class WishlistController {
 
   async addItem(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.telegramUser!.userId;
+      const userId = req.telegramUser?.userId;
       const { tobaccoId, notes } = req.body;
 
       logger.info(`API: Add tobacco ${tobaccoId} to wishlist for user ${userId}`);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized: Invalid user' });
+        return;
+      }
 
       if (!tobaccoId) {
         res.status(400).json({ error: 'tobaccoId is required' });
@@ -71,10 +81,15 @@ export class WishlistController {
 
   async removeItem(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.telegramUser!.userId;
+      const userId = req.telegramUser?.userId;
       const { tobaccoId } = req.params;
 
       logger.info(`API: Remove tobacco ${tobaccoId} from wishlist for user ${userId}`);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized: Invalid user' });
+        return;
+      }
 
       if (!tobaccoId) {
         res.status(400).json({ error: 'tobaccoId is required' });
@@ -111,9 +126,14 @@ export class WishlistController {
 
   async clearWishlist(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.telegramUser!.userId;
+      const userId = req.telegramUser?.userId;
 
       logger.info(`API: Clear wishlist for user ${userId}`);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized: Invalid user' });
+        return;
+      }
 
       await wishlistService.clearWishlist(userId);
 

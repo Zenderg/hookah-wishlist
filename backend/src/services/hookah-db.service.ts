@@ -91,9 +91,11 @@ class HookahDbService {
         },
       });
 
+      // Handle response safely - response.data might be undefined
+      const responseData = response.data || {};
       const result: TobaccoSearchResult = {
-        results: response.data.data || response.data.results || [],
-        total: response.data.total || response.data.count || 0,
+        results: responseData.data || responseData.results || [],
+        total: responseData.total || responseData.count || 0,
         page: params.page || 1,
         pageSize: params.pageSize || 20,
       };
@@ -113,7 +115,10 @@ class HookahDbService {
 
     try {
       const response = await this.client.get(`/tobaccos/${id}`);
-      const tobacco: Tobacco = response.data.data || response.data;
+      
+      // Handle response safely - response.data might be undefined
+      const responseData = response.data || {};
+      const tobacco: Tobacco = responseData.data || responseData;
       
       this.setCache(cacheKey, tobacco);
       return tobacco;
@@ -133,7 +138,10 @@ class HookahDbService {
 
     try {
       const response = await this.client.get('/brands');
-      const brands: string[] = response.data.data || response.data || [];
+      
+      // Handle response safely - response.data might be undefined
+      const responseData = response.data || {};
+      const brands: string[] = responseData.data || responseData || [];
       
       this.setCache(cacheKey, brands);
       return brands;
@@ -150,7 +158,10 @@ class HookahDbService {
 
     try {
       const response = await this.client.get('/flavors');
-      const flavors: string[] = response.data.data || response.data || [];
+      
+      // Handle response safely - response.data might be undefined
+      const responseData = response.data || {};
+      const flavors: string[] = responseData.data || responseData || [];
       
       this.setCache(cacheKey, flavors);
       return flavors;
@@ -166,5 +177,6 @@ class HookahDbService {
   }
 }
 
+export { HookahDbService };
 export const hookahDbService = new HookahDbService();
 export default hookahDbService;

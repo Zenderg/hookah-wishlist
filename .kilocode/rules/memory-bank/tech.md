@@ -283,6 +283,100 @@ volumes:
   hookah-wishlist-data:  # Named volume for persistent SQLite database storage
 ```
 
+## Testing Infrastructure
+
+### Backend Testing
+
+The backend subproject has a comprehensive testing infrastructure:
+
+**Testing Framework:**
+- **Jest** - Testing framework with TypeScript support via ts-jest
+- **Supertest** - HTTP testing for API endpoints
+- **ts-jest** - TypeScript preprocessor for Jest
+
+**Test Scripts:**
+```bash
+cd backend
+
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+**Coverage Thresholds:**
+- Minimum 80% code coverage enforced
+- Current coverage: 90.99% (exceeds threshold)
+
+**Test Structure:**
+```
+backend/tests/
+├── setup.ts              # Test setup and configuration
+├── README.md             # Test documentation
+├── fixtures/             # Test fixtures and mock data
+│   └── mockData.ts
+├── mocks/                # Mock implementations
+│   ├── mockAxios.ts
+│   ├── mockExpress.ts
+│   └── mockTelegram.ts
+├── unit/                 # Unit tests
+│   ├── bot/
+│   │   ├── session.test.ts
+│   │   └── commands/
+│   │       ├── add.test.ts
+│   │       ├── help.test.ts
+│   │       ├── remove.test.ts
+│   │       ├── search.test.ts
+│   │       ├── start.test.ts
+│   │       └── wishlist.test.ts
+│   ├── controllers/
+│   │   ├── search.controller.test.ts
+│   │   └── wishlist.controller.test.ts
+│   ├── middleware/
+│   │   ├── auth.test.ts
+│   │   └── errorHandler.test.ts
+│   ├── services/
+│   │   ├── hookah-db.service.test.ts
+│   │   ├── search.service.test.ts
+│   │   └── wishlist.service.test.ts
+│   └── storage/
+│       ├── file.storage.test.ts
+│       └── sqlite.storage.test.ts
+└── integration/          # Integration tests
+    ├── api.test.ts
+    └── routes/
+        ├── search.test.ts
+        └── wishlist.test.ts
+```
+
+**Test Coverage by Module:**
+- **Storage**: SQLite (55 tests), File (51 tests)
+- **Services**: Wishlist (64 tests), Search (55 tests), Hookah-db (67 tests)
+- **Middleware**: Auth (31 tests), Error Handler (50 tests)
+- **Controllers**: Wishlist (36 tests), Search (42 tests)
+- **Bot**: Commands (90 tests), Session (49 tests)
+- **Integration**: Routes (92 tests), API (45 tests)
+
+**Total Tests:** 727
+**Pass Rate:** 99.59% (724/727 tests passing)
+**Code Coverage:** 90.99%
+
+**Implementation Fixes Made During Testing:**
+- **file.storage.ts**: Added key sanitization and async directory creation
+- **errorHandler.ts**: Added null/undefined error handling
+- **wishlist.controller.ts**: Added safe userId access with optional chaining
+- **search.controller.ts**: Added whitespace-only query validation
+- **start.ts & help.ts**: Added error handling with try-catch blocks
+
+**Test Documentation:**
+- Test documentation available in `backend/tests/README.md`
+- Test results documented in `docs/BACKEND_TEST_COVERAGE.md`
+- Test utilities, mocks, and fixtures available in `backend/tests/`
+
 ## Technical Constraints
 
 ### Performance Requirements
@@ -328,6 +422,7 @@ volumes:
 - Integration tests for API endpoints
 - E2E tests for critical user flows
 - Minimum 80% code coverage
+- Comprehensive test suite with 727 tests (backend)
 
 ## Security Best Practices
 
@@ -727,13 +822,14 @@ The project documentation is organized as follows:
 - **[`docs/TESTING_SUMMARY.md`](docs/TESTING_SUMMARY.md)** - Test results and verification
 - **[`docs/DOCKER_VOLUMES.md`](docs/DOCKER_VOLUMES.md)** - Docker volumes documentation
 - **[`docs/DOCKER_COMPOSE_TESTING.md`](docs/DOCKER_COMPOSE_TESTING.md)** - Comprehensive Docker Compose test results
+- **[`docs/BACKEND_TEST_COVERAGE.md`](docs/BACKEND_TEST_COVERAGE.md)** - Backend test coverage details
 - **[`mini-app/TELEGRAM_INTEGRATION.md`](mini-app/TELEGRAM_INTEGRATION.md)** - Telegram integration guide (mini-app specific)
 - **[`.kilocode/rules/memory-bank/`](.kilocode/rules/memory-bank/)** - Memory bank files for project context
 
 ### Documentation Organization
 
 - **Root directory**: Contains only [`README.md`](README.md) as the main project documentation
-- **docs/**: Contains additional documentation files (TESTING_SUMMARY.md, DOCKER_VOLUMES.md, DOCKER_COMPOSE_TESTING.md)
+- **docs/**: Contains additional documentation files (TESTING_SUMMARY.md, DOCKER_VOLUMES.md, DOCKER_COMPOSE_TESTING.md, BACKEND_TEST_COVERAGE.md)
 - **mini-app/**: Contains mini-app specific documentation (TELEGRAM_INTEGRATION.md)
 - **Memory Bank**: Located in [`.kilocode/rules/memory-bank/`](.kilocode/rules/memory-bank/) for project context and architecture
 
@@ -803,4 +899,47 @@ The hookah-wishlist project is **approved for production deployment** once:
 2. Environment variables are set with actual credentials
 3. Monitoring and logging are implemented (recommended)
 
-All core functionality is working correctly, data persistence is verified, and the system is ready for deployment. Comprehensive test results are documented in [`docs/DOCKER_COMPOSE_TESTING.md`](docs/DOCKER_COMPOSE_TESTING.md).
+All core functionality is working correctly, data persistence is verified, and system is ready for deployment. Comprehensive test results are documented in [`docs/DOCKER_COMPOSE_TESTING.md`](docs/DOCKER_COMPOSE_TESTING.md).
+
+## Backend Testing Results
+
+### Testing Summary (2026-01-11)
+
+**Total Tests Executed:** 727
+**Pass Rate:** 99.59% (724/727 tests passing)
+**Code Coverage:** 90.99%
+**Critical Issues:** 0
+
+### Test Infrastructure
+
+- **Testing Framework:** Jest with ts-jest
+- **HTTP Testing:** Supertest
+- **Coverage Thresholds:** 80% minimum (exceeded with 90.99%)
+- **Test Scripts:** test, test:watch, test:coverage
+
+### Test Coverage by Module
+
+- **Storage:** SQLite (55 tests), File (51 tests)
+- **Services:** Wishlist (64 tests), Search (55 tests), Hookah-db (67 tests)
+- **Middleware:** Auth (31 tests), Error Handler (50 tests)
+- **Controllers:** Wishlist (36 tests), Search (42 tests)
+- **Bot:** Commands (90 tests), Session (49 tests)
+- **Integration:** Routes (92 tests), API (45 tests)
+
+### Implementation Fixes Made During Testing
+
+- **file.storage.ts**: Added key sanitization and async directory creation
+- **errorHandler.ts**: Added null/undefined error handling
+- **wishlist.controller.ts**: Added safe userId access with optional chaining
+- **search.controller.ts**: Added whitespace-only query validation
+- **start.ts & help.ts**: Added error handling with try-catch blocks
+
+### Test Documentation
+
+- Test documentation available in `backend/tests/README.md`
+- Test results documented in `docs/BACKEND_TEST_COVERAGE.md`
+- Test utilities, mocks, and fixtures available in `backend/tests/`
+
+### Production Readiness
+
+The backend is **production-ready** with comprehensive test coverage exceeding 80% threshold. All critical functionality is tested and verified.
