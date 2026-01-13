@@ -37,6 +37,7 @@ services:
     container_name: hookah-wishlist-frontend
     environment:
       - NODE_ENV=production
+      - VITE_API_URL=${API_URL}
     restart: unless-stopped
     networks:
       - hookah-network
