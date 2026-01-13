@@ -56,8 +56,8 @@ services:
       context: ./docker/nginx
       dockerfile: Dockerfile
     container_name: hookah-wishlist-nginx
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     restart: unless-stopped
     networks:
       - hookah-network
