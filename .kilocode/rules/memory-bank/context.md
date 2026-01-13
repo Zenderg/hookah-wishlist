@@ -21,6 +21,27 @@ The project is ready for development, testing, and production deployment.
 
 ## Recent Changes
 
+- **Fixed backend Docker startup issue** (2026-01-13)
+  - Problem: Backend was building successfully but failing to start with error "Cannot find module '/app/dist/index.js'"
+  - Root cause: TypeScript `rootDir: "./"` in [`backend/tsconfig.json`](backend/tsconfig.json:7) caused compiled files to be placed at `dist/src/index.js` instead of `dist/index.js`
+  - Solution: Changed `rootDir` from `"./"` to `"./src"` in [`backend/tsconfig.json`](backend/tsconfig.json:7)
+  - Additional fix: Removed `tests/**/*` from include pattern since tests don't need to be compiled for production
+  - Additional fix: Removed static file serving code from [`backend/src/api/server.ts`](backend/src/api/server.ts:38-46) since we have a separate frontend container and Nginx proxy
+  - Result: Backend now starts successfully and is healthy
+
+- **Updated docker-compose.yaml** (2026-01-13)
+  - Removed obsolete `version: '3.8'` declaration to eliminate Docker Compose warning
+  - Configuration validated with `docker-compose config`
+
+- **Verified all services running** (2026-01-13)
+  - Backend: hookah-wishlist-backend - Up and healthy (internal port 3000)
+  - Frontend: hookah-wishlist-frontend - Up and healthy (internal port 5173)
+  - Nginx: nginx:alpine - Up and running (external port 80)
+  - Network: hookah-wishlist_hookah-network - Created and active
+  - Volume: hookah-wishlist_hookah-wishlist-data - Created for persistent storage
+  - Health check: `http://localhost/api/health` returns `{"status":"ok","timestamp":"..."}`
+  - Frontend: `http://localhost/mini-app/` serves HTML correctly
+
 - **Completed comprehensive App integration testing** (2026-01-13)
   - Created comprehensive integration test suite with 71 tests
   - Achieved 100% pass rate (71/71 tests passing)
@@ -321,6 +342,7 @@ The project is ready for development, testing, and production deployment.
 - ✅ Dependencies Installation: All dependencies installed in both backend and mini-app subprojects
 - ✅ Docker Compose Testing: Comprehensive testing completed with 100% success rate
 - ✅ Service Health: All services running and healthy (backend, frontend, nginx)
+- ✅ Backend Startup Issue: Fixed TypeScript compilation path issue, backend now starts successfully
 - ✅ Reverse Proxy Routing: Path-based routing working correctly
 - ✅ API Endpoints: All endpoints responding with proper authentication
 - ✅ Mini-App Accessibility: Frontend accessible through Nginx proxy
@@ -382,4 +404,4 @@ The project is ready for development, testing, and production deployment.
 - **Independent subprojects**: Complete isolation between backend and mini-app with no shared dependencies
 - **Clean root directory**: Prefers documentation files organized in docs/ directory rather than scattered in root
 - **Production-ready focus**: System has been thoroughly tested and verified for production deployment
-- **Comprehensive testing**: Backend has comprehensive test suite with 727 tests achieving 90.99% coverage; Mini-app has comprehensive test suite with 463 tests achieving 99.78% pass rate (462/463 passing)
+- **Comprehensive testing**: Backend has comprehensive test suite with 727 tests achieving 90.99% coverage; Mini-app has comprehensive test suite with 534 tests achieving 99.78% pass rate (462/463 passing)

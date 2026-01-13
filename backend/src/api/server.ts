@@ -35,16 +35,6 @@ export function createServer(): Application {
   // API routes
   app.use('/api', apiRoutes);
 
-  // Serve mini-app static files in production
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('mini-app/dist'));
-    
-    // SPA fallback - catch all routes that don't match API routes
-    app.get(/.*/, (_req, res) => {
-      res.sendFile('index.html', { root: 'mini-app/dist' });
-    });
-  }
-
   // Error handling
   app.use(notFoundHandler);
   app.use(errorHandler);
