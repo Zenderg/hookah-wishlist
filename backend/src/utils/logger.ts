@@ -15,11 +15,24 @@ const logger = winston.createLogger({
   ],
 });
 
-if (process.env.NODE_ENV !== 'production') {
+// Always log to console in Docker containers (for docker logs to work)
+// In production with Docker, we need console output to be captured
+// In local development, we also want colored console output
+if (process.env.NODE_ENV !== 'production' || process.env.DOCKER_CONTAINER === 'true') {
   logger.add(new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),
       winston.format.simple()
+    )
+  }));
+}
+
+// For production Docker containers, also add a console transport with JSON format
+if (process.env.NODE_ENV === 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
     )
   }));
 }

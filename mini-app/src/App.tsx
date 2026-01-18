@@ -5,6 +5,7 @@ import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import SearchResults from './components/SearchResults';
 import Wishlist from './components/Wishlist';
+import DebugPanel from './components/DebugPanel';
 
 type Tab = 'search' | 'wishlist';
 
@@ -13,7 +14,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search');
 
   useEffect(() => {
-    // Initialize Telegram WebApp using the API service
+    // Initialize Telegram WebApp using API service
     const webApp = apiService.initializeTelegram();
     
     if (webApp) {
@@ -33,6 +34,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <DebugPanel />
       <Header />
       <div className="container mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 mb-4">
