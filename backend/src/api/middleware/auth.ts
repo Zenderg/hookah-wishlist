@@ -43,93 +43,8 @@ interface InitDataParams {
 const MAX_AUTH_AGE = 86400;
 
 /**
- * Telegram Ed25519 public keys for signature verification
- * Source: https://docs.telegram-mini-apps.com/platform/init-data
- */
-const TELEGRAM_PUBLIC_KEYS = {
-  production: 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d',
-  test: '40055058a4ee38156a06562e52eece92a771bcd8346a8c4615cb7376eddf72ec'
-};
-
-/**
- * Detects if we're in test environment
- */
-const isTestEnvironment = process.env.NODE_ENV === 'development' || 
-                           process.env.TELEGRAM_BOT_TOKEN?.startsWith('test') ||
-                           process.env.TELEGRAM_BOT_TOKEN === 'test';
-
-/**
- * Verifies Telegram initData signature using Ed25519 (new format)
- * 
- * @param initData - The initData string from Telegram WebApp
- * @param signature - The base64url-encoded Ed25519 signature
- * @returns true if signature is valid, false otherwise
- */
-function verifyEd25519Signature(initData: string, signature: string): boolean {
-  try {
-    logger.debug('[AUTH DEBUG] Verifying Ed25519 signature (new format)');
-    
-    // Parse initData parameters
-    const params: InitDataParams = {};
-    const pairs = initData.split('&');
-    
-    for (const pair of pairs) {
-      const [key, value] = pair.split('=');
-      if (key && value !== undefined) {
-        params[key] = value;
-      }
-    }
-
-    // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
-    const dataCheckString = Object.entries(params)
-      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n');
-
-    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
-
-    // Get the appropriate public key based on environment
-    const publicKeyHex = isTestEnvironment ? TELEGRAM_PUBLIC_KEYS.test : TELEGRAM_PUBLIC_KEYS.production;
-    
-    // Convert hex public key to Buffer
-    const publicKey = Buffer.from(publicKeyHex, 'hex');
-    logger.debug('[AUTH DEBUG] Using public key (first 40 chars):', publicKeyHex.substring(0, 40) + '...');
-
-    // Decode base64url signature to Buffer
-    const signatureBuffer = Buffer.from(signature, 'base64url');
-    logger.debug('[AUTH DEBUG] Signature buffer length:', signatureBuffer.length);
-
-    // Convert data-check-string to Buffer
-    const dataBuffer = Buffer.from(dataCheckString, 'utf-8');
-    logger.debug('[AUTH DEBUG] Data buffer length:', dataBuffer.length);
-
-    // Verify Ed25519 signature
-    // Note: Node.js crypto module doesn't have built-in Ed25519 support
-    // We need to use the 'ed25519' package that was just installed
-    const ed25519 = require('ed25519');
-    
-    const isValid = ed25519.verify(
-      dataBuffer,
-      signatureBuffer,
-      publicKey
-    );
-
-    if (!isValid) {
-      logger.error('[AUTH DEBUG] Ed25519 signature verification failed');
-    } else {
-      logger.debug('[AUTH DEBUG] Ed25519 signature verification successful');
-    }
-
-    return isValid;
-  } catch (error) {
-    logger.error('[AUTH DEBUG] Error verifying Ed25519 signature:', error);
-    return false;
-  }
-}
-
-/**
- * Verifies Telegram initData signature using HMAC-SHA256 (old format)
+ * Verifies Telegram initData signature using HMAC-SHA256
+ * Supports both old format (hash) and new format (signature)
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for HMAC verification
@@ -158,7 +73,8 @@ function verifyHmacSha256Signature(initData: string, botToken: string): boolean 
       return false;
     }
     
-    logger.debug('[AUTH DEBUG] Hash present:', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Signature present:', signature.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Using signature format:', params.signature ? 'new (signature)' : 'old (hash)');
 
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -180,16 +96,16 @@ function verifyHmacSha256Signature(initData: string, botToken: string): boolean 
       .digest('hex');
 
     logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Expected hash:', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Expected signature:', signature.substring(0, 20) + '...');
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
-      Buffer.from(hash, 'hex')
+      Buffer.from(signature, 'hex')
     );
 
     if (!isValid) {
-      logger.error('[AUTH DEBUG] HMAC signature verification failed - hashes do not match');
+      logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
     } else {
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
