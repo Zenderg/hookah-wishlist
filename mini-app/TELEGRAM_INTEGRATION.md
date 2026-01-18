@@ -1,6 +1,6 @@
 # Telegram Web Apps API Integration
 
-This document explains how the hookah-wishlist mini-app integrates with the Telegram Web Apps API for authentication and user identification.
+This document explains how to hookah-wishlist mini-app integrates with Telegram Web Apps API for authentication and user identification.
 
 ## Overview
 
@@ -35,7 +35,7 @@ if (webApp) {
 
 #### Automatic Authentication
 
-All API requests automatically include the `X-Telegram-Init-Data` header:
+All API requests automatically include `X-Telegram-Init-Data` header:
 
 ```typescript
 // This request automatically includes Telegram authentication
@@ -173,25 +173,25 @@ npm install --save-dev @twa-dev/types
 
 ### Testing in Development Mode
 
-1. Start the development server:
+1. Start development server:
    ```bash
    npm run dev
    ```
 
-2. Open the app in your browser
+2. Open app in your browser
 3. The app will automatically use mock Telegram data
 4. All API requests will include mock authentication
 
 ### Testing in Telegram
 
-1. Build the production version:
+1. Build production version:
    ```bash
    npm run build
    ```
 
-2. Deploy the app to a web server
-3. Configure the Telegram bot with the mini-app URL
-4. Open the mini-app from Telegram
+2. Deploy app to a web server
+3. Configure Telegram bot with mini-app URL
+4. Open mini-app from Telegram
 5. The app will use real Telegram authentication
 
 ## Troubleshooting
@@ -204,6 +204,7 @@ npm install --save-dev @twa-dev/types
 - Ensure app is opened from Telegram (not directly in browser)
 - Check that Telegram Web Apps API is available
 - Verify backend authentication middleware is working correctly
+- Check backend logs for detailed error messages
 
 ### "Telegram Web Apps API not available" Warning
 
@@ -229,11 +230,12 @@ npm install --save-dev @twa-dev/types
 2. **Backend validation**: Always validate `initData` on the backend using Telegram's verification algorithm
 3. **HTTPS required**: Always use HTTPS in production to prevent man-in-the-middle attacks
 4. **Mock data only for development**: Never use mock authentication in production
+5. **Support both signature formats**: Backend supports both old HMAC-SHA256 and new Ed25519 signature formats
 
 ## Additional Resources
 
 - [Telegram Web Apps API Documentation](https://core.telegram.org/bots/webapps)
-- [Telegram Mini Apps Documentation](https://core.telegram.org/bots/webapps)
+- [Telegram Mini Apps Documentation](https://docs.telegram-mini-apps.com/platform/init-data)
 - [@twa-dev/types Package](https://www.npmjs.com/package/@twa-dev/types)
 
 ## Implementation Details
@@ -242,6 +244,16 @@ npm install --save-dev @twa-dev/types
 
 The `initData` string is a URL-encoded query string containing:
 
+**New Format (Ed25519 signature - current):**
+```
+query_id=AAHdF6IQAAAAAN0XohDhrOrc
+&user={"id":123456789,"first_name":"Test","last_name":"User","username":"testuser","language_code":"en"}
+&auth_date=1234567890
+&signature=3cPH_gFJPY1UR3VFTGw3ll-lE8Epu_0Sp7pSCwx9t_Hb_uHngjKlw6G6jTqxU7LFECm2Cwvl61j64ySw5Yf7CA
+&hash=518b76045a970ade08c388c1cea37da79e1431ad24356acc7961153e4c01f958
+```
+
+**Old Format (HMAC-SHA256 signature - deprecated):**
 ```
 user={"id":123456789,"first_name":"Test","last_name":"User","username":"testuser","language_code":"en"}
 &auth_date=1234567890
@@ -250,13 +262,40 @@ user={"id":123456789,"first_name":"Test","last_name":"User","username":"testuser
 
 ### Backend Authentication
 
-The backend authentication middleware (`backend/src/api/middleware/auth.ts`) validates the `initData` by:
+The backend authentication middleware (`backend/src/api/middleware/auth.ts`) validates `initData` by:
 
-1. Extracting the hash from `initData`
-2. Reconstructing the data string without the hash
-3. Creating an HMAC-SHA256 signature using the bot token
-4. Comparing the computed hash with the provided hash
-5. Extracting the user ID if validation succeeds
+**New Format (Ed25519):**
+1. Extracting `signature` from `initData`
+2. Extracting bot ID from bot token
+3. Reconstructing data string without `hash` and `signature`, sorted alphabetically
+4. Creating verify string: `{bot_id}:WebAppData\n{dataCheckString}`
+5. Verifying Ed25519 signature using Telegram's public key
+6. Extracting user ID if validation succeeds
+
+**Old Format (HMAC-SHA256):**
+1. Extracting `hash` from `initData`
+2. Reconstructing data string without `hash`, sorted alphabetically
+3. Creating HMAC-SHA256 signature using bot token
+4. Comparing computed hash with provided hash
+5. Extracting user ID if validation succeeds
+
+The middleware automatically detects which format to use based on the presence of `signature` (new) or `hash` (old) parameters.
+
+### Signature Verification Methods
+
+#### Ed25519 (New Format - Recommended)
+
+- Uses Telegram's public key for verification
+- No need to share bot secret token with third parties
+- More secure for third-party validation
+- Supports both production and test environments
+
+#### HMAC-SHA256 (Old Format - Deprecated)
+
+- Uses bot token for verification
+- Requires bot secret token on backend
+- Still supported for backward compatibility
+- Will be phased out in future Telegram updates
 
 ### Error Messages
 
@@ -277,10 +316,12 @@ The API service provides user-friendly error messages:
 4. **Test in both modes**: Test in development mode and Telegram
 5. **Log errors for debugging**: Use console.error for API errors
 6. **Provide user feedback**: Show error messages to users when requests fail
+7. **Use Ed25519 verification**: Prefer new Ed25519 signature format for production
+8. **Keep backend updated**: Ensure backend supports both signature formats for compatibility
 
 ## Future Enhancements
 
-Potential improvements to the Telegram integration:
+Potential improvements to Telegram integration:
 
 - Add support for Telegram theme colors
 - Implement haptic feedback using `HapticFeedback` API
@@ -288,3 +329,24 @@ Potential improvements to the Telegram integration:
 - Support for Telegram's `BackButton` API
 - Implement popup dialogs using `Popup` API
 - Add support for Telegram's `ScanQrPopup` API
+- Implement third-party validation using Ed25519 public keys
+
+## Dependencies
+
+### Backend
+
+- `tweetnacl`: Ed25519 signature verification library
+- `crypto`: Node.js built-in cryptographic functions
+
+### Frontend
+
+- `@twa-dev/types`: TypeScript type definitions for Telegram Web Apps API
+- `axios`: HTTP client for API requests
+
+## Version Compatibility
+
+- **Old Format (HMAC-SHA256)**: Supported for backward compatibility
+- **New Format (Ed25519)**: Current standard, recommended for all new implementations
+- **Auto-detection**: Backend automatically detects and uses appropriate verification method
+
+The authentication system is designed to be future-proof and will continue to work as Telegram updates their Web Apps API.

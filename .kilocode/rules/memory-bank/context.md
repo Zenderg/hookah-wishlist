@@ -10,7 +10,8 @@ Project setup is complete. All core functionality has been implemented including
 - React mini-app with Tailwind CSS and Zustand state management
 - Docker configuration for containerized deployment
 - Nginx reverse proxy for unified access on port 80
-- **Telegram authentication with initData verification (HMAC-SHA256)**
+- **Telegram authentication with initData verification (Ed25519 and HMAC-SHA256)**
+- **Automatic format detection - backend detects and uses appropriate signature verification method**
 - **Docker volumes configuration for persistent SQLite database storage**
 - **Dependencies installed in both subprojects (backend and mini-app)**
 - **Docker Compose testing completed successfully (100% pass rate)**
@@ -20,6 +21,32 @@ Project setup is complete. All core functionality has been implemented including
 The project is ready for development, testing, and production deployment.
 
 ## Recent Changes
+
+- **Fixed production authentication issue** (2026-01-18)
+  - Problem: Production environment showing "Authentication failed. Please open this app from Telegram." error
+  - Root cause: Telegram updated Web Apps API to use Ed25519 signatures instead of old HMAC-SHA256 format, but backend only supported HMAC-SHA256
+  - Error: `ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH` - Input buffers must have the same byte length
+  - Solution: Added Ed25519 signature verification support using `tweetnacl` library
+  - Added automatic format detection - backend now detects which signature format to use based on initData parameters
+  - Implemented Ed25519 verification (new format):
+    - Uses Telegram's public key for verification
+    - Creates verify string: `{bot_id}:WebAppData\n{dataCheckString}`
+    - Verifies Ed25519 signature using `tweetnacl` library
+    - Supports both production and test environments
+  - Maintained HMAC-SHA256 verification (old format) for backward compatibility
+  - Added `tweetnacl` dependency to [`backend/package.json`](backend/package.json:1)
+  - Updated [`backend/src/api/middleware/auth.ts`](backend/src/api/middleware/auth.ts:1) with:
+    - `verifyInitDataSignatureEd25519()` function for new format verification
+    - `verifyInitDataSignatureHMAC()` function for old format verification
+    - `verifyInitDataSignature()` function with automatic format detection
+    - Proper base64url decoding with padding handling
+    - Telegram's public keys for production and test environments
+  - Updated documentation:
+    - [`mini-app/TELEGRAM_INTEGRATION.md`](mini-app/TELEGRAM_INTEGRATION.md:1) with both signature formats explained
+    - [`README.md`](README.md:1) with Ed25519 support information
+    - [`.kilocode/rules/memory-bank/architecture.md`](.kilocode/rules/memory-bank/architecture.md:1) with new authentication flow
+    - [`.kilocode/rules/memory-bank/tech.md`](.kilocode/rules/memory-bank/tech.md:1) with tweetnacl dependency
+  - Result: Backend now supports both old HMAC-SHA256 and new Ed25519 signature formats, authentication should work in production
 
 - **Fixed backend Docker startup issue** (2026-01-13)
   - Problem: Backend was building successfully but failing to start with error "Cannot find module '/app/dist/index.js'"
@@ -335,7 +362,8 @@ The project is ready for development, testing, and production deployment.
 - ✅ Independent Subprojects: Complete isolation with own package.json and Dockerfiles
 - ✅ Documentation: Comprehensive README.md
 - ✅ Nginx Reverse Proxy: Unified access on port 80 with path-based routing
-- ✅ Telegram Authentication: initData verification with HMAC-SHA256 and replay attack prevention
+- ✅ Telegram Authentication: initData verification with Ed25519 (new) and HMAC-SHA256 (old)
+- ✅ Automatic Format Detection: Backend automatically detects and uses appropriate signature verification method
 - ✅ Docker Volumes: Named volume `hookah-wishlist-data` for persistent SQLite database storage
 - ✅ Root Package Removal: No monorepo structure, complete subproject isolation
 - ✅ Documentation Reorganization: Additional documentation moved to docs/ directory
@@ -368,30 +396,36 @@ The project is ready for development, testing, and production deployment.
 
 ## Next Steps
 
-1. Configure environment variables:
+1. Deploy updated authentication to production:
+   - Rebuild Docker containers with new authentication code
+   - Restart services to apply changes
+   - Test mini-app in Telegram environment
+   - Verify Ed25519 signature verification works correctly
+
+2. Configure environment variables:
    - Obtain Telegram Bot Token from @BotFather
    - Obtain hookah-db API key from hookah-db service provider
    - Update .env file with bot token, API key, and configuration
    - Set actual domain for TELEGRAM_WEBHOOK_URL and MINI_APP_URL
 
-2. Production deployment:
+3. Production deployment:
    - Configure SSL/TLS for HTTPS (required for production)
    - Deploy using Docker Compose: `docker-compose up -d`
    - Verify all services are running and healthy
    - Test bot commands with actual Telegram bot
    - Test mini-app functionality with backend API in Telegram environment
 
-3. Monitoring and logging (recommended):
+4. Monitoring and logging (recommended):
    - Implement monitoring solution (ELK stack, Loki, CloudWatch)
    - Set up log aggregation and analysis
    - Configure alerts for service failures
 
-4. Backup strategy (recommended):
+5. Backup strategy (recommended):
    - Implement manual backup procedures for database volume
    - Document backup and restore processes
    - Schedule regular backups (manual as per user preference)
 
-5. Consider adding advanced features:
+6. Consider adding advanced features:
    - Pagination for search results
    - Advanced filtering (by brand, flavor, strength)
    - Tobacco images in mini-app

@@ -13,6 +13,7 @@
 - **API**: Telegram Bot API
 - **Web Apps**: Telegram Web Apps API
 - **Type Definitions**: @twa-dev/types for TypeScript support
+- **Signature Verification**: tweetnacl for Ed25519 signature verification
 
 ### Frontend (Mini-App)
 - **Framework**: React with TypeScript
@@ -96,7 +97,7 @@ cd backend
 npm init -y
 
 # Install core dependencies
-npm install express node-telegram-bot-api axios dotenv better-sqlite3
+npm install express node-telegram-bot-api axios dotenv better-sqlite3 tweetnacl
 
 # Install development dependencies
 npm install -D typescript @types/node @types/express ts-node nodemon @types/better-sqlite3
@@ -138,6 +139,7 @@ mkdir -p docker/nginx
 - `node-telegram-bot-api` - Telegram Bot API wrapper
 - `axios` - HTTP client for API requests
 - `dotenv` - Environment variable management
+- `tweetnacl` - Ed25519 signature verification library
 
 **Database & Storage**
 - `better-sqlite3` v12.5.0 - SQLite database driver (synchronous, faster than sqlite3)
@@ -459,14 +461,15 @@ mini-app/tests/
 
 **Testing Best Practices:**
 - AAA Pattern (Arrange-Act-Assert) in all tests
-- Descriptive test names
-- Proper test isolation with beforeEach/afterEach
-- Mocking external dependencies (store, API, Telegram)
-- User interaction testing with @testing-library/user-event
-- Accessibility testing for all components
-- Edge case testing (special characters, Unicode, emoji, rapid interactions)
-- State management testing
-- Integration testing for App component
+- Descriptive Test Names: Clear, self-documenting test names
+- Setup/Teardown: Proper beforeEach/afterEach for test isolation
+- Mocking: Appropriate mocking of dependencies (store, API, Telegram)
+- Test Organization: Logical grouping with describe blocks
+- Edge Cases: Comprehensive edge case testing
+- Accessibility: Accessibility testing for all components
+- State Management: Testing state transitions and updates
+- User Interaction: Realistic user interaction simulation
+- Integration Testing: Testing component integration (App component)
 
 ## Technical Constraints
 
@@ -522,11 +525,14 @@ mini-app/tests/
 3. **HTTPS**: Use HTTPS for all communications
 4. **Dependencies**: Regularly update and audit dependencies
 5. **Error Handling**: Never expose stack traces to users
-6. **Authentication**: Verify Telegram user IDs via initData with HMAC-SHA256
-7. **API Key Security**: Securely store and use hookah-db API key
-8. **Reverse Proxy**: Use Nginx to hide internal service ports
-9. **Data Isolation**: Each user's data isolated by Telegram user ID
-10. **Database Security**: SQLite file permissions and proper connection handling
+6. **Authentication**: Verify Telegram user IDs via initData with Ed25519 (new) or HMAC-SHA256 (old)
+7. **Automatic Format Detection**: Backend automatically detects and uses appropriate signature verification method
+8. **Ed25519 Verification**: Uses Telegram's public key, more secure for third-party validation
+9. **HMAC-SHA256 Verification**: Uses bot token, maintained for backward compatibility
+10. **API Key Security**: Securely store and use hookah-db API key
+11. **Reverse Proxy**: Use Nginx to hide internal service ports
+12. **Data Isolation**: Each user's data isolated by Telegram user ID
+13. **Database Security**: SQLite file permissions and proper connection handling
 
 ## Nginx Configuration
 
@@ -866,7 +872,16 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Key Features:**
 - Extracts initData from `X-Telegram-Init-Data` header or query parameters
 - Parses URL-encoded initData parameters
-- Verifies HMAC-SHA256 signature using bot token's secret key
+- **Automatic format detection**: Detects Ed25519 (signature parameter) or HMAC-SHA256 (hash parameter) format
+- **Ed25519 verification** (new format):
+  - Uses Telegram's public key for verification
+  - Creates verify string: `{bot_id}:WebAppData\n{dataCheckString}`
+  - Verifies Ed25519 signature using `tweetnacl` library
+  - Supports both production and test environments
+- **HMAC-SHA256 verification** (old format):
+  - Uses bot token for verification
+  - Calculates HMAC-SHA256 of data-check-string
+  - Compares with provided hash using constant-time comparison
 - Validates timestamp to prevent replay attacks (24-hour max age)
 - Extracts and validates user_id from initData
 - Adds user information to `req.telegramUser` object
@@ -874,7 +889,7 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Error Codes:**
 - `MISSING_INIT_DATA` - No initData provided
 - `MISSING_BOT_TOKEN` - Server configuration error
-- `INVALID_SIGNATURE` - HMAC verification failed
+- `INVALID_SIGNATURE` - Signature verification failed (Ed25519 or HMAC-SHA256)
 - `EXPIRED_AUTH_DATA` - Timestamp too old or invalid
 - `MISSING_USER_DATA` - User parameter missing
 - `INVALID_USER_DATA` - User data parsing failed
@@ -899,11 +914,14 @@ The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/ap
 
 ### Security Measures
 
-1. **HMAC-SHA256 Verification**: Prevents tampering with initData
-2. **Constant-Time Comparison**: Prevents timing attacks
-3. **Timestamp Validation**: Prevents replay attacks
-4. **Input Validation**: All user inputs validated before use
-5. **Error Message Safety**: No sensitive information in error responses
+1. **Ed25519 Verification**: Prevents tampering with initData (new format, more secure)
+2. **HMAC-SHA256 Verification**: Prevents tampering with initData (old format, backward compatible)
+3. **Constant-Time Comparison**: Prevents timing attacks
+4. **Timestamp Validation**: Prevents replay attacks
+5. **Input Validation**: All user inputs validated before use
+6. **Error Message Safety**: No sensitive information in error responses
+7. **Automatic Format Detection**: Ensures compatibility with both old and new Telegram API formats
+8. **Public Key Verification**: Ed25519 uses Telegram's official public keys for production and test environments
 
 ## Documentation Structure
 
@@ -968,7 +986,9 @@ This organization keeps the root directory clean while maintaining easy access t
 
 ### Authentication System
 
-- HMAC-SHA256 signature verification working correctly
+- Ed25519 signature verification working correctly (new format)
+- HMAC-SHA256 signature verification working correctly (old format)
+- Automatic format detection working correctly
 - Replay attack prevention with 24-hour timestamp validation
 - Constant-time comparison for timing attack prevention
 - All protected endpoints properly enforce authentication

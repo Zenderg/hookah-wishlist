@@ -21,6 +21,7 @@ Telegram bot with mini-app for managing hookah tobacco wishlist.
 - Axios
 - Winston (logging)
 - SQLite with WAL mode
+- tweetnacl (Ed25519 signature verification)
 
 ### Frontend (Mini-App)
 - React 18
@@ -91,7 +92,7 @@ Edit `.env` and set:
 
 **Important**: The backend and mini-app are completely independent. You must run them separately.
 
-### Start the backend
+### Start backend
 
 ```bash
 cd backend
@@ -100,7 +101,7 @@ npm run dev
 
 The backend server will start on port 3000.
 
-### Start the mini-app
+### Start mini-app
 
 ```bash
 cd mini-app
@@ -127,7 +128,7 @@ cd ..
 
 ## Docker Deployment
 
-The project uses Docker Compose to orchestrate the backend, frontend, and Nginx reverse proxy as independent services.
+The project uses Docker Compose to orchestrate backend, frontend, and Nginx reverse proxy as independent services.
 
 ### Build and start all services
 
@@ -249,36 +250,36 @@ For complete environment variable documentation, see [`.env.example`](.env.examp
 
 ```
 hookah-wishlist/
-├── backend/                  # Backend subproject (independent)
-│   ├── src/
-│   │   ├── bot/             # Telegram bot implementation
-│   │   ├── api/             # REST API
-│   │   ├── services/        # Business logic
-│   │   ├── models/          # Data models
-│   │   ├── storage/         # Data persistence (SQLite)
-│   │   └── utils/           # Utility functions
-│   ├── package.json         # Backend dependencies (independent)
-│   ├── Dockerfile           # Backend Dockerfile (independent)
-│   └── tsconfig.json        # Backend TypeScript config
-├── mini-app/                # Mini-app frontend subproject (independent)
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── services/        # API services
-│   │   ├── store/           # State management
-│   │   └── types/           # TypeScript types
-│   ├── package.json         # Frontend dependencies (independent)
-│   ├── Dockerfile           # Frontend Dockerfile (independent)
-│   └── vite.config.ts       # Vite configuration
-├── docker/                  # Docker configurations
-│   └── nginx/
-│       └── nginx.conf       # Nginx reverse proxy config
-├── plans/                   # Architecture and planning documents
-│   └── docker-volumes-architecture.md
-├── data/                    # Data storage directory (development)
-├── docker-compose.yml       # Docker Compose configuration
-├── .env.example             # Environment variables template
-├── README.md                # This file
-└── DOCKER_VOLUMES.md        # Docker volumes documentation
+ ├── backend/                  # Backend subproject (independent)
+ │   ├── src/
+ │   │   ├── bot/             # Telegram bot implementation
+ │   │   ├── api/             # REST API
+ │   │   ├── services/        # Business logic
+ │   │   ├── models/          # Data models
+ │   │   ├── storage/         # Data persistence (SQLite)
+ │   │   └── utils/           # Utility functions
+ │   ├── package.json         # Backend dependencies (independent)
+ │   ├── Dockerfile           # Backend Dockerfile (independent)
+ │   └── tsconfig.json        # Backend TypeScript config
+ ├── mini-app/                # Mini-app frontend subproject (independent)
+ │   ├── src/
+ │   │   ├── components/      # React components
+ │   │   ├── services/        # API services
+ │   │   ├── store/           # State management
+ │   │   └── types/           # TypeScript types
+ │   ├── package.json         # Frontend dependencies (independent)
+ │   ├── Dockerfile           # Frontend Dockerfile (independent)
+ │   └── vite.config.ts       # Vite configuration
+ ├── docker/                  # Docker configurations
+ │   └── nginx/
+ │       └── nginx.conf       # Nginx reverse proxy config
+ ├── plans/                   # Architecture and planning documents
+ │   └── docker-volumes-architecture.md
+ ├── data/                    # Data storage directory (development)
+ ├── docker-compose.yml       # Docker Compose configuration
+ ├── .env.example             # Environment variables template
+ ├── README.md                # This file
+ └── DOCKER_VOLUMES.md        # Docker volumes documentation
 ```
 
 ## Important Notes
@@ -291,7 +292,7 @@ The backend and mini-app are **completely independent subprojects**:
 - Each has its own [`Dockerfile`](backend/Dockerfile) for independent containerization
 - Each must be installed, built, and run separately
 - There is **no root package.json** or monorepo structure
-- Docker Compose orchestrates the independent services together
+- Docker Compose orchestrates independent services together
 
 ### Development Workflow
 
@@ -330,10 +331,31 @@ For detailed Nginx configuration, see [`docker/nginx/nginx.conf`](docker/nginx/n
 
 The project implements secure Telegram authentication using initData verification:
 
-- **HMAC-SHA256 signature verification** for secure user authentication
+- **Ed25519 signature verification** (new format, current standard)
+- **HMAC-SHA256 signature verification** (old format, for backward compatibility)
+- **Automatic format detection** - backend detects and uses appropriate method
 - **Constant-time comparison** to prevent timing attacks
 - **Timestamp validation** (24-hour max age) to prevent replay attacks
 - **Automatic authentication** via Telegram user ID (no passwords required)
+
+### Signature Verification Methods
+
+#### Ed25519 (New Format - Current Standard)
+
+- Uses Telegram's public key for verification
+- No need to share bot secret token with third parties
+- More secure for third-party validation
+- Supports both production and test environments
+- **Recommended for all new deployments**
+
+#### HMAC-SHA256 (Old Format - Deprecated)
+
+- Uses bot token for verification
+- Requires bot secret token on backend
+- Still supported for backward compatibility
+- Will be phased out in future Telegram updates
+
+The authentication middleware automatically detects which format to use based on the presence of `signature` (Ed25519) or `hash` (HMAC-SHA256) parameters in the initData.
 
 For detailed information about Telegram authentication, see [`mini-app/TELEGRAM_INTEGRATION.md`](mini-app/TELEGRAM_INTEGRATION.md).
 

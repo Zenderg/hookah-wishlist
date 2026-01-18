@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import * as nacl from 'tweetnacl';
 import logger from '@/utils/logger';
 
 /**
@@ -35,6 +36,10 @@ interface InitDataParams {
   user?: string;
   auth_date?: string;
   query_id?: string;
+  chat_type?: string;
+  chat_instance?: string;
+  start_param?: string;
+  can_send_after?: string;
 }
 
 /**
@@ -43,38 +48,53 @@ interface InitDataParams {
 const MAX_AUTH_AGE = 86400;
 
 /**
- * Converts base64url string to hex string
+ * Telegram Ed25519 public keys
+ * Source: https://docs.telegram-mini-apps.com/platform/init-data
+ */
+const TELEGRAM_PUBLIC_KEYS = {
+  production: 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d',
+  test: '40055058a4ee38156a06562e52eece92a771bcd8346a8c4615cb7376eddf72ec',
+};
+
+/**
+ * Converts base64url string to buffer
+ * Handles padding as per Telegram documentation
  * 
  * @param base64url - Base64url encoded string
- * @returns Hex encoded string
+ * @returns Buffer
  */
-function base64urlToHex(base64url: string): string {
+function base64urlToBuffer(base64url: string): Buffer {
   // Replace base64url characters with standard base64
   let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
   
-  // Add padding if needed
+  // Add padding if needed (Telegram may send invalid base64 without padding)
   while (base64.length % 4) {
     base64 += '=';
   }
   
-  // Convert base64 to buffer, then to hex
-  const buffer = Buffer.from(base64, 'base64');
-  return buffer.toString('hex');
+  return Buffer.from(base64, 'base64');
 }
 
 /**
- * Verifies Telegram initData signature using HMAC-SHA256
- * Supports both old format (hash in hex) and new format (signature in base64url)
+ * Converts hex string to buffer
+ * 
+ * @param hex - Hex encoded string
+ * @returns Buffer
+ */
+function hexToBuffer(hex: string): Buffer {
+  return Buffer.from(hex, 'hex');
+}
+
+/**
+ * Verifies Telegram initData signature using Ed25519 (new format)
  * 
  * @param initData - The initData string from Telegram WebApp
- * @param botToken - The bot token for HMAC verification
+ * @param botToken - The bot token (used to extract bot ID)
  * @returns true if signature is valid, false otherwise
  */
-function verifyInitDataSignature(initData: string, botToken: string): boolean {
+function verifyInitDataSignatureEd25519(initData: string, botToken: string): boolean {
   try {
-    logger.debug('[AUTH DEBUG] Verifying initData signature');
-    logger.debug('[AUTH DEBUG] initData length:', initData.length);
-    logger.debug('[AUTH DEBUG] initData preview:', initData.substring(0, 100) + '...');
+    logger.debug('[AUTH DEBUG] Verifying initData signature using Ed25519 (new format)');
     
     // Parse initData parameters
     const params: InitDataParams = {};
@@ -87,15 +107,18 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       }
     }
 
-    // Support both old format (hash) and new format (signature)
-    const signature = params.signature || params.hash;
+    // Check for signature parameter (new format)
+    const signature = params.signature;
     if (!signature) {
-      logger.error('[AUTH DEBUG] Missing signature/hash in initData');
+      logger.error('[AUTH DEBUG] Missing signature in initData for Ed25519 verification');
       return false;
     }
     
-    logger.debug('[AUTH DEBUG] Signature present:', signature.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Using signature format:', params.signature ? 'new (signature in base64url)' : 'old (hash in hex)');
+    logger.debug('[AUTH DEBUG] Signature present (Ed25519):', signature.substring(0, 20) + '...');
+
+    // Extract bot ID from bot token
+    const botId = botToken.split(':')[0];
+    logger.debug('[AUTH DEBUG] Bot ID:', botId);
 
     // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -106,47 +129,162 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
 
     logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
 
-    // Calculate secret key from bot token
-    const secretKey = crypto.createHash('sha256').update(botToken).digest();
+    // Create string to verify: "{bot_id}:WebAppData\n{dataCheckString}"
+    const verifyString = `${botId}:WebAppData\n${dataCheckString}`;
+    logger.debug('[AUTH DEBUG] verifyString:', verifyString);
+
+    // Convert verify string to buffer
+    const messageBuffer = Buffer.from(verifyString, 'utf-8');
+
+    // Determine which public key to use
+    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.TELEGRAM_TEST_MODE === 'true';
+    const publicKeyHex = isTestEnvironment ? TELEGRAM_PUBLIC_KEYS.test : TELEGRAM_PUBLIC_KEYS.production;
+    
+    logger.debug('[AUTH DEBUG] Using public key for:', isTestEnvironment ? 'test' : 'production');
+
+    // Convert public key from hex to buffer
+    const publicKeyBuffer = hexToBuffer(publicKeyHex);
+
+    // Convert signature from base64url to buffer
+    const signatureBuffer = base64urlToBuffer(signature);
+
+    logger.debug('[AUTH DEBUG] Message buffer length:', messageBuffer.length);
+    logger.debug('[AUTH DEBUG] Public key buffer length:', publicKeyBuffer.length);
+    logger.debug('[AUTH DEBUG] Signature buffer length:', signatureBuffer.length);
+
+    // Verify Ed25519 signature
+    const isValid = nacl.sign.detached.verify(
+      messageBuffer,
+      signatureBuffer,
+      publicKeyBuffer
+    );
+
+    if (!isValid) {
+      logger.error('[AUTH DEBUG] Ed25519 signature verification failed');
+    } else {
+      logger.debug('[AUTH DEBUG] Ed25519 signature verification successful');
+    }
+
+    return isValid;
+  } catch (error) {
+    logger.error('[AUTH DEBUG] Error verifying Ed25519 signature:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifies Telegram initData signature using HMAC-SHA256 (old format)
+ * 
+ * @param initData - The initData string from Telegram WebApp
+ * @param botToken - The bot token for HMAC verification
+ * @returns true if signature is valid, false otherwise
+ */
+function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolean {
+  try {
+    logger.debug('[AUTH DEBUG] Verifying initData signature using HMAC-SHA256 (old format)');
+    
+    // Parse initData parameters
+    const params: InitDataParams = {};
+    const pairs = initData.split('&');
+    
+    for (const pair of pairs) {
+      const [key, value] = pair.split('=');
+      if (key && value !== undefined) {
+        params[key] = value;
+      }
+    }
+
+    // Check for hash parameter (old format)
+    const hash = params.hash;
+    if (!hash) {
+      logger.error('[AUTH DEBUG] Missing hash in initData for HMAC verification');
+      return false;
+    }
+    
+    logger.debug('[AUTH DEBUG] Hash present (HMAC-SHA256):', hash.substring(0, 20) + '...');
+
+    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    const dataCheckString = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+
+    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
+
+    // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
     logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
 
-    // Calculate HMAC-SHA256 (always produces hex)
+    // Calculate HMAC-SHA256 of data-check-string using the secret key
     const hmac = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
 
     logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac.substring(0, 20) + '...');
-    
-    // Convert signature to hex if it's in base64url format
-    let signatureHex: string;
-    if (params.signature) {
-      // New format: signature is base64url, convert to hex
-      signatureHex = base64urlToHex(signature);
-      logger.debug('[AUTH DEBUG] Converted signature from base64url to hex:', signatureHex.substring(0, 20) + '...');
-    } else {
-      // Old format: hash is already hex
-      signatureHex = signature;
-      logger.debug('[AUTH DEBUG] Using hash directly (already hex):', signatureHex.substring(0, 20) + '...');
-    }
-
-    logger.debug('[AUTH DEBUG] Expected signature (hex):', signatureHex.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash.substring(0, 20) + '...');
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
-      Buffer.from(signatureHex, 'hex')
+      Buffer.from(hash, 'hex')
     );
 
     if (!isValid) {
       logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
       logger.debug('[AUTH DEBUG] Calculated:', hmac);
-      logger.debug('[AUTH DEBUG] Expected:', signatureHex);
+      logger.debug('[AUTH DEBUG] Expected:', hash);
     } else {
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
 
     return isValid;
+  } catch (error) {
+    logger.error('[AUTH DEBUG] Error verifying HMAC signature:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifies Telegram initData signature
+ * Automatically detects and supports both old format (HMAC-SHA256 with hash) 
+ * and new format (Ed25519 with signature)
+ * 
+ * @param initData - The initData string from Telegram WebApp
+ * @param botToken - The bot token for verification
+ * @returns true if signature is valid, false otherwise
+ */
+function verifyInitDataSignature(initData: string, botToken: string): boolean {
+  try {
+    logger.debug('[AUTH DEBUG] Verifying initData signature');
+    logger.debug('[AUTH DEBUG] initData length:', initData.length);
+    logger.debug('[AUTH DEBUG] initData preview:', initData.substring(0, 100) + '...');
+    
+    // Parse initData parameters to detect format
+    const params: InitDataParams = {};
+    const pairs = initData.split('&');
+    
+    for (const pair of pairs) {
+      const [key, value] = pair.split('=');
+      if (key && value !== undefined) {
+        params[key] = value;
+      }
+    }
+
+    // Detect which verification method to use
+    // New format: has 'signature' parameter (Ed25519)
+    // Old format: has 'hash' parameter (HMAC-SHA256)
+    if (params.signature) {
+      logger.debug('[AUTH DEBUG] Detected new format: using Ed25519 signature verification');
+      return verifyInitDataSignatureEd25519(initData, botToken);
+    } else if (params.hash) {
+      logger.debug('[AUTH DEBUG] Detected old format: using HMAC-SHA256 signature verification');
+      return verifyInitDataSignatureHMAC(initData, botToken);
+    } else {
+      logger.error('[AUTH DEBUG] Neither signature nor hash found in initData');
+      return false;
+    }
   } catch (error) {
     logger.error('[AUTH DEBUG] Error verifying initData signature:', error);
     return false;
@@ -228,7 +366,7 @@ function parseUserData(userParam: string): TelegramUser | null {
  * 
  * This middleware:
  * 1. Extracts initData from headers or query parameters
- * 2. Verifies HMAC signature using bot token (supports both old and new format)
+ * 2. Verifies signature (supports both old HMAC-SHA256 and new Ed25519 formats)
  * 3. Validates timestamp to prevent replay attacks
  * 4. Extracts user_id and user data
  * 5. Adds authentication data to req.telegramUser
@@ -266,7 +404,7 @@ export function authenticateTelegramUser(req: AuthenticatedRequest, res: Respons
     
     logger.debug('[AUTH DEBUG] initData found, length:', initData.length);
 
-    // Verify HMAC signature
+    // Verify signature
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     logger.debug('[AUTH DEBUG] Checking TELEGRAM_BOT_TOKEN environment variable:', !!botToken);
     

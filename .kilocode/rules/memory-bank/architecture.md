@@ -43,7 +43,7 @@ The hookah-wishlist system follows a four-tier architecture with reverse proxy:
    - Business logic for wishlist management
    - Data persistence layer
    - Integration with hookah-db API
-   - Telegram authentication via initData verification (HMAC-SHA256)
+   - Telegram authentication via initData verification (Ed25519 and HMAC-SHA256)
 
 3. **Mini-App Frontend Layer**
    - Web application embedded in Telegram
@@ -209,7 +209,10 @@ hookah-wishlist/
 - **Tailwind CSS** for styling (utility-first, small bundle)
 
 ### Telegram Authentication
-- **initData Verification**: HMAC-SHA256 signature verification for secure user authentication
+- **initData Verification**: Supports both Ed25519 (new format) and HMAC-SHA256 (old format) signature verification
+- **Automatic Format Detection**: Backend automatically detects which signature format to use based on initData parameters
+- **Ed25519 (New Format)**: Uses Telegram's public key for verification, more secure for third-party validation
+- **HMAC-SHA256 (Old Format)**: Uses bot token for verification, maintained for backward compatibility
 - **Constant-Time Comparison**: Prevents timing attacks using `crypto.timingSafeEqual()`
 - **Replay Attack Prevention**: Timestamp validation with 24-hour maximum age
 - **Development Mode Fallback**: Mock init data for local testing without Telegram environment
@@ -292,7 +295,7 @@ Telegram authentication implemented as Express middleware:
 ```typescript
 interface AuthenticatedRequest extends Request {
   telegramUser?: {
-    userId: string;
+    userId: number;
     user: TelegramUser;
     initData: string;
   };
@@ -316,12 +319,35 @@ interface AuthenticatedRequest extends Request {
 2. Mini-app receives Telegram user context via Web Apps API
 3. Mini-app extracts initData from Telegram.WebApp.initData
 4. Mini-app sends API requests with X-Telegram-Init-Data header
-5. Backend validates initData using HMAC-SHA256 verification
+5. Backend validates initData using Ed25519 or HMAC-SHA256 verification
 6. Backend extracts user_id from validated initData
 7. Backend processes request and updates SQLite database
 8. Mini-app receives updated data
 
-**Authentication Flow:**
+**Authentication Flow (Ed25519 - New Format):**
+```mermaid
+sequenceDiagram
+    participant User
+    participant MiniApp
+    participant Backend
+    participant TelegramAPI
+
+    User->>MiniApp: Opens mini-app
+    MiniApp->>TelegramAPI: Get initData
+    TelegramAPI-->>MiniApp: initData (with user_id, auth_date, signature)
+    MiniApp->>Backend: API request with X-Telegram-Init-Data header
+    Backend->>Backend: Extract initData from header
+    Backend->>Backend: Parse initData parameters
+    Backend->>Backend: Detect Ed25519 format (signature parameter)
+    Backend->>Backend: Create data-check-string (sorted, no hash/signature)
+    Backend->>Backend: Create verify string: "{bot_id}:WebAppData\n{dataCheckString}"
+    Backend->>Backend: Verify Ed25519 signature using Telegram public key
+    Backend->>Backend: Validate auth_date (24h max)
+    Backend->>Backend: Extract user_id from initData
+    Backend-->>MiniApp: Response (200 OK or 401 Unauthorized)
+```
+
+**Authentication Flow (HMAC-SHA256 - Old Format):**
 ```mermaid
 sequenceDiagram
     participant User
@@ -335,7 +361,8 @@ sequenceDiagram
     MiniApp->>Backend: API request with X-Telegram-Init-Data header
     Backend->>Backend: Extract initData from header
     Backend->>Backend: Parse initData parameters
-    Backend->>Backend: Create data-check-string
+    Backend->>Backend: Detect HMAC-SHA256 format (hash parameter)
+    Backend->>Backend: Create data-check-string (sorted, no hash)
     Backend->>Backend: Calculate HMAC-SHA256 with bot token
     Backend->>Backend: Compare hashes (constant-time)
     Backend->>Backend: Validate auth_date (24h max)
@@ -389,7 +416,7 @@ sequenceDiagram
 - Backend API for data operations
 - Shared authentication via Telegram user ID
 - Reverse proxy for unified access
-- initData extraction and HMAC verification
+- initData extraction and signature verification (Ed25519 or HMAC-SHA256)
 
 ### Nginx Reverse Proxy
 - Single entry point on port 80
@@ -417,17 +444,20 @@ sequenceDiagram
 
 ## Security Considerations
 
-1. **Authentication**: Telegram user ID verification via initData with HMAC-SHA256
-2. **Timing Attack Prevention**: Constant-time hash comparison using `crypto.timingSafeEqual()`
-3. **Replay Attack Prevention**: Timestamp validation with 24-hour maximum age
-4. **Input Validation**: Sanitize all user inputs
-5. **Error Messages**: Don't expose sensitive information
-6. **Environment Variables**: Store sensitive data securely
-7. **Reverse Proxy**: Adds security layer and hides internal service ports
-8. **Security Headers**: Nginx adds X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
-9. **Data Isolation**: Each user's data isolated by Telegram user ID
-10. **API Key Security**: Securely store and use hookah-db API key
-11. **Database Security**: SQLite file permissions and proper connection handling
+1. **Authentication**: Telegram user ID verification via initData with Ed25519 (new) or HMAC-SHA256 (old)
+2. **Automatic Format Detection**: Backend automatically detects and uses appropriate signature verification method
+3. **Ed25519 Verification**: Uses Telegram's public key, more secure for third-party validation
+4. **HMAC-SHA256 Verification**: Uses bot token, maintained for backward compatibility
+5. **Timing Attack Prevention**: Constant-time hash comparison using `crypto.timingSafeEqual()`
+6. **Replay Attack Prevention**: Timestamp validation with 24-hour maximum age
+7. **Input Validation**: Sanitize all user inputs
+8. **Error Messages**: Don't expose sensitive information
+9. **Environment Variables**: Store sensitive data securely
+10. **Reverse Proxy**: Adds security layer and hides internal service ports
+11. **Security Headers**: Nginx adds X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+12. **Data Isolation**: Each user's data isolated by Telegram user ID
+13. **API Key Security**: Securely store and use hookah-db API key
+14. **Database Security**: SQLite file permissions and proper connection handling
 
 ## Scalability Considerations
 
@@ -438,7 +468,7 @@ sequenceDiagram
 5. **Persistent Storage**: Docker volumes ensure data survives scaling events
 6. **Gzip Compression**: Reduces bandwidth usage and improves response times
 7. **Internal Networking**: Services communicate internally, reducing external exposure
-8. **Authentication Performance**: HMAC verification is fast and scalable with proper caching
+8. **Authentication Performance**: Ed25519 and HMAC verification are fast and scalable with proper caching
 
 ## Telegram Authentication Implementation
 
@@ -449,7 +479,16 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Key Features:**
 - Extracts initData from `X-Telegram-Init-Data` header or query parameters
 - Parses URL-encoded initData parameters
-- Verifies HMAC-SHA256 signature using bot token's secret key
+- **Automatic format detection**: Detects Ed25519 (signature parameter) or HMAC-SHA256 (hash parameter) format
+- **Ed25519 verification** (new format):
+  - Uses Telegram's public key for verification
+  - Creates verify string: `{bot_id}:WebAppData\n{dataCheckString}`
+  - Verifies Ed25519 signature using `tweetnacl` library
+  - Supports both production and test environments
+- **HMAC-SHA256 verification** (old format):
+  - Uses bot token for verification
+  - Calculates HMAC-SHA256 of data-check-string
+  - Compares with provided hash using constant-time comparison
 - Validates timestamp to prevent replay attacks (24-hour max age)
 - Extracts and validates user_id from initData
 - Adds user information to `req.telegramUser` object
@@ -457,7 +496,7 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Error Codes:**
 - `MISSING_INIT_DATA` - No initData provided
 - `MISSING_BOT_TOKEN` - Server configuration error
-- `INVALID_SIGNATURE` - HMAC verification failed
+- `INVALID_SIGNATURE` - Signature verification failed (Ed25519 or HMAC-SHA256)
 - `EXPIRED_AUTH_DATA` - Timestamp too old or invalid
 - `MISSING_USER_DATA` - User parameter missing
 - `INVALID_USER_DATA` - User data parsing failed
@@ -482,8 +521,11 @@ The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/ap
 
 ### Security Measures
 
-1. **HMAC-SHA256 Verification**: Prevents tampering with initData
-2. **Constant-Time Comparison**: Prevents timing attacks
-3. **Timestamp Validation**: Prevents replay attacks
-4. **Input Validation**: All user inputs validated before use
-5. **Error Message Safety**: No sensitive information in error responses
+1. **Ed25519 Verification**: Prevents tampering with initData (new format, more secure)
+2. **HMAC-SHA256 Verification**: Prevents tampering with initData (old format, backward compatible)
+3. **Constant-Time Comparison**: Prevents timing attacks
+4. **Timestamp Validation**: Prevents replay attacks
+5. **Input Validation**: All user inputs validated before use
+6. **Error Message Safety**: No sensitive information in error responses
+7. **Automatic Format Detection**: Ensures compatibility with both old and new Telegram API formats
+8. **Public Key Verification**: Ed25519 uses Telegram's official public keys for production and test environments
