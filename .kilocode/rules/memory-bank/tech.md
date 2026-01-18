@@ -525,10 +525,10 @@ mini-app/tests/
 3. **HTTPS**: Use HTTPS for all communications
 4. **Dependencies**: Regularly update and audit dependencies
 5. **Error Handling**: Never expose stack traces to users
-6. **Authentication**: Verify Telegram user IDs via initData with Ed25519 (new) or HMAC-SHA256 (old)
-7. **Automatic Format Detection**: Backend automatically detects and uses appropriate signature verification method
-8. **Ed25519 Verification**: Uses Telegram's public key, more secure for third-party validation
-9. **HMAC-SHA256 Verification**: Uses bot token, maintained for backward compatibility
+6. **Authentication**: Verify Telegram user IDs via initData with HMAC-SHA256 (preferred) or Ed25519 (third-party)
+7. **Priority-Based Verification**: HMAC-SHA256 prioritized when bot token is available, Ed25519 used for third-party validation
+8. **HMAC-SHA256 Verification**: Uses bot token, recommended for first-party validation
+9. **Ed25519 Verification**: Uses Telegram's public key, used for third-party validation when bot token is not available
 10. **API Key Security**: Securely store and use hookah-db API key
 11. **Reverse Proxy**: Use Nginx to hide internal service ports
 12. **Data Isolation**: Each user's data isolated by Telegram user ID
@@ -872,16 +872,18 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Key Features:**
 - Extracts initData from `X-Telegram-Init-Data` header or query parameters
 - Parses URL-encoded initData parameters
-- **Automatic format detection**: Detects Ed25519 (signature parameter) or HMAC-SHA256 (hash parameter) format
-- **Ed25519 verification** (new format):
+- **Priority-based verification**: Prioritizes HMAC-SHA256 (hash parameter) when bot token is available, falls back to Ed25519 (signature parameter) for third-party validation
+- **HMAC-SHA256 verification** (preferred method):
+  - Uses bot token for verification
+  - Calculates HMAC-SHA256 of data-check-string
+  - Compares with provided hash using constant-time comparison
+  - Recommended for first-party validation when you have access to bot token
+- **Ed25519 verification** (third-party validation):
   - Uses Telegram's public key for verification
   - Creates verify string: `{bot_id}:WebAppData\n{dataCheckString}`
   - Verifies Ed25519 signature using `tweetnacl` library
   - Supports both production and test environments
-- **HMAC-SHA256 verification** (old format):
-  - Uses bot token for verification
-  - Calculates HMAC-SHA256 of data-check-string
-  - Compares with provided hash using constant-time comparison
+  - Used when you don't have access to bot token
 - Validates timestamp to prevent replay attacks (24-hour max age)
 - Extracts and validates user_id from initData
 - Adds user information to `req.telegramUser` object
@@ -889,7 +891,7 @@ The authentication middleware is implemented in [`backend/src/api/middleware/aut
 **Error Codes:**
 - `MISSING_INIT_DATA` - No initData provided
 - `MISSING_BOT_TOKEN` - Server configuration error
-- `INVALID_SIGNATURE` - Signature verification failed (Ed25519 or HMAC-SHA256)
+- `INVALID_SIGNATURE` - Signature verification failed (HMAC-SHA256 or Ed25519)
 - `EXPIRED_AUTH_DATA` - Timestamp too old or invalid
 - `MISSING_USER_DATA` - User parameter missing
 - `INVALID_USER_DATA` - User data parsing failed
@@ -914,13 +916,13 @@ The frontend integrates with Telegram Web Apps API in [`mini-app/src/services/ap
 
 ### Security Measures
 
-1. **Ed25519 Verification**: Prevents tampering with initData (new format, more secure)
-2. **HMAC-SHA256 Verification**: Prevents tampering with initData (old format, backward compatible)
+1. **HMAC-SHA256 Verification**: Prevents tampering with initData (preferred method, uses bot token)
+2. **Ed25519 Verification**: Prevents tampering with initData (third-party validation, uses public key)
 3. **Constant-Time Comparison**: Prevents timing attacks
 4. **Timestamp Validation**: Prevents replay attacks
 5. **Input Validation**: All user inputs validated before use
 6. **Error Message Safety**: No sensitive information in error responses
-7. **Automatic Format Detection**: Ensures compatibility with both old and new Telegram API formats
+7. **Priority-Based Verification**: Ensures correct method is used based on available credentials
 8. **Public Key Verification**: Ed25519 uses Telegram's official public keys for production and test environments
 
 ## Documentation Structure
@@ -986,9 +988,9 @@ This organization keeps the root directory clean while maintaining easy access t
 
 ### Authentication System
 
-- Ed25519 signature verification working correctly (new format)
-- HMAC-SHA256 signature verification working correctly (old format)
-- Automatic format detection working correctly
+- HMAC-SHA256 signature verification working correctly (preferred method)
+- Ed25519 signature verification working correctly (third-party validation)
+- Priority-based verification working correctly
 - Replay attack prevention with 24-hour timestamp validation
 - Constant-time comparison for timing attack prevention
 - All protected endpoints properly enforce authentication

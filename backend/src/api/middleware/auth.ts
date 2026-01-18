@@ -50,6 +50,7 @@ const MAX_AUTH_AGE = 86400;
 /**
  * Telegram Ed25519 public keys
  * Source: https://docs.telegram-mini-apps.com/platform/init-data
+ * These keys are used for third-party validation when bot token is not available
  */
 const TELEGRAM_PUBLIC_KEYS = {
   production: 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d',
@@ -86,15 +87,16 @@ function hexToBuffer(hex: string): Buffer {
 }
 
 /**
- * Verifies Telegram initData signature using Ed25519 (new format)
+ * Verifies Telegram initData signature using HMAC-SHA256 (preferred method)
+ * This is the recommended method when you have access to the bot token
  * 
  * @param initData - The initData string from Telegram WebApp
- * @param botToken - The bot token (used to extract bot ID)
+ * @param botToken - The bot token for HMAC verification
  * @returns true if signature is valid, false otherwise
  */
-function verifyInitDataSignatureEd25519(initData: string, botToken: string): boolean {
+function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolean {
   try {
-    logger.debug('[AUTH DEBUG] Verifying initData signature using Ed25519 (new format)');
+    logger.debug('[AUTH DEBUG] Verifying initData signature using HMAC-SHA256 (preferred method)');
     
     // Parse initData parameters
     const params: InitDataParams = {};
@@ -107,7 +109,82 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
       }
     }
 
-    // Check for signature parameter (new format)
+    // Check for hash parameter
+    const hash = params.hash;
+    if (!hash) {
+      logger.error('[AUTH DEBUG] Missing hash in initData for HMAC verification');
+      return false;
+    }
+    
+    logger.debug('[AUTH DEBUG] Hash present (HMAC-SHA256):', hash.substring(0, 20) + '...');
+
+    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    const dataCheckString = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+
+    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
+
+    // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+    logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
+
+    // Calculate HMAC-SHA256 of data-check-string using the secret key
+    const hmac = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+
+    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash.substring(0, 20) + '...');
+
+    // Compare hashes using constant-time comparison to prevent timing attacks
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(hmac, 'hex'),
+      Buffer.from(hash, 'hex')
+    );
+
+    if (!isValid) {
+      logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
+      logger.debug('[AUTH DEBUG] Calculated:', hmac);
+      logger.debug('[AUTH DEBUG] Expected:', hash);
+    } else {
+      logger.debug('[AUTH DEBUG] HMAC signature verification successful');
+    }
+
+    return isValid;
+  } catch (error) {
+    logger.error('[AUTH DEBUG] Error verifying HMAC signature:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifies Telegram initData signature using Ed25519 (third-party validation)
+ * This method is used when you don't have access to the bot token
+ * 
+ * @param initData - The initData string from Telegram WebApp
+ * @param botToken - The bot token (used to extract bot ID)
+ * @returns true if signature is valid, false otherwise
+ */
+function verifyInitDataSignatureEd25519(initData: string, botToken: string): boolean {
+  try {
+    logger.debug('[AUTH DEBUG] Verifying initData signature using Ed25519 (third-party validation)');
+    
+    // Parse initData parameters
+    const params: InitDataParams = {};
+    const pairs = initData.split('&');
+    
+    for (const pair of pairs) {
+      const [key, value] = pair.split('=');
+      if (key && value !== undefined) {
+        params[key] = value;
+      }
+    }
+
+    // Check for signature parameter
     const signature = params.signature;
     if (!signature) {
       logger.error('[AUTH DEBUG] Missing signature in initData for Ed25519 verification');
@@ -173,83 +250,9 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
 }
 
 /**
- * Verifies Telegram initData signature using HMAC-SHA256 (old format)
- * 
- * @param initData - The initData string from Telegram WebApp
- * @param botToken - The bot token for HMAC verification
- * @returns true if signature is valid, false otherwise
- */
-function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolean {
-  try {
-    logger.debug('[AUTH DEBUG] Verifying initData signature using HMAC-SHA256 (old format)');
-    
-    // Parse initData parameters
-    const params: InitDataParams = {};
-    const pairs = initData.split('&');
-    
-    for (const pair of pairs) {
-      const [key, value] = pair.split('=');
-      if (key && value !== undefined) {
-        params[key] = value;
-      }
-    }
-
-    // Check for hash parameter (old format)
-    const hash = params.hash;
-    if (!hash) {
-      logger.error('[AUTH DEBUG] Missing hash in initData for HMAC verification');
-      return false;
-    }
-    
-    logger.debug('[AUTH DEBUG] Hash present (HMAC-SHA256):', hash.substring(0, 20) + '...');
-
-    // Create data-check-string: all parameters except 'hash', sorted alphabetically
-    const dataCheckString = Object.entries(params)
-      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n');
-
-    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
-
-    // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-    logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
-
-    // Calculate HMAC-SHA256 of data-check-string using the secret key
-    const hmac = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-
-    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash.substring(0, 20) + '...');
-
-    // Compare hashes using constant-time comparison to prevent timing attacks
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(hmac, 'hex'),
-      Buffer.from(hash, 'hex')
-    );
-
-    if (!isValid) {
-      logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
-      logger.debug('[AUTH DEBUG] Calculated:', hmac);
-      logger.debug('[AUTH DEBUG] Expected:', hash);
-    } else {
-      logger.debug('[AUTH DEBUG] HMAC signature verification successful');
-    }
-
-    return isValid;
-  } catch (error) {
-    logger.error('[AUTH DEBUG] Error verifying HMAC signature:', error);
-    return false;
-  }
-}
-
-/**
  * Verifies Telegram initData signature
- * Automatically detects and supports both old format (HMAC-SHA256 with hash) 
- * and new format (Ed25519 with signature)
+ * Prioritizes HMAC-SHA256 (hash parameter) when bot token is available
+ * Falls back to Ed25519 (signature parameter) for third-party validation
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for verification
@@ -272,19 +275,22 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       }
     }
 
-    // Detect which verification method to use
-    // New format: has 'signature' parameter (Ed25519)
-    // Old format: has 'hash' parameter (HMAC-SHA256)
-    if (params.signature) {
-      logger.debug('[AUTH DEBUG] Detected new format: using Ed25519 signature verification');
-      return verifyInitDataSignatureEd25519(initData, botToken);
-    } else if (params.hash) {
-      logger.debug('[AUTH DEBUG] Detected old format: using HMAC-SHA256 signature verification');
+    // Prioritize HMAC-SHA256 verification (hash parameter) when bot token is available
+    // This is the recommended method for first-party validation
+    if (params.hash) {
+      logger.debug('[AUTH DEBUG] Using HMAC-SHA256 signature verification (preferred method with bot token)');
       return verifyInitDataSignatureHMAC(initData, botToken);
-    } else {
-      logger.error('[AUTH DEBUG] Neither signature nor hash found in initData');
-      return false;
     }
+    
+    // Fall back to Ed25519 verification (signature parameter) for third-party validation
+    // This is used when you don't have access to the bot token
+    if (params.signature) {
+      logger.debug('[AUTH DEBUG] Using Ed25519 signature verification (third-party validation)');
+      return verifyInitDataSignatureEd25519(initData, botToken);
+    }
+    
+    logger.error('[AUTH DEBUG] Neither hash nor signature found in initData');
+    return false;
   } catch (error) {
     logger.error('[AUTH DEBUG] Error verifying initData signature:', error);
     return false;
@@ -366,7 +372,7 @@ function parseUserData(userParam: string): TelegramUser | null {
  * 
  * This middleware:
  * 1. Extracts initData from headers or query parameters
- * 2. Verifies signature (supports both old HMAC-SHA256 and new Ed25519 formats)
+ * 2. Verifies signature (prioritizes HMAC-SHA256 with hash, falls back to Ed25519 with signature)
  * 3. Validates timestamp to prevent replay attacks
  * 4. Extracts user_id and user data
  * 5. Adds authentication data to req.telegramUser
