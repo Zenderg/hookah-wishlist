@@ -95,7 +95,7 @@ describe('Search Routes Integration Tests', () => {
     const dataCheckString = `auth_date=${authDate}\nuser=${userParam}`;
 
     // Calculate secret key from bot token
-    const secretKey = crypto.createHash('sha256').update(TEST_BOT_TOKEN).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TEST_BOT_TOKEN).digest();
 
     // Calculate HMAC-SHA256
     const hash = crypto
@@ -146,7 +146,7 @@ describe('Search Routes Integration Tests', () => {
     const dataCheckString = `auth_date=${authDate}\nuser=${userParam}`;
 
     // Calculate secret key from bot token
-    const secretKey = crypto.createHash('sha256').update(TEST_BOT_TOKEN).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TEST_BOT_TOKEN).digest();
 
     // Calculate HMAC-SHA256
     const hash = crypto

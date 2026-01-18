@@ -41,7 +41,7 @@ describe('Authentication Middleware', () => {
       .join('\n');
     
     // Calculate secret key from bot token
-    const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
     
     // Calculate HMAC-SHA256
     const hash = crypto
@@ -81,7 +81,7 @@ describe('Authentication Middleware', () => {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
     
-    const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
     const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
     
     return `user=${userParam}&auth_date=${expiredTimestamp}&hash=${hash}`;
@@ -105,7 +105,7 @@ describe('Authentication Middleware', () => {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
     
-    const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
     const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
     
     return `user=${userParam}&auth_date=${futureTimestamp}&hash=${hash}`;
@@ -333,7 +333,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `user=${userParam}&auth_date=invalid&hash=${hash}`;
@@ -475,7 +475,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `auth_date=${timestamp}&hash=${hash}`;
@@ -508,7 +508,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `user=&auth_date=${timestamp}&hash=${hash}`;
@@ -543,7 +543,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `user=${encodeURIComponent('not_valid_json')}&auth_date=${timestamp}&hash=${hash}`;
@@ -579,7 +579,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `user=${userParam}&auth_date=${timestamp}&hash=${hash}`;
@@ -710,7 +710,7 @@ describe('Authentication Middleware', () => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
       
-      const secretKey = crypto.createHash('sha256').update(mockBotToken).digest();
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
       const hash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
       
       const initData = `user=${userParam}&auth_date=${timestamp}&query_id=AAQBAgIAAAAB&start_param=referral_code&hash=${hash}`;

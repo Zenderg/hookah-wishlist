@@ -251,8 +251,8 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
 
 /**
  * Verifies Telegram initData signature
- * Prioritizes HMAC-SHA256 (hash parameter) when bot token is available
- * Falls back to Ed25519 (signature parameter) for third-party validation
+ * Prioritizes Ed25519 (signature parameter) for third-party validation
+ * Falls back to HMAC-SHA256 (hash parameter) for first-party validation
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for verification
@@ -275,18 +275,18 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       }
     }
 
-    // Prioritize HMAC-SHA256 verification (hash parameter) when bot token is available
-    // This is the recommended method for first-party validation
-    if (params.hash) {
-      logger.debug('[AUTH DEBUG] Using HMAC-SHA256 signature verification (preferred method with bot token)');
-      return verifyInitDataSignatureHMAC(initData, botToken);
-    }
-    
-    // Fall back to Ed25519 verification (signature parameter) for third-party validation
-    // This is used when you don't have access to the bot token
+    // Prioritize Ed25519 verification (signature parameter) for third-party validation
+    // When both signature and hash are present, it's a third-party mini app
     if (params.signature) {
       logger.debug('[AUTH DEBUG] Using Ed25519 signature verification (third-party validation)');
       return verifyInitDataSignatureEd25519(initData, botToken);
+    }
+    
+    // Fall back to HMAC-SHA256 verification (hash parameter) for first-party validation
+    // This is used when only hash is present (first-party validation)
+    if (params.hash) {
+      logger.debug('[AUTH DEBUG] Using HMAC-SHA256 signature verification (preferred method with bot token)');
+      return verifyInitDataSignatureHMAC(initData, botToken);
     }
     
     logger.error('[AUTH DEBUG] Neither hash nor signature found in initData');
@@ -372,7 +372,7 @@ function parseUserData(userParam: string): TelegramUser | null {
  * 
  * This middleware:
  * 1. Extracts initData from headers or query parameters
- * 2. Verifies signature (prioritizes HMAC-SHA256 with hash, falls back to Ed25519 with signature)
+ * 2. Verifies signature (prioritizes Ed25519 with signature, falls back to HMAC-SHA256 with hash)
  * 3. Validates timestamp to prevent replay attacks
  * 4. Extracts user_id and user data
  * 5. Adds authentication data to req.telegramUser
