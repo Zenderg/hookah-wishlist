@@ -43,8 +43,28 @@ interface InitDataParams {
 const MAX_AUTH_AGE = 86400;
 
 /**
+ * Converts base64url string to hex string
+ * 
+ * @param base64url - Base64url encoded string
+ * @returns Hex encoded string
+ */
+function base64urlToHex(base64url: string): string {
+  // Replace base64url characters with standard base64
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  
+  // Add padding if needed
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  
+  // Convert base64 to buffer, then to hex
+  const buffer = Buffer.from(base64, 'base64');
+  return buffer.toString('hex');
+}
+
+/**
  * Verifies Telegram initData signature using HMAC-SHA256
- * Supports both old format (hash) and new format (signature)
+ * Supports both old format (hash in hex) and new format (signature in base64url)
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for HMAC verification
@@ -75,7 +95,7 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
     }
     
     logger.debug('[AUTH DEBUG] Signature present:', signature.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Using signature format:', params.signature ? 'new (signature)' : 'old (hash)');
+    logger.debug('[AUTH DEBUG] Using signature format:', params.signature ? 'new (signature in base64url)' : 'old (hash in hex)');
 
     // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -90,23 +110,38 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
     const secretKey = crypto.createHash('sha256').update(botToken).digest();
     logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
 
-    // Calculate HMAC-SHA256
+    // Calculate HMAC-SHA256 (always produces hex)
     const hmac = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
 
-    logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Expected signature:', signature.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac.substring(0, 20) + '...');
+    
+    // Convert signature to hex if it's in base64url format
+    let signatureHex: string;
+    if (params.signature) {
+      // New format: signature is base64url, convert to hex
+      signatureHex = base64urlToHex(signature);
+      logger.debug('[AUTH DEBUG] Converted signature from base64url to hex:', signatureHex.substring(0, 20) + '...');
+    } else {
+      // Old format: hash is already hex
+      signatureHex = signature;
+      logger.debug('[AUTH DEBUG] Using hash directly (already hex):', signatureHex.substring(0, 20) + '...');
+    }
+
+    logger.debug('[AUTH DEBUG] Expected signature (hex):', signatureHex.substring(0, 20) + '...');
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
-      Buffer.from(signature, 'hex')
+      Buffer.from(signatureHex, 'hex')
     );
 
     if (!isValid) {
       logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
+      logger.debug('[AUTH DEBUG] Calculated:', hmac);
+      logger.debug('[AUTH DEBUG] Expected:', signatureHex);
     } else {
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
