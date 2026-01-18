@@ -37,12 +37,18 @@ const TELEGRAM_INIT_DATA_HEADER = 'X-Telegram-Init-Data';
 const getTelegramInitData = (): string => {
   // Check if running in development mode
   const isDevelopment = import.meta.env.DEV;
+  console.log('[API DEBUG] isDevelopment:', isDevelopment);
   
   // Try to access Telegram Web Apps API
   const telegramWebApp = (window as any).Telegram?.WebApp as WebApp | undefined;
+  console.log('[API DEBUG] telegramWebApp exists:', !!telegramWebApp);
+  console.log('[API DEBUG] telegramWebApp.initData:', telegramWebApp?.initData ? 'PRESENT' : 'MISSING');
   
   if (telegramWebApp?.initData) {
     // Production: Use real init data from Telegram
+    console.log('[API DEBUG] Using real Telegram init data');
+    console.log('[API DEBUG] initData length:', telegramWebApp.initData.length);
+    console.log('[API DEBUG] initData preview:', telegramWebApp.initData.substring(0, 100) + '...');
     return telegramWebApp.initData;
   }
   
@@ -54,6 +60,7 @@ const getTelegramInitData = (): string => {
   
   // Production without Telegram: Return empty string (will cause 401 errors)
   console.error('[API] Telegram Web Apps API not available and not in development mode');
+  console.error('[API] This app must be opened from Telegram to work in production');
   return '';
 };
 
@@ -89,6 +96,7 @@ const createMockInitData = (): string => {
  * Falls back to localhost if not specified in environment
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+console.log('[API DEBUG] API_BASE_URL:', API_BASE_URL);
 
 /**
  * Axios instance configured for API requests
@@ -106,15 +114,23 @@ const api = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const initData = getTelegramInitData();
+    console.log('[API DEBUG] Request interceptor - initData present:', !!initData);
     
     if (initData) {
       config.headers = config.headers || {};
       config.headers[TELEGRAM_INIT_DATA_HEADER] = initData;
+      console.log('[API DEBUG] Added X-Telegram-Init-Data header to request');
+    } else {
+      console.error('[API DEBUG] No initData available - authentication will fail');
     }
+    
+    console.log('[API DEBUG] Request URL:', config.url);
+    console.log('[API DEBUG] Request headers:', JSON.stringify(config.headers, null, 2));
     
     return config;
   },
   (error: AxiosError) => {
+    console.error('[API DEBUG] Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -123,13 +139,19 @@ api.interceptors.request.use(
  * Response interceptor for error handling
  */
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    console.log('[API DEBUG] Response successful:', response.status);
+    return response;
+  },
   (error: AxiosError) => {
     const status = error.response?.status;
+    console.log('[API DEBUG] Response error:', status);
+    console.log('[API DEBUG] Error response data:', error.response?.data);
     
     if (status === 401) {
       // Authentication failed - invalid or missing init data
       console.error('[API] Authentication failed: Invalid or missing Telegram init data');
+      console.error('[API] Error details:', error.response?.data);
       return Promise.reject(new Error('Authentication failed. Please open this app from Telegram.'));
     }
     

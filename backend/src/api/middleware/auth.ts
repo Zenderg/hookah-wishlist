@@ -50,6 +50,10 @@ const MAX_AUTH_AGE = 86400;
  */
 function verifyInitDataSignature(initData: string, botToken: string): boolean {
   try {
+    logger.debug('[AUTH DEBUG] Verifying initData signature');
+    logger.debug('[AUTH DEBUG] initData length:', initData.length);
+    logger.debug('[AUTH DEBUG] initData preview:', initData.substring(0, 100) + '...');
+    
     // Parse initData parameters
     const params: InitDataParams = {};
     const pairs = initData.split('&');
@@ -63,9 +67,11 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
 
     const hash = params.hash;
     if (!hash) {
-      logger.error('Missing hash in initData');
+      logger.error('[AUTH DEBUG] Missing hash in initData');
       return false;
     }
+    
+    logger.debug('[AUTH DEBUG] Hash present:', hash.substring(0, 20) + '...');
 
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -74,14 +80,20 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
+    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
+
     // Calculate secret key from bot token
     const secretKey = crypto.createHash('sha256').update(botToken).digest();
+    logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
 
     // Calculate HMAC-SHA256
     const hmac = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
+
+    logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Expected hash:', hash.substring(0, 20) + '...');
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
@@ -90,12 +102,14 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
     );
 
     if (!isValid) {
-      logger.error('HMAC signature verification failed');
+      logger.error('[AUTH DEBUG] HMAC signature verification failed - hashes do not match');
+    } else {
+      logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
 
     return isValid;
   } catch (error) {
-    logger.error('Error verifying initData signature:', error);
+    logger.error('[AUTH DEBUG] Error verifying initData signature:', error);
     return false;
   }
 }
@@ -108,28 +122,36 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
  */
 function validateAuthDate(authDate: string): boolean {
   try {
+    logger.debug('[AUTH DEBUG] Validating auth_date:', authDate);
+    
     const timestamp = parseInt(authDate, 10);
     if (isNaN(timestamp)) {
-      logger.error('Invalid auth_date format');
+      logger.error('[AUTH DEBUG] Invalid auth_date format');
       return false;
     }
 
     const now = Math.floor(Date.now() / 1000);
     const age = now - timestamp;
 
+    logger.debug('[AUTH DEBUG] Current timestamp:', now);
+    logger.debug('[AUTH DEBUG] Auth timestamp:', timestamp);
+    logger.debug('[AUTH DEBUG] Age:', age, 'seconds');
+    logger.debug('[AUTH DEBUG] Max age:', MAX_AUTH_AGE, 'seconds');
+
     if (age < 0) {
-      logger.error('auth_date is in the future');
+      logger.error('[AUTH DEBUG] auth_date is in the future');
       return false;
     }
 
     if (age > MAX_AUTH_AGE) {
-      logger.error(`auth_date is too old: ${age} seconds`);
+      logger.error(`[AUTH DEBUG] auth_date is too old: ${age} seconds`);
       return false;
     }
 
+    logger.debug('[AUTH DEBUG] auth_date validation successful');
     return true;
   } catch (error) {
-    logger.error('Error validating auth_date:', error);
+    logger.error('[AUTH DEBUG] Error validating auth_date:', error);
     return false;
   }
 }
@@ -142,17 +164,22 @@ function validateAuthDate(authDate: string): boolean {
  */
 function parseUserData(userParam: string): TelegramUser | null {
   try {
+    logger.debug('[AUTH DEBUG] Parsing user data');
+    
     const decoded = decodeURIComponent(userParam);
     const user: TelegramUser = JSON.parse(decoded);
     
+    logger.debug('[AUTH DEBUG] Parsed user:', JSON.stringify(user, null, 2));
+    
     if (!user.id) {
-      logger.error('Missing user.id in user data');
+      logger.error('[AUTH DEBUG] Missing user.id in user data');
       return null;
     }
 
+    logger.debug('[AUTH DEBUG] User data parsed successfully, user.id:', user.id);
     return user;
   } catch (error) {
-    logger.error('Error parsing user data:', error);
+    logger.error('[AUTH DEBUG] Error parsing user data:', error);
     return null;
   }
 }
@@ -173,36 +200,52 @@ function parseUserData(userParam: string): TelegramUser | null {
  */
 export function authenticateTelegramUser(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   try {
+    logger.debug('[AUTH DEBUG] ==================== Authentication Request ====================');
+    logger.debug('[AUTH DEBUG] Request URL:', req.url);
+    logger.debug('[AUTH DEBUG] Request method:', req.method);
+    
     // Extract initData from headers or query parameters
     let initData = req.headers['x-telegram-init-data'] as string;
     
+    logger.debug('[AUTH DEBUG] Checking X-Telegram-Init-Data header:', !!initData);
+    
     if (!initData) {
       initData = req.query.initData as string;
+      logger.debug('[AUTH DEBUG] Checking initData query param:', !!initData);
     }
 
     if (!initData) {
-      logger.warn('Missing Telegram init data in request');
+      logger.warn('[AUTH DEBUG] Missing Telegram init data in request');
+      logger.warn('[AUTH DEBUG] Available headers:', Object.keys(req.headers));
+      logger.warn('[AUTH DEBUG] Available query params:', Object.keys(req.query));
       res.status(401).json({ 
         error: 'Unauthorized: Missing Telegram init data',
         code: 'MISSING_INIT_DATA'
       });
       return;
     }
+    
+    logger.debug('[AUTH DEBUG] initData found, length:', initData.length);
 
     // Verify HMAC signature
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    logger.debug('[AUTH DEBUG] Checking TELEGRAM_BOT_TOKEN environment variable:', !!botToken);
+    
     if (!botToken) {
-      logger.error('TELEGRAM_BOT_TOKEN environment variable is not set');
+      logger.error('[AUTH DEBUG] TELEGRAM_BOT_TOKEN environment variable is not set');
+      logger.error('[AUTH DEBUG] This is a critical configuration error - authentication cannot work without bot token');
       res.status(500).json({ 
         error: 'Server configuration error',
         code: 'MISSING_BOT_TOKEN'
       });
       return;
     }
+    
+    logger.debug('[AUTH DEBUG] Bot token present, length:', botToken.length);
 
     const isSignatureValid = verifyInitDataSignature(initData, botToken);
     if (!isSignatureValid) {
-      logger.warn('Invalid Telegram init data signature');
+      logger.warn('[AUTH DEBUG] Invalid Telegram init data signature');
       res.status(401).json({ 
         error: 'Unauthorized: Invalid signature',
         code: 'INVALID_SIGNATURE'
@@ -215,11 +258,14 @@ export function authenticateTelegramUser(req: AuthenticatedRequest, res: Respons
     const userParam = params.get('user');
     const authDate = params.get('auth_date');
 
+    logger.debug('[AUTH DEBUG] user parameter present:', !!userParam);
+    logger.debug('[AUTH DEBUG] auth_date parameter present:', !!authDate);
+
     // Validate auth_date to prevent replay attacks
     if (authDate) {
       const isAuthDateValid = validateAuthDate(authDate);
       if (!isAuthDateValid) {
-        logger.warn('Invalid or expired auth_date in init data');
+        logger.warn('[AUTH DEBUG] Invalid or expired auth_date in init data');
         res.status(401).json({ 
           error: 'Unauthorized: Expired authentication data',
           code: 'EXPIRED_AUTH_DATA'
@@ -230,7 +276,8 @@ export function authenticateTelegramUser(req: AuthenticatedRequest, res: Respons
 
     // Parse user data
     if (!userParam) {
-      logger.warn('Missing user parameter in init data');
+      logger.warn('[AUTH DEBUG] Missing user parameter in init data');
+      logger.warn('[AUTH DEBUG] Available parameters:', Array.from(params.keys()));
       res.status(401).json({ 
         error: 'Unauthorized: Missing user data',
         code: 'MISSING_USER_DATA'
@@ -240,7 +287,7 @@ export function authenticateTelegramUser(req: AuthenticatedRequest, res: Respons
 
     const user = parseUserData(userParam);
     if (!user) {
-      logger.warn('Invalid user data in init data');
+      logger.warn('[AUTH DEBUG] Invalid user data in init data');
       res.status(401).json({ 
         error: 'Unauthorized: Invalid user data',
         code: 'INVALID_USER_DATA'
@@ -255,10 +302,12 @@ export function authenticateTelegramUser(req: AuthenticatedRequest, res: Respons
       initData
     };
 
-    logger.debug(`Successfully authenticated user ${user.id} from Telegram WebApp`);
+    logger.debug('[AUTH DEBUG] ==================== Authentication Successful ====================');
+    logger.debug(`[AUTH DEBUG] Successfully authenticated user ${user.id} from Telegram WebApp`);
+    logger.debug('[AUTH DEBUG] User details:', JSON.stringify(user, null, 2));
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
+    logger.error('[AUTH DEBUG] Authentication error:', error);
     res.status(401).json({ 
       error: 'Unauthorized: Authentication failed',
       code: 'AUTHENTICATION_FAILED'
