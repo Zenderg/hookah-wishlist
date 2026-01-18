@@ -31,6 +31,7 @@ export interface AuthenticatedRequest extends Request {
 interface InitDataParams {
   [key: string]: string | undefined;
   hash?: string;
+  signature?: string;
   user?: string;
   auth_date?: string;
   query_id?: string;
@@ -43,6 +44,7 @@ const MAX_AUTH_AGE = 86400;
 
 /**
  * Verifies Telegram initData signature using HMAC-SHA256
+ * Supports both old format (hash) and new format (signature)
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for HMAC verification
@@ -65,17 +67,19 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       }
     }
 
-    const hash = params.hash;
-    if (!hash) {
-      logger.error('[AUTH DEBUG] Missing hash in initData');
+    // Support both old format (hash) and new format (signature)
+    const signature = params.signature || params.hash;
+    if (!signature) {
+      logger.error('[AUTH DEBUG] Missing signature/hash in initData');
       return false;
     }
     
-    logger.debug('[AUTH DEBUG] Hash present:', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Signature present:', signature.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Using signature format:', params.signature ? 'new (signature)' : 'old (hash)');
 
-    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
     const dataCheckString = Object.entries(params)
-      .filter(([key, value]) => key !== 'hash' && value !== undefined)
+      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
@@ -93,16 +97,16 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       .digest('hex');
 
     logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Expected hash:', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Expected signature:', signature.substring(0, 20) + '...');
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
-      Buffer.from(hash, 'hex')
+      Buffer.from(signature, 'hex')
     );
 
     if (!isValid) {
-      logger.error('[AUTH DEBUG] HMAC signature verification failed - hashes do not match');
+      logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
     } else {
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
@@ -189,7 +193,7 @@ function parseUserData(userParam: string): TelegramUser | null {
  * 
  * This middleware:
  * 1. Extracts initData from headers or query parameters
- * 2. Verifies HMAC signature using bot token
+ * 2. Verifies HMAC signature using bot token (supports both old and new format)
  * 3. Validates timestamp to prevent replay attacks
  * 4. Extracts user_id and user data
  * 5. Adds authentication data to req.telegramUser
