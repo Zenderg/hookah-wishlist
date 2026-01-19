@@ -23,12 +23,15 @@ describe('Authentication Middleware', () => {
   /**
    * Helper function to create valid initData with HMAC signature
    * This matches exactly how middleware parses and verifies initData
+   * IMPORTANT: Uses URL-decoded values in data-check-string (per Telegram documentation)
    */
   const createValidInitData = (user: TelegramUser, authDate?: number): string => {
     const timestamp = authDate || Math.floor(Date.now() / 1000);
     const userParam = encodeURIComponent(JSON.stringify(user));
     
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
+    // Reference: https://docs.telegram-mini-apps.com/platform/init-data
     const params = {
       user: userParam,
       auth_date: timestamp.toString(),
@@ -37,13 +40,13 @@ describe('Authentication Middleware', () => {
     const dataCheckString = Object.entries(params)
       .filter(([key, value]) => key !== 'hash' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
       .join('\n');
     
     // Calculate secret key from bot token
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
     
-    // Calculate HMAC-SHA256
+    // Calculate HMAC-SHA256 from URL-decoded data-check-string
     const hash = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
@@ -58,7 +61,7 @@ describe('Authentication Middleware', () => {
   const createInvalidSignatureInitData = (user: TelegramUser): string => {
     const timestamp = Math.floor(Date.now() / 1000);
     const userParam = encodeURIComponent(JSON.stringify(user));
-    // Create a hash of the same length as a real SHA256 hash (64 hex chars)
+    // Create a hash of same length as a real SHA256 hash (64 hex chars)
     const invalidHash = 'a'.repeat(64);
     return `user=${userParam}&auth_date=${timestamp}&hash=${invalidHash}`;
   };
@@ -75,10 +78,11 @@ describe('Authentication Middleware', () => {
       auth_date: expiredTimestamp.toString(),
     };
     
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
     const dataCheckString = Object.entries(params)
       .filter(([key, value]) => key !== 'hash' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
       .join('\n');
     
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -99,10 +103,11 @@ describe('Authentication Middleware', () => {
       auth_date: futureTimestamp.toString(),
     };
     
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
     const dataCheckString = Object.entries(params)
       .filter(([key, value]) => key !== 'hash' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
       .join('\n');
     
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -327,10 +332,11 @@ describe('Authentication Middleware', () => {
         auth_date: 'invalid',
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -469,10 +475,11 @@ describe('Authentication Middleware', () => {
         auth_date: timestamp.toString(),
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -502,10 +509,11 @@ describe('Authentication Middleware', () => {
         auth_date: timestamp.toString(),
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -537,10 +545,11 @@ describe('Authentication Middleware', () => {
         auth_date: timestamp.toString(),
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -573,10 +582,11 @@ describe('Authentication Middleware', () => {
         auth_date: timestamp.toString(),
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();
@@ -704,10 +714,11 @@ describe('Authentication Middleware', () => {
         start_param: 'referral_code',
       };
       
+      // IMPORTANT: Use URL-decoded values (per Telegram documentation)
       const dataCheckString = Object.entries(params)
         .filter(([key, value]) => key !== 'hash' && value !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
         .join('\n');
       
       const secretKey = crypto.createHmac('sha256', 'WebAppData').update(mockBotToken).digest();

@@ -29,7 +29,7 @@ describe('Authentication Verification Method Tests', () => {
   });
 
   describe('Verification Method Selection', () => {
-    it('should use Ed25519 when both signature and hash are present', () => {
+    it('should use HMAC-SHA256 when both signature and hash are present (first-party mini app with bot token)', () => {
       const initDataWithBoth = 
         'user=%7B%22id%22%3A385787313%2C%22first_name%22%3A%22Test%22%7D' +
         '&auth_date=' + Math.floor(Date.now() / 1000) +
@@ -48,18 +48,18 @@ describe('Authentication Verification Method Tests', () => {
         mockNext
       );
 
-      // Verify Ed25519 was used by checking debug logs
+      // Verify HMAC-SHA256 was used by checking debug logs
       const logger = require('@/utils/logger');
-      const ed25519Calls = logger.debug.mock.calls.filter((call: any[]) =>
-        call[0].includes('Ed25519') && call[0].includes('third-party validation')
-      );
       const hmacCalls = logger.debug.mock.calls.filter((call: any[]) =>
         call[0].includes('HMAC-SHA256') && call[0].includes('preferred method')
       );
+      const ed25519Calls = logger.debug.mock.calls.filter((call: any[]) =>
+        call[0].includes('Ed25519') && call[0].includes('third-party validation')
+      );
 
-      expect(ed25519Calls.length).toBeGreaterThan(0);
-      expect(hmacCalls.length).toBe(0);
-      expect(mockResponse.status).toHaveBeenCalledWith(401); // Will fail because signature is invalid
+      expect(hmacCalls.length).toBeGreaterThan(0);
+      expect(ed25519Calls.length).toBe(0);
+      expect(mockResponse.status).toHaveBeenCalledWith(401); // Will fail because hash is invalid
     });
 
     it('should use HMAC-SHA256 when only hash is present', () => {
@@ -128,8 +128,9 @@ describe('Authentication Verification Method Tests', () => {
   });
 
   describe('Production Scenario', () => {
-    it('should use Ed25519 for production initData with both signature and hash', () => {
+    it('should use HMAC-SHA256 for production initData with both signature and hash (first-party mini app)', () => {
       // This is exact format from production logs
+      // When both hash and signature are present, HMAC-SHA256 is prioritized (first-party validation)
       const productionInitData = 
         'user=%7B%22id%22%3A385787313%2C%22first_name%22%3A%22%D0%94%D0%B0%D0%BD%D0%B8%D0%BB%22%2C%22last_name%22%3A%22%22%2C%22username%22%3A%22Koshmarus%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2F82YeSLG37ePM3uwUAcvN87Uo5EeLPE_iqPQzAML40MY.svg%22%7D' +
         '&chat_instance=7714732502496827171' +
@@ -150,18 +151,18 @@ describe('Authentication Verification Method Tests', () => {
         mockNext
       );
 
-      // Verify Ed25519 was used by checking debug logs
+      // Verify HMAC-SHA256 was used by checking debug logs
       const logger = require('@/utils/logger');
-      const ed25519Calls = logger.debug.mock.calls.filter((call: any[]) =>
-        call[0].includes('Ed25519') && call[0].includes('third-party validation')
-      );
       const hmacCalls = logger.debug.mock.calls.filter((call: any[]) =>
         call[0].includes('HMAC-SHA256') && call[0].includes('preferred method')
       );
+      const ed25519Calls = logger.debug.mock.calls.filter((call: any[]) =>
+        call[0].includes('Ed25519') && call[0].includes('third-party validation')
+      );
 
-      expect(ed25519Calls.length).toBeGreaterThan(0);
-      expect(hmacCalls.length).toBe(0);
-      expect(mockResponse.status).toHaveBeenCalledWith(401); // Will fail because signature is invalid with test bot token
+      expect(hmacCalls.length).toBeGreaterThan(0);
+      expect(ed25519Calls.length).toBe(0);
+      expect(mockResponse.status).toHaveBeenCalledWith(401); // Will fail because hash is invalid with test bot token
     });
   });
 });

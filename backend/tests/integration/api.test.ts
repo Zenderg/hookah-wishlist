@@ -60,6 +60,7 @@ describe('API Integration Tests', () => {
     });
 
     (searchService.getAvailableBrands as jest.Mock).mockResolvedValue(['Al Fakher', 'Starbuzz', 'Tangiers']);
+
     (searchService.getAvailableFlavors as jest.Mock).mockResolvedValue(['Mint', 'Apple', 'Blueberry']);
   });
 
@@ -76,6 +77,7 @@ describe('API Integration Tests', () => {
 
   /**
    * Helper function to create valid Telegram init data
+   * IMPORTANT: Uses URL-decoded values in data-check-string (per Telegram documentation)
    */
   const createValidInitData = (userId: number): string => {
     const user = {
@@ -89,13 +91,23 @@ describe('API Integration Tests', () => {
     const authDate = Math.floor(Date.now() / 1000).toString();
     const userParam = encodeURIComponent(JSON.stringify(user));
 
-    // Create data-check-string
-    const dataCheckString = `auth_date=${authDate}\nuser=${userParam}`;
+    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
+    const params = {
+      user: userParam,
+      auth_date: authDate,
+    };
+
+    const dataCheckString = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
+      .join('\n');
 
     // Calculate secret key from bot token
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TEST_BOT_TOKEN).digest();
 
-    // Calculate HMAC-SHA256
+    // Calculate HMAC-SHA256 from URL-decoded data-check-string
     const hash = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
@@ -569,7 +581,8 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .get('/api/v1/search')
         .query({ query: 'test' })
-        .set('X-Telegram-Init-Data', validInitData);
+        .set('X-Telegram-Init-Data', validInitData)
+        .expect(200);
 
       expect(response.headers['access-control-allow-origin']).toBeDefined();
     });
@@ -596,7 +609,8 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .get('/api/v1/wishlist')
-        .set('X-Telegram-Init-Data', validInitData);
+        .set('X-Telegram-Init-Data', validInitData)
+        .expect(200);
 
       expect(response.headers['content-type']).toMatch(/json/);
     });
@@ -622,7 +636,8 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .get('/api/v1/search')
         .query({ query: 'test' })
-        .set('X-Telegram-Init-Data', validInitData);
+        .set('X-Telegram-Init-Data', validInitData)
+        .expect(200);
 
       expect(response.headers['content-type']).toMatch(/json/);
     });
@@ -656,6 +671,10 @@ describe('API Integration Tests', () => {
           .post('/api/v1/wishlist')
           .set('X-Telegram-Init-Data', validInitData)
           .send({ tobaccoId: '3' }),
+        request(app)
+          .post('/api/v1/wishlist')
+          .set('X-Telegram-Init-Data', validInitData)
+          .send({ tobaccoId: '4' }),
       ];
 
       const responses = await Promise.all(requests);
@@ -711,6 +730,9 @@ describe('API Integration Tests', () => {
           .send({ tobaccoId: '1' }),
         request(app)
           .get('/api/v1/search/brands')
+          .set('X-Telegram-Init-Data', validInitData),
+        request(app)
+          .get('/api/v1/search/flavors')
           .set('X-Telegram-Init-Data', validInitData),
         request(app)
           .get('/health'),
@@ -889,7 +911,7 @@ describe('API Integration Tests', () => {
         .get('/health')
         .expect(200);
 
-      expect(response.body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect(response.body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     });
   });
 });

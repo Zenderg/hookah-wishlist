@@ -121,10 +121,12 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
     logger.debug('[AUTH DEBUG] Full hash (hex):', hash);
 
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // IMPORTANT: URL-decode values before creating the string (per Telegram documentation)
+    // Reference: https://docs.telegram-mini-apps.com/platform/init-data
     const dataCheckString = Object.entries(params)
       .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
       .join('\n');
 
     logger.debug('[AUTH DEBUG] dataCheckString:');
@@ -212,10 +214,12 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
     logger.debug('[AUTH DEBUG] Bot ID type:', typeof botId);
 
     // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
+    // IMPORTANT: URL-decode values before creating the string (per Telegram documentation)
+    // Reference: https://docs.telegram-mini-apps.com/platform/init-data
     const dataCheckString = Object.entries(params)
       .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
       .join('\n');
 
     logger.debug('[AUTH DEBUG] dataCheckString:');

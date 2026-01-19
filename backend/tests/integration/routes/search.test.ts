@@ -78,6 +78,7 @@ describe('Search Routes Integration Tests', () => {
 
   /**
    * Helper function to create valid Telegram init data
+   * IMPORTANT: Uses URL-decoded values in data-check-string (per Telegram documentation)
    */
   const createValidInitData = (userId: number): string => {
     const user = {
@@ -91,13 +92,23 @@ describe('Search Routes Integration Tests', () => {
     const authDate = Math.floor(Date.now() / 1000).toString();
     const userParam = encodeURIComponent(JSON.stringify(user));
 
-    // Create data-check-string
-    const dataCheckString = `auth_date=${authDate}\nuser=${userParam}`;
+    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
+    const params = {
+      user: userParam,
+      auth_date: authDate,
+    };
+
+    const dataCheckString = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
+      .join('\n');
 
     // Calculate secret key from bot token
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TEST_BOT_TOKEN).digest();
 
-    // Calculate HMAC-SHA256
+    // Calculate HMAC-SHA256 from URL-decoded data-check-string
     const hash = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
@@ -142,13 +153,23 @@ describe('Search Routes Integration Tests', () => {
     const authDate = Math.floor((Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000).toString();
     const userParam = encodeURIComponent(JSON.stringify(user));
 
-    // Create data-check-string
-    const dataCheckString = `auth_date=${authDate}\nuser=${userParam}`;
+    // Create data-check-string: all parameters except 'hash', sorted alphabetically
+    // IMPORTANT: Use URL-decoded values (per Telegram documentation)
+    const params = {
+      user: userParam,
+      auth_date: authDate,
+    };
+
+    const dataCheckString = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
+      .join('\n');
 
     // Calculate secret key from bot token
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TEST_BOT_TOKEN).digest();
 
-    // Calculate HMAC-SHA256
+    // Calculate HMAC-SHA256 from URL-decoded data-check-string
     const hash = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
