@@ -96,6 +96,7 @@ function hexToBuffer(hex: string): Buffer {
  */
 function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolean {
   try {
+    logger.debug('[AUTH DEBUG] ==================== HMAC-SHA256 Verification Start ====================');
     logger.debug('[AUTH DEBUG] Verifying initData signature using HMAC-SHA256 (preferred method)');
     
     // Parse initData parameters
@@ -117,6 +118,7 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
     }
     
     logger.debug('[AUTH DEBUG] Hash present (HMAC-SHA256):', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Full hash (hex):', hash);
 
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -125,11 +127,14 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
+    logger.debug('[AUTH DEBUG] dataCheckString:');
+    logger.debug('[AUTH DEBUG]', dataCheckString);
+    logger.debug('[AUTH DEBUG] dataCheckString length:', dataCheckString.length);
 
     // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
     logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
+    logger.debug('[AUTH DEBUG] Secret key (hex):', secretKey.toString('hex'));
 
     // Calculate HMAC-SHA256 of data-check-string using the secret key
     const hmac = crypto
@@ -137,8 +142,8 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
       .update(dataCheckString)
       .digest('hex');
 
-    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac);
+    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash);
 
     // Compare hashes using constant-time comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(
@@ -148,11 +153,17 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
 
     if (!isValid) {
       logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
-      logger.debug('[AUTH DEBUG] Calculated:', hmac);
-      logger.debug('[AUTH DEBUG] Expected:', hash);
+      logger.error('[AUTH DEBUG] This could be due to:');
+      logger.error('[AUTH DEBUG] 1. Incorrect bot token');
+      logger.error('[AUTH DEBUG] 2. Incorrect data-check-string construction');
+      logger.error('[AUTH DEBUG] 3. initData has been tampered with');
+      logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac);
+      logger.debug('[AUTH DEBUG] Expected hash:', hash);
     } else {
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
     }
+
+    logger.debug('[AUTH DEBUG] ==================== HMAC-SHA256 Verification End ====================');
 
     return isValid;
   } catch (error) {
@@ -171,6 +182,7 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
  */
 function verifyInitDataSignatureEd25519(initData: string, botToken: string): boolean {
   try {
+    logger.debug('[AUTH DEBUG] ==================== Ed25519 Verification Start ====================');
     logger.debug('[AUTH DEBUG] Verifying initData signature using Ed25519 (third-party validation)');
     
     // Parse initData parameters
@@ -192,10 +204,12 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
     }
     
     logger.debug('[AUTH DEBUG] Signature present (Ed25519):', signature.substring(0, 20) + '...');
+    logger.debug('[AUTH DEBUG] Full signature (base64url):', signature);
 
     // Extract bot ID from bot token
     const botId = botToken.split(':')[0];
     logger.debug('[AUTH DEBUG] Bot ID:', botId);
+    logger.debug('[AUTH DEBUG] Bot ID type:', typeof botId);
 
     // Create data-check-string: all parameters except 'hash' and 'signature', sorted alphabetically
     const dataCheckString = Object.entries(params)
@@ -204,26 +218,34 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    logger.debug('[AUTH DEBUG] dataCheckString:', dataCheckString);
+    logger.debug('[AUTH DEBUG] dataCheckString:');
+    logger.debug('[AUTH DEBUG]', dataCheckString);
+    logger.debug('[AUTH DEBUG] dataCheckString length:', dataCheckString.length);
 
     // Create string to verify: "{bot_id}:WebAppData\n{dataCheckString}"
     const verifyString = `${botId}:WebAppData\n${dataCheckString}`;
-    logger.debug('[AUTH DEBUG] verifyString:', verifyString);
+    logger.debug('[AUTH DEBUG] verifyString:');
+    logger.debug('[AUTH DEBUG]', verifyString);
+    logger.debug('[AUTH DEBUG] verifyString length:', verifyString.length);
 
     // Convert verify string to buffer
     const messageBuffer = Buffer.from(verifyString, 'utf-8');
+    logger.debug('[AUTH DEBUG] messageBuffer (hex):', messageBuffer.toString('hex'));
 
     // Determine which public key to use
     const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.TELEGRAM_TEST_MODE === 'true';
     const publicKeyHex = isTestEnvironment ? TELEGRAM_PUBLIC_KEYS.test : TELEGRAM_PUBLIC_KEYS.production;
     
     logger.debug('[AUTH DEBUG] Using public key for:', isTestEnvironment ? 'test' : 'production');
+    logger.debug('[AUTH DEBUG] Public key (hex):', publicKeyHex);
 
     // Convert public key from hex to buffer
     const publicKeyBuffer = hexToBuffer(publicKeyHex);
+    logger.debug('[AUTH DEBUG] publicKeyBuffer (hex):', publicKeyBuffer.toString('hex'));
 
     // Convert signature from base64url to buffer
     const signatureBuffer = base64urlToBuffer(signature);
+    logger.debug('[AUTH DEBUG] signatureBuffer (hex):', signatureBuffer.toString('hex'));
 
     logger.debug('[AUTH DEBUG] Message buffer length:', messageBuffer.length);
     logger.debug('[AUTH DEBUG] Public key buffer length:', publicKeyBuffer.length);
@@ -238,9 +260,17 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
 
     if (!isValid) {
       logger.error('[AUTH DEBUG] Ed25519 signature verification failed');
+      logger.error('[AUTH DEBUG] This could be due to:');
+      logger.error('[AUTH DEBUG] 1. Incorrect public key (may be outdated)');
+      logger.error('[AUTH DEBUG] 2. Incorrect verify string format');
+      logger.error('[AUTH DEBUG] 3. Incorrect data-check-string construction');
+      logger.error('[AUTH DEBUG] 4. Signature is not actually an Ed25519 signature');
+      logger.error('[AUTH DEBUG] 5. initData is from a first-party mini app (should use HMAC-SHA256 instead)');
     } else {
       logger.debug('[AUTH DEBUG] Ed25519 signature verification successful');
     }
+
+    logger.debug('[AUTH DEBUG] ==================== Ed25519 Verification End ====================');
 
     return isValid;
   } catch (error) {
@@ -251,8 +281,8 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
 
 /**
  * Verifies Telegram initData signature
- * Prioritizes Ed25519 (signature parameter) for third-party validation
- * Falls back to HMAC-SHA256 (hash parameter) for first-party validation
+ * Prioritizes HMAC-SHA256 (hash parameter) for first-party validation
+ * Falls back to Ed25519 (signature parameter) for third-party validation
  * 
  * @param initData - The initData string from Telegram WebApp
  * @param botToken - The bot token for verification
@@ -260,6 +290,7 @@ function verifyInitDataSignatureEd25519(initData: string, botToken: string): boo
  */
 function verifyInitDataSignature(initData: string, botToken: string): boolean {
   try {
+    logger.debug('[AUTH DEBUG] ==================== Signature Verification Start ====================');
     logger.debug('[AUTH DEBUG] Verifying initData signature');
     logger.debug('[AUTH DEBUG] initData length:', initData.length);
     logger.debug('[AUTH DEBUG] initData preview:', initData.substring(0, 100) + '...');
@@ -275,21 +306,28 @@ function verifyInitDataSignature(initData: string, botToken: string): boolean {
       }
     }
 
-    // Prioritize Ed25519 verification (signature parameter) for third-party validation
-    // When both signature and hash are present, it's a third-party mini app
-    if (params.signature) {
-      logger.debug('[AUTH DEBUG] Using Ed25519 signature verification (third-party validation)');
-      return verifyInitDataSignatureEd25519(initData, botToken);
-    }
-    
-    // Fall back to HMAC-SHA256 verification (hash parameter) for first-party validation
-    // This is used when only hash is present (first-party validation)
+    logger.debug('[AUTH DEBUG] Parsed parameters:', Object.keys(params).join(', '));
+    logger.debug('[AUTH DEBUG] Has hash parameter:', !!params.hash);
+    logger.debug('[AUTH DEBUG] Has signature parameter:', !!params.signature);
+
+    // Prioritize HMAC-SHA256 verification (hash parameter) for first-party validation
+    // This is the recommended method when you have access to the bot token
     if (params.hash) {
       logger.debug('[AUTH DEBUG] Using HMAC-SHA256 signature verification (preferred method with bot token)');
+      logger.debug('[AUTH DEBUG] This is the correct method for first-party mini apps');
       return verifyInitDataSignatureHMAC(initData, botToken);
     }
     
+    // Fall back to Ed25519 verification (signature parameter) for third-party validation
+    // This is used when you don't have access to the bot token
+    if (params.signature) {
+      logger.debug('[AUTH DEBUG] Using Ed25519 signature verification (third-party validation)');
+      logger.debug('[AUTH DEBUG] This is used for third-party validation when bot token is not available');
+      return verifyInitDataSignatureEd25519(initData, botToken);
+    }
+    
     logger.error('[AUTH DEBUG] Neither hash nor signature found in initData');
+    logger.error('[AUTH DEBUG] This is unexpected - initData should contain at least one of these parameters');
     return false;
   } catch (error) {
     logger.error('[AUTH DEBUG] Error verifying initData signature:', error);
@@ -372,7 +410,7 @@ function parseUserData(userParam: string): TelegramUser | null {
  * 
  * This middleware:
  * 1. Extracts initData from headers or query parameters
- * 2. Verifies signature (prioritizes Ed25519 with signature, falls back to HMAC-SHA256 with hash)
+ * 2. Verifies signature (prioritizes HMAC-SHA256 with hash, falls back to Ed25519 with signature)
  * 3. Validates timestamp to prevent replay attacks
  * 4. Extracts user_id and user data
  * 5. Adds authentication data to req.telegramUser

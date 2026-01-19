@@ -32,9 +32,9 @@ describe('Authentication Priority Tests', () => {
   });
 
   describe('Signature Priority', () => {
-    it('should use Ed25519 when both signature and hash are present (third-party mini app)', () => {
+    it('should use HMAC-SHA256 when both signature and hash are present (first-party mini app with bot token)', () => {
       // This simulates production scenario where both signature and hash are present
-      // In this case, it's a third-party mini app, so we should use Ed25519 with signature
+      // In this case, it's a first-party mini app with bot token available, so we should use HMAC-SHA256 with hash
       const initDataWithBoth = 
         'user=%7B%22id%22%3A385787313%2C%22first_name%22%3A%22Test%22%7D' +
         '&auth_date=1768757235' +
@@ -54,9 +54,9 @@ describe('Authentication Priority Tests', () => {
         mockNext
       );
 
-      // The middleware should try to verify Ed25519 first (because signature is present)
-      // Since we don't have a real signature, it will fail
-      // But important thing is that it prioritizes signature over hash
+      // The middleware should try to verify HMAC-SHA256 first (because bot token is available)
+      // Since we don't have a real hash, it will fail
+      // But important thing is that it prioritizes HMAC-SHA256 over Ed25519
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -172,8 +172,8 @@ describe('Authentication Priority Tests', () => {
         mockNext
       );
 
-      // Should try Ed25519 first (because signature is present)
-      // Will fail because signature is not valid with test bot token
+      // Should try HMAC-SHA256 first (because bot token is available)
+      // Will fail because hash is not valid with test bot token
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockNext).not.toHaveBeenCalled();
     });

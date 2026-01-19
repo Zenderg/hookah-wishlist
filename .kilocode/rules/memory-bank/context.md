@@ -26,7 +26,7 @@ The project is ready for development, testing, and production deployment.
   - Problem: Production environment showing "Authentication failed. Please open this app from Telegram." error
   - Root cause: Backend was prioritizing Ed25519 signature verification (third-party validation) when both `signature` and `hash` parameters were present in initData
   - Issue: Ed25519 is designed for third-party validation when you DON'T have bot token, but we have bot token available
-  - Solution: Changed priority to use Ed25519 (signature parameter) when signature is present, and only use HMAC-SHA256 (hash parameter) when only hash is present
+  - Solution: Changed priority to use HMAC-SHA256 (hash parameter) when bot token is available (preferred method), and only use Ed25519 (signature parameter) as fallback for third-party validation when bot token is not available
   - Updated [`backend/src/api/middleware/auth.ts`](backend/src/api/middleware/auth.ts:1) with:
     - Reordered verification logic in `verifyInitDataSignature()` function
     - Now prioritizes HMAC-SHA256 verification (hash parameter) when bot token is available
