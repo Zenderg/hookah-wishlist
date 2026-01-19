@@ -99,16 +99,29 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
     logger.debug('[AUTH DEBUG] ==================== HMAC-SHA256 Verification Start ====================');
     logger.debug('[AUTH DEBUG] Verifying initData signature using HMAC-SHA256 (preferred method)');
     
+    // Log bot token (masked for security)
+    const maskedBotToken = botToken.length > 10 
+      ? `${botToken.substring(0, 6)}...${botToken.substring(botToken.length - 4)}`
+      : '***';
+    logger.debug('[AUTH DEBUG] Bot token (masked):', maskedBotToken);
+    logger.debug('[AUTH DEBUG] Bot token length:', botToken.length);
+    
     // Parse initData parameters
     const params: InitDataParams = {};
     const pairs = initData.split('&');
+    
+    logger.debug('[AUTH DEBUG] Parsing initData parameters...');
+    logger.debug('[AUTH DEBUG] Number of parameter pairs:', pairs.length);
     
     for (const pair of pairs) {
       const [key, value] = pair.split('=');
       if (key && value !== undefined) {
         params[key] = value;
+        logger.debug(`[AUTH DEBUG] Parsed param: ${key} = ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}`);
       }
     }
+
+    logger.debug('[AUTH DEBUG] All parsed parameter keys:', Object.keys(params).join(', '));
 
     // Check for hash parameter
     const hash = params.hash;
@@ -117,59 +130,113 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
       return false;
     }
     
-    logger.debug('[AUTH DEBUG] Hash present (HMAC-SHA256):', hash.substring(0, 20) + '...');
-    logger.debug('[AUTH DEBUG] Full hash (hex):', hash);
+    logger.debug('[AUTH DEBUG] Hash parameter found');
+    logger.debug('[AUTH DEBUG] Hash length:', hash.length);
+    logger.debug('[AUTH DEBUG] Hash (full hex):', hash);
 
     // Create data-check-string: all parameters except 'hash', sorted alphabetically
     // IMPORTANT: URL-decode values before creating the string (per Telegram documentation)
     // Reference: https://docs.telegram-mini-apps.com/platform/init-data
-    const dataCheckString = Object.entries(params)
-      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${decodeURIComponent(value!)}`)
+    logger.debug('[AUTH DEBUG] Creating data-check-string...');
+    logger.debug('[AUTH DEBUG] Excluding parameters: hash, signature');
+    
+    const filteredParams = Object.entries(params)
+      .filter(([key, value]) => key !== 'hash' && key !== 'signature' && value !== undefined);
+    
+    logger.debug('[AUTH DEBUG] Number of filtered parameters:', filteredParams.length);
+    logger.debug('[AUTH DEBUG] Filtered parameter keys:', filteredParams.map(([k]) => k).join(', '));
+    
+    const sortedParams = filteredParams.sort(([a], [b]) => a.localeCompare(b));
+    logger.debug('[AUTH DEBUG] Sorted parameter keys:', sortedParams.map(([k]) => k).join(', '));
+    
+    const dataCheckString = sortedParams
+      .map(([key, value]) => {
+        const decodedValue = decodeURIComponent(value!);
+        logger.debug(`[AUTH DEBUG] Decoding ${key}: ${value!.substring(0, 50)}${value!.length > 50 ? '...' : ''} -> ${decodedValue.substring(0, 50)}${decodedValue.length > 50 ? '...' : ''}`);
+        return `${key}=${decodedValue}`;
+      })
       .join('\n');
 
-    logger.debug('[AUTH DEBUG] dataCheckString:');
+    logger.debug('[AUTH DEBUG] dataCheckString (full):');
     logger.debug('[AUTH DEBUG]', dataCheckString);
     logger.debug('[AUTH DEBUG] dataCheckString length:', dataCheckString.length);
+    logger.debug('[AUTH DEBUG] dataCheckString line count:', dataCheckString.split('\n').length);
 
     // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
+    logger.debug('[AUTH DEBUG] Calculating secret key from bot token...');
+    logger.debug('[AUTH DEBUG] Using "WebAppData" as HMAC key for secret key derivation');
+    
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-    logger.debug('[AUTH DEBUG] Secret key calculated from bot token');
-    logger.debug('[AUTH DEBUG] Secret key (hex):', secretKey.toString('hex'));
+    
+    const maskedSecretKey = secretKey.toString('hex').length > 16
+      ? `${secretKey.toString('hex').substring(0, 8)}...${secretKey.toString('hex').substring(secretKey.toString('hex').length - 8)}`
+      : '***';
+    logger.debug('[AUTH DEBUG] Secret key calculated successfully');
+    logger.debug('[AUTH DEBUG] Secret key length:', secretKey.length, 'bytes');
+    logger.debug('[AUTH DEBUG] Secret key (masked hex):', maskedSecretKey);
+    logger.debug('[AUTH DEBUG] Secret key (full hex):', secretKey.toString('hex'));
 
     // Calculate HMAC-SHA256 of data-check-string using the secret key
+    logger.debug('[AUTH DEBUG] Calculating HMAC-SHA256 of data-check-string...');
+    logger.debug('[AUTH DEBUG] Using secret key for HMAC calculation');
+    
     const hmac = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
 
-    logger.debug('[AUTH DEBUG] Calculated HMAC (hex):', hmac);
-    logger.debug('[AUTH DEBUG] Expected hash (hex):', hash);
+    logger.debug('[AUTH DEBUG] HMAC calculated successfully');
+    logger.debug('[AUTH DEBUG] HMAC length:', hmac.length, 'characters');
+    logger.debug('[AUTH DEBUG] Calculated HMAC (full hex):', hmac);
+    logger.debug('[AUTH DEBUG] Expected hash (full hex):', hash);
 
     // Compare hashes using constant-time comparison to prevent timing attacks
+    logger.debug('[AUTH DEBUG] Comparing calculated HMAC with expected hash...');
+    logger.debug('[AUTH DEBUG] Using constant-time comparison to prevent timing attacks');
+    
     const isValid = crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
       Buffer.from(hash, 'hex')
     );
 
     if (!isValid) {
+      logger.error('[AUTH DEBUG] ==================== HMAC VERIFICATION FAILED ====================');
       logger.error('[AUTH DEBUG] HMAC signature verification failed - signatures do not match');
       logger.error('[AUTH DEBUG] This could be due to:');
       logger.error('[AUTH DEBUG] 1. Incorrect bot token');
       logger.error('[AUTH DEBUG] 2. Incorrect data-check-string construction');
       logger.error('[AUTH DEBUG] 3. initData has been tampered with');
-      logger.debug('[AUTH DEBUG] Calculated HMAC:', hmac);
-      logger.debug('[AUTH DEBUG] Expected hash:', hash);
+      logger.error('[AUTH DEBUG] 4. URL-decoding issue with parameter values');
+      logger.error('[AUTH DEBUG] 5. Incorrect parameter sorting');
+      logger.error('[AUTH DEBUG] 6. Missing or extra parameters in data-check-string');
+      logger.error('[AUTH DEBUG] ==================== COMPARISON DETAILS ====================');
+      logger.error('[AUTH DEBUG] Calculated HMAC (hex):', hmac);
+      logger.error('[AUTH DEBUG] Expected hash (hex):', hash);
+      logger.error('[AUTH DEBUG] HMAC length:', hmac.length);
+      logger.error('[AUTH DEBUG] Hash length:', hash.length);
+      logger.error('[AUTH DEBUG] Lengths match:', hmac.length === hash.length);
+      logger.error('[AUTH DEBUG] First 8 chars of HMAC:', hmac.substring(0, 8));
+      logger.error('[AUTH DEBUG] First 8 chars of hash:', hash.substring(0, 8));
+      logger.error('[AUTH DEBUG] Last 8 chars of HMAC:', hmac.substring(hmac.length - 8));
+      logger.error('[AUTH DEBUG] Last 8 chars of hash:', hash.substring(hash.length - 8));
+      logger.error('[AUTH DEBUG] ==================== END COMPARISON DETAILS ====================');
     } else {
+      logger.debug('[AUTH DEBUG] ==================== HMAC VERIFICATION SUCCESSFUL ====================');
       logger.debug('[AUTH DEBUG] HMAC signature verification successful');
+      logger.debug('[AUTH DEBUG] Calculated HMAC matches expected hash');
     }
 
     logger.debug('[AUTH DEBUG] ==================== HMAC-SHA256 Verification End ====================');
 
     return isValid;
   } catch (error) {
+    logger.error('[AUTH DEBUG] ==================== HMAC VERIFICATION ERROR ====================');
     logger.error('[AUTH DEBUG] Error verifying HMAC signature:', error);
+    if (error instanceof Error) {
+      logger.error('[AUTH DEBUG] Error name:', error.name);
+      logger.error('[AUTH DEBUG] Error message:', error.message);
+      logger.error('[AUTH DEBUG] Error stack:', error.stack);
+    }
     return false;
   }
 }
