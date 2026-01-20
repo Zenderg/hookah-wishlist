@@ -162,11 +162,13 @@ function verifyInitDataSignatureHMAC(initData: string, botToken: string): boolea
     logger.debug('[AUTH DEBUG] dataCheckString length:', dataCheckString.length);
     logger.debug('[AUTH DEBUG] dataCheckString line count:', dataCheckString.split('\n').length);
 
-    // Calculate secret key from bot token using SHA-256 hash
+    // Calculate secret key from bot token using HMAC-SHA256 with "WebAppData" as key
+    // Reference: https://docs.telegram-mini-apps.com/platform/init-data
+    // Secret key = HMAC-SHA256(bot_token, "WebAppData")
     logger.debug('[AUTH DEBUG] Calculating secret key from bot token...');
-    logger.debug('[AUTH DEBUG] Using SHA-256 hash of bot token as secret key');
+    logger.debug('[AUTH DEBUG] Using HMAC-SHA256 with "WebAppData" as key and bot token as message');
     
-    const secretKey = crypto.createHash('sha256').update(botToken).digest();
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
     
     const maskedSecretKey = secretKey.toString('hex').length > 16
       ? `${secretKey.toString('hex').substring(0, 8)}...${secretKey.toString('hex').substring(secretKey.toString('hex').length - 8)}`
