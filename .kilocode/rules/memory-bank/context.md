@@ -40,13 +40,25 @@ The project structure has been initialized. Source code files have been created 
   - Implemented [`removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) - Removes item with user ownership validation
   - Created [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) with 10 unit tests (all passing)
   - All methods include proper error handling (NotFoundException, ForbiddenException)
+- **Implemented Telegram bot handlers** for all commands:
+  - Implemented [`StartHandler`](backend/src/bot/handlers/start.handler.ts) - Displays welcome message with mini-app link button
+  - Implemented [`HelpHandler`](backend/src/bot/handlers/help.handler.ts) - Shows usage instructions and tips
+  - Implemented [`WishlistHandler`](backend/src/bot/handlers/wishlist.handler.ts) - Displays user's wishlist with tobacco names and dates
+  - Updated [`BotService`](backend/src/bot/bot.service.ts) to register command handlers with Telegraf, includes logging and error handling
+  - Updated [`BotModule`](backend/src/bot/bot.module.ts) to import WishlistModule for dependency injection
+  - Created [`start.handler.spec.ts`](backend/src/bot/handlers/start.handler.spec.ts) with 4 unit tests (all passing)
+  - Created [`help.handler.spec.ts`](backend/src/bot/handlers/help.handler.spec.ts) with 4 unit tests (all passing)
+  - Created [`wishlist.handler.spec.ts`](backend/src/bot/handlers/wishlist.handler.spec.ts) with 4 unit tests (all passing)
+  - All handlers use HTML-formatted messages with emojis for better UX
+  - Inline keyboard buttons for mini-app access
+  - Error handling for missing user IDs
+  - Empty wishlist detection with helpful prompts
 
 ## Next Steps
 
-1. Implement Telegram bot handlers for `/start`, `/help`, `/wishlist` commands
-2. Implement mini-app UI (search, wishlist components)
-3. Integrate with hookah-db API
-4. Deploy using Docker Compose
+1. Implement mini-app UI (search, wishlist components)
+2. Integrate with hookah-db API
+3. Deploy using Docker Compose
 
 ## Known Decisions
 
