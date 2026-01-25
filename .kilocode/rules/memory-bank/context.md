@@ -33,14 +33,20 @@ The project structure has been initialized. Source code files have been created 
   - Updated [`AuthService`](backend/src/auth/auth.service.ts) to find or create users by telegramId
   - Updated [`AuthModule`](backend/src/auth/auth.module.ts) to import DatabaseModule for User repository access
   - Service validates Telegram user data and returns userId for use in other modules
+- **Implemented WishlistService** with full CRUD operations:
+  - Updated [`WishlistModule`](backend/src/wishlist/wishlist.module.ts) to import DatabaseModule for User repository access
+  - Implemented [`getUserWishlist()`](backend/src/wishlist/wishlist.service.ts:13) - Returns user's wishlist items sorted by creation date (newest first)
+  - Implemented [`addToWishlist()`](backend/src/wishlist/wishlist.service.ts:30) - Adds tobacco to wishlist, returns existing item if duplicate
+  - Implemented [`removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) - Removes item with user ownership validation
+  - Created [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) with 10 unit tests (all passing)
+  - All methods include proper error handling (NotFoundException, ForbiddenException)
 
 ## Next Steps
 
-1. Implement WishlistService with user ID lookup
-2. Implement Telegram bot handlers for `/start`, `/help`, `/wishlist` commands
-3. Implement mini-app UI (search, wishlist components)
-4. Integrate with hookah-db API
-5. Deploy using Docker Compose
+1. Implement Telegram bot handlers for `/start`, `/help`, `/wishlist` commands
+2. Implement mini-app UI (search, wishlist components)
+3. Integrate with hookah-db API
+4. Deploy using Docker Compose
 
 ## Known Decisions
 
