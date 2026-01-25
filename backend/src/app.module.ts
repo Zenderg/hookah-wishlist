@@ -1,0 +1,35 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { AuthModule } from './auth/auth.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { BotModule } from './bot/bot.module';
+import { DatabaseModule } from './database/database.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService) => ({
+        type: 'sqlite',
+        database: configService.get('DATABASE_PATH') || './data/wishlist.db',
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: true,
+        logging: configService.get('NODE_ENV') === 'development',
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
+    WishlistModule,
+    BotModule,
+    DatabaseModule,
+  ],
+})
+export class AppModule {
+  constructor(private dataSource: DataSource) {}
+}

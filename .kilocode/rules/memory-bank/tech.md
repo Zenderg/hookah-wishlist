@@ -3,25 +3,25 @@
 ## Backend (NestJS)
 
 ### Core Technologies
-- **Runtime**: Node.js (LTS version, 24.x or higher recommended)
+- **Runtime**: Node.js (LTS version, 24.x or higher)
 - **Language**: TypeScript
-- **Framework**: NestJS
+- **Framework**: NestJS (v11.x)
 - **Package Manager**: npm
 
 ### Key Dependencies
-- `@nestjs/common` - Core NestJS decorators and utilities
-- `@nestjs/core` - NestJS core module
-- `@nestjs/platform-express` - Express platform adapter
-- `@nestjs/typeorm` - TypeORM integration for database
-- `@nestjs/config` - Configuration management
-- `@nestjs/swagger` - OpenAPI/Swagger documentation
-- `typeorm` - ORM for database operations
-- `sqlite3` - SQLite database driver
-- `telegraf` - Telegram Bot API framework
-- `axios` - HTTP client for external API calls
-- `class-validator` - Input validation decorators
-- `class-transformer` - Object transformation
-- `reflect-metadata` - Required for decorators
+- `@nestjs/common` (v11.x) - Core NestJS decorators and utilities
+- `@nestjs/core` (v11.x) - NestJS core module
+- `@nestjs/platform-express` (v11.x) - Express platform adapter
+- `@nestjs/typeorm` (v11.x) - TypeORM integration for database
+- `@nestjs/config` (v4.x) - Configuration management
+- `@nestjs/swagger` (v8.x) - OpenAPI/Swagger documentation
+- `typeorm` (v0.3.x) - ORM for database operations
+- `sqlite3` (v5.x) - SQLite database driver
+- `telegraf` (v4.x) - Telegram Bot API framework
+- `axios` (v1.x) - HTTP client for external API calls
+- `class-validator` (v0.14.x) - Input validation decorators
+- `class-transformer` (v0.5.x) - Object transformation
+- `reflect-metadata` (v0.2.x) - Required for decorators
 
 ### Development Dependencies
 - `@nestjs/cli` - NestJS CLI for project generation
@@ -46,22 +46,22 @@
 ## Frontend (Angular)
 
 ### Core Technologies
-- **Framework**: Angular (latest stable version)
+- **Framework**: Angular (v21.x)
 - **Language**: TypeScript
 - **Package Manager**: npm
 
 ### Key Dependencies
-- `@angular/core` - Angular core framework
-- `@angular/common` - Common Angular utilities
-- `@angular/forms` - Reactive forms support
-- `@angular/router` - Routing module
-- `@angular/http` - HTTP client
-- `@angular/platform-browser` - Browser platform
-- `@angular/platform-browser-dynamic` - Dynamic browser platform
-- `rxjs` - Reactive Extensions for JavaScript
-- `zone.js` - Zone.js for change detection
-- `@telegram-apps/sdk` - Telegram Mini Apps SDK
-- `axios` - HTTP client for API calls
+- `@angular/core` (v21.x) - Angular core framework
+- `@angular/common` (v21.x) - Common Angular utilities
+- `@angular/forms` (v21.x) - Reactive forms support
+- `@angular/router` (v21.x) - Routing module
+- `@angular/http` (v21.x) - HTTP client
+- `@angular/platform-browser` (v21.x) - Browser platform
+- `@angular/platform-browser-dynamic` (v21.x) - Dynamic browser platform
+- `rxjs` (v7.x) - Reactive Extensions for JavaScript
+- `zone.js` (v0.15.x) - Zone.js for change detection
+- `@telegram-apps/sdk` (v2.x) - Telegram Mini Apps SDK
+- `axios` (v1.x) - HTTP client for API calls
 
 ### Development Dependencies
 - `@angular/cli` - Angular CLI for project generation
@@ -69,12 +69,8 @@
 - `@angular-devkit/build-angular` - Angular build tools
 - `typescript` - TypeScript compiler
 - `@types/node` - TypeScript definitions for Node.js
-- `karma` - Test runner
-- `@types/jasmine` - TypeScript definitions for Jasmine
-- `jasmine-core` - Jasmine testing framework
-- `karma-jasmine` - Karma adapter for Jasmine
-- `karma-chrome-launcher` - Chrome launcher for Karma
-- `protractor` - End-to-end testing framework
+- `vitest` - Test runner (experimental unit testing)
+- `jsdom` - DOM implementation for testing
 - `eslint` - Code linting
 - `@typescript-eslint/parser` - TypeScript parser for ESLint
 - `@typescript-eslint/eslint-plugin` - TypeScript ESLint rules
@@ -175,9 +171,9 @@ docker-compose logs -f
 - Test coverage reporting
 
 ### Frontend Testing
-- Unit tests with Jasmine/Karma
+- Unit tests with Vitest (experimental unit testing)
 - Component testing with Angular testing utilities
-- E2E tests with Protractor
+- jsdom for DOM implementation in tests
 
 ## Code Quality
 
