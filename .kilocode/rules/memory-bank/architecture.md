@@ -155,6 +155,8 @@ hookah-wishlist/
 │   │   │       └── wishlist.handler.ts
 │   │   └── database/
 │   │       ├── database.module.ts
+│   │       ├── entities/
+│   │       │   └── user.entity.ts
 │   │       └── migrations/
 │   ├── test/
 │   ├── package.json
