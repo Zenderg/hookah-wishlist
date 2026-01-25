@@ -1,40 +1,41 @@
-# Hookah Wishlist Project
+# Hookah Wishlist - Telegram Bot with Mini-App
 
-## Overview
-Telegram bot with mini-app for managing hookah tobacco wishlist, solving the problem of tracking purchased tobaccos without manual record-keeping.
+## Project Overview
 
-## Primary Goals
-- Provide quick and easy tobacco search functionality
-- Enable seamless wishlist management
-- Deliver instant wishlist retrieval via simple bot commands
-- Streamline the shopping experience at tobacco stores
-- Secure user authentication through Telegram
-- Provide unified access to all services via reverse proxy
-- Ensure data persistence across deployments
-- Maintain high code quality through comprehensive testing
+A Telegram bot with integrated mini-app that solves the problem of tracking hookah tobacco purchases. The app provides an easy and fast way to discover tobaccos, manage a personal wishlist, and quickly retrieve it when visiting a tobacco shop.
 
-## Key Features
-- **Telegram Bot Integration**: Full-featured bot with command-based interface
-- **Mini-App Interface**: User-friendly web app embedded in Telegram
-- **Tobacco Search**: Fast search across brands and tobacco varieties
-- **Wishlist Management**: Add/remove items with minimal effort
-- **Quick Access**: Single command to retrieve complete wishlist
-- **Telegram Authentication**: Secure user identification via Telegram user ID
-- **Reverse Proxy**: Unified access to all services on port 80
-- **Persistent Storage**: SQLite database with Docker volumes for data persistence
-- **Independent Subprojects**: Backend and mini-app are completely isolated with their own dependencies and configurations
-- **Comprehensive Testing**: Backend has 727 tests with 99.59% pass rate and 90.99% code coverage; Mini-app has 534 tests with 99.78% pass rate and ~95% coverage
+## Main Goals
 
-## Technology Stack
-- **Runtime**: Node.js
-- **Package Manager**: npm
-- **Containerization**: Docker Compose
-- **Reverse Proxy**: Nginx
-- **Data Source**: hookah-db API (https://hdb.coolify.dknas.org) with API key authentication
-- **Platform**: Telegram Bot API + Mini Apps
-- **Storage**: SQLite database with persistent Docker volumes
-- **Architecture**: Independent subprojects (backend/ and mini-app/) with complete isolation
-- **Testing**: Jest, supertest, ts-jest for comprehensive backend testing; Vitest, React Testing Library for comprehensive mini-app testing
+- Eliminate the friction of recording tobacco purchases
+- Provide instant access to personal wishlist via Telegram
+- Enable quick tobacco discovery through search and filtering
+- Simplify the shopping experience at tobacco stores
 
-## Significance
-Eliminates friction in tracking hookah tobacco preferences by leveraging Telegram's familiar interface, making wishlist management effortless and accessible anywhere. Provides secure authentication and reliable data persistence for production deployment. The independent subproject architecture allows for flexible development and deployment of each component. Comprehensive testing ensures high code quality and production readiness with 90.99% backend code coverage and ~95% mini-app coverage.
+## Target Audience
+
+Casual hookah enthusiasts who occasionally smoke and want to remember tobaccos to try.
+
+## Core Requirements
+
+### Telegram Bot
+- `/start` command - displays instructions and mini-app link
+- `/help` command - shows usage instructions
+- `/wishlist` command - displays user's current wishlist
+- Mini-app link - opens the web application
+- Simple Telegram user ID-based authentication
+
+### Mini-App
+- Real-time tobacco search
+- Filter by brand
+- View detailed tobacco information
+- Add/remove tobaccos from wishlist
+- Seamless Telegram integration
+
+### Wishlist Features
+- Store only tobacco names (minimal approach)
+- No notes, quantities, or priorities
+- Simple add/remove functionality
+
+## Scope
+
+This is a complete MVP that includes all features listed above. No additional features are planned for future releases.

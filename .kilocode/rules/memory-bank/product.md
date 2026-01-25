@@ -1,134 +1,64 @@
-# Product Documentation
+# Product Description
 
-## Why This Project Exists
+## Problem Statement
 
-Hookah enthusiasts face a common problem: when visiting tobacco stores, they often forget which tobacco varieties they've already tried or want to try. This leads to:
-- Accidentally purchasing the same tobacco multiple times
-- Forgetting interesting flavors discovered online
-- Inability to track personal preferences over time
-- No centralized record of tobacco collection
+Casual hookah enthusiasts often struggle to remember which tobaccos they want to try. When visiting a tobacco shop, they may recall hearing about interesting flavors or brands but cannot remember the specific names. This leads to missed opportunities to discover new tobaccos and frustration at not being able to recall recommendations.
 
-The hookah-wishlist project solves this by providing a Telegram-based solution that integrates seamlessly into users' daily communication habits.
+## Solution
 
-## Problems Solved
+A Telegram bot with an integrated mini-app that provides a frictionless way to:
+- Discover and explore hookah tobaccos
+- Save interesting tobaccos to a personal wishlist
+- Quickly access the wishlist when visiting a tobacco shop
 
-1. **Memory Friction**: Eliminates the need to mentally track purchased tobaccos
-2. **Accessibility**: Provides instant access to wishlist from anywhere via Telegram
-3. **Discovery**: Enables easy search and exploration of new tobacco varieties
-4. **Organization**: Maintains a structured record of preferences and collection
-5. **Security**: Secure authentication through Telegram without additional accounts
-6. **Reliability**: Persistent data storage that survives deployments and restarts
+## Why This Solution Works
 
-## How It Should Work
+### Ubiquity of Telegram
+Telegram is already installed and used daily by millions of people. No need to download a separate app.
 
-### User Journey
+### Convenience of Mini-Apps
+Telegram mini-apps provide a native-feeling web experience without leaving the Telegram interface.
 
-1. **Initial Setup**
-   - User starts the Telegram bot
-   - Bot provides brief instructions and available commands
-   - User is automatically authenticated via Telegram user ID (no registration required)
-   - User can immediately start searching for tobaccos
+### Simplicity
+The app focuses on one core use case: remembering tobaccos to try. No complex features, no learning curve.
 
-2. **Authentication Flow**
-   - Telegram provides user context (user ID, username, first name) when user opens bot
-   - Bot extracts and validates Telegram user ID from incoming messages
-   - Mini-app receives Telegram user ID via Web Apps API initData
-   - Backend validates Telegram user ID using cryptographic verification
-   - All subsequent requests are authenticated via Telegram user ID
-   - No additional passwords or registration steps required
+### Instant Access
+With a simple `/wishlist` command, users can view their saved tobaccos anywhere, anytime.
 
-3. **Tobacco Search**
-   - User initiates search via bot command or mini-app
-   - System queries hookah-db API for tobacco data
-   - hookah-db API requires API key authentication via `X-API-Key` header
-   - Results display brand names, flavor profiles, and descriptions
-   - Search supports filtering by brand, flavor type, or keywords
+## User Experience
 
-4. **Wishlist Management**
-   - User adds desired tobaccos to wishlist with one tap/command
-   - Wishlist persists in SQLite database linked to Telegram user ID
-   - SQLite database uses WAL mode for better performance and concurrency
-   - User can remove items when purchased or no longer interested
-   - Wishlist updates reflect immediately across bot and mini-app
-   - Data survives container restarts and deployments via Docker volumes
+### Discovery Phase
+1. User opens the Telegram bot
+2. User clicks the mini-app link
+3. User searches for tobaccos by name or filters by brand
+4. User views detailed information about interesting tobaccos
+5. User adds desired tobaccos to wishlist with a single tap
 
-5. **Quick Access**
-   - Single bot command retrieves complete wishlist
-   - Wishlist displays in organized, scannable format
-   - User can reference wishlist while shopping at tobacco stores
+### Shopping Phase
+1. User visits a tobacco shop
+2. User opens Telegram and sends `/wishlist` command
+3. Bot displays the saved wishlist
+4. User can quickly reference and purchase desired tobaccos
 
-### Interaction Models
+## Key User Benefits
 
-**Bot Commands** (Primary Interface)
-- `/start` - Initialize bot and show help
-- `/search [query]` - Search for tobaccos
-- `/wishlist` - Display current wishlist
-- `/add [tobacco_id]` - Add tobacco to wishlist
-- `/remove [tobacco_id]` - Remove from wishlist
-- `/help` - Show available commands
+- **No Friction**: Add tobaccos to wishlist in seconds
+- **Always Available**: Access wishlist from any device with Telegram
+- **No Account Creation**: Uses existing Telegram account
+- **Minimal Learning Curve**: Intuitive interface, simple commands
+- **Fast**: Real-time search and instant wishlist display
 
-**Mini-App Interface** (Enhanced Experience)
-- Visual tobacco browsing with images
-- Advanced filtering and sorting options
-- Drag-and-drop wishlist management
-- Rich tobacco details and reviews
-- Offline wishlist caching
-- Seamless authentication via Telegram Web Apps API
+## Design Principles
 
-## User Experience Goals
+- **Simplicity First**: Only essential features, no bloat
+- **Mobile-First**: Optimized for mobile Telegram usage
+- **Fast Performance**: Quick search, instant wishlist access
+- **Reliable**: Works consistently, no complex setup required
+- **Privacy-First**: Minimal data collection (just Telegram user ID)
 
-### Core Principles
+## Success Metrics
 
-1. **Speed**: Complete common actions in 3 taps or less
-2. **Simplicity**: No account creation or authentication required (Telegram handles it)
-3. **Reliability**: Wishlist persists reliably across sessions and deployments
-4. **Familiarity**: Leverage Telegram's existing UI patterns
-5. **Security**: Automatic authentication through Telegram without user effort
-
-### Success Metrics
-
-- **Time to First Action**: User can search and add to wishlist within 30 seconds of starting bot
-- **Command Recall**: Users remember and use core commands without help after first session
-- **Engagement**: Users return to wishlist multiple times per shopping trip
-- **Satisfaction**: Wishlist reduces duplicate purchases and improves discovery
-- **Data Persistence**: Zero data loss during deployments or container restarts
-
-### Design Philosophy
-
-The product should feel like a natural extension of Telegram, not a separate application bolted on. Every interaction should feel:
-- **Instant**: No loading states for basic operations
-- **Intuitive**: Commands and UI match user expectations
-- **Helpful**: Proactive suggestions and contextual assistance
-- **Unobtrusive**: Never interrupts user's primary Telegram usage
-- **Secure**: Authentication happens transparently without user action
-
-## Target Audience
-
-- Hookah enthusiasts who regularly purchase tobacco
-- Users comfortable with Telegram bot interfaces
-- Mobile-first users who value convenience over feature depth
-- Individuals who want to track preferences without manual effort
-- Users who prefer not to create additional accounts for simple tools
-
-## Authentication & Security
-
-### Telegram Authentication
-- **No Passwords Required**: Uses Telegram's built-in user identification
-- **Automatic Login**: User is authenticated when they open the bot
-- **Secure Verification**: Cryptographic validation of Telegram user data
-- **Cross-Platform**: Works seamlessly across bot and mini-app
-- **Privacy**: Only stores Telegram user ID, no sensitive personal data
-
-### hookah-db API Authentication
-- **API Key Required**: All hookah-db API v1 endpoints require authentication via `X-API-Key` header
-- **Secure Storage**: API key stored in environment variables, never committed to code
-- **Rate Limiting**: Follow hookah-db API rate limits to prevent abuse
-- **Error Handling**: Proper error handling for 401 Unauthorized and 429 Too Many Requests responses
-
-### Data Privacy
-- User data is stored securely in SQLite database
-- Only Telegram user ID is used for identification
-- No additional personal information is collected
-- Data is isolated per user via Telegram user ID
-- SQLite database uses WAL mode for better performance and data integrity
-- Docker volumes ensure data persists across container restarts and deployments
+- User adoption rate
+- Wishlist creation frequency
+- Wishlist retrieval frequency
+- User retention over time

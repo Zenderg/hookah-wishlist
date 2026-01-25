@@ -1,8 +1,0 @@
-# Coverage reports
-coverage/
-
-# Test artifacts
-*.log
-
-# Temporary files
-*.tmp

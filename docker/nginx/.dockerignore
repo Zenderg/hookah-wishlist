@@ -1,3 +1,0 @@
-# Ignore all files except nginx.conf
-*
-!nginx.conf
