@@ -1,41 +1,45 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
+
+export interface WishlistItem {
+  id: string;
+  tobaccoId: string;
+  tobaccoName: string;
+  createdAt: string;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class WishlistService {
+  private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
+  private authService = inject(AuthService);
 
-  constructor(private http: HttpClient) {}
-
-  getWishlist(telegramId: string): Observable<any[]> {
-    // TODO: Implement get wishlist
-    return this.http.get<any[]>(`${this.apiUrl}/wishlist`, {
-      body: { telegramId },
+  getWishlist(telegramId: string): Observable<WishlistItem[]> {
+    return this.http.get<WishlistItem[]>(`${this.apiUrl}/wishlist`, {
+      params: { telegramId },
     });
   }
 
-  addToWishlist(tobaccoId: string, tobaccoName: string): Observable<any> {
-    // TODO: Implement add to wishlist
-    return this.http.post(`${this.apiUrl}/wishlist`, {
-      telegramId: this.getTelegramId(),
+  addToWishlist(tobaccoId: string, tobaccoName: string): Observable<WishlistItem> {
+    const telegramId = this.authService.getTelegramId();
+
+    return this.http.post<WishlistItem>(`${this.apiUrl}/wishlist`, {
+      telegramId,
       tobaccoId,
       tobaccoName,
     });
   }
 
   removeFromWishlist(id: string): Observable<void> {
-    // TODO: Implement remove from wishlist
-    return this.http.delete<void>(`${this.apiUrl}/wishlist/${id}`, {
-      body: { telegramId: this.getTelegramId() },
-    });
-  }
+    const telegramId = this.authService.getTelegramId();
 
-  private getTelegramId(): string {
-    // TODO: Get telegram ID from Telegram WebApp
-    return '';
+    return this.http.delete<void>(`${this.apiUrl}/wishlist/${id}`, {
+      params: { telegramId },
+    });
   }
 }

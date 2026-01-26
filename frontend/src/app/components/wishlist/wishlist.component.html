@@ -1,0 +1,68 @@
+<mat-toolbar color="primary">
+  <span>📋 My Wishlist</span>
+</mat-toolbar>
+
+<mat-tab-group>
+  <mat-tab label="Wishlist">
+    <div class="wishlist-container">
+      @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading...</p>
+        </div>
+      } @else if (error()) {
+        <mat-card class="error-card">
+          <mat-card-content>
+            <p class="error-message">{{ error() }}</p>
+            <button mat-raised-button color="primary" (click)="loadWishlist()" class="retry-btn">
+              Retry
+            </button>
+          </mat-card-content>
+        </mat-card>
+      } @else if (wishlist().length === 0) {
+        <mat-card class="empty-card">
+          <mat-card-content>
+            <mat-icon class="empty-icon">shopping_basket</mat-icon>
+            <h3>Your wishlist is empty</h3>
+            <p>Start exploring and add tobaccos you want to try!</p>
+            <button mat-raised-button color="primary" routerLink="/search" class="go-search-btn">
+              Go to Search
+            </button>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <div class="results-header">
+          <h2>Your Wishlist ({{ wishlist().length }})</h2>
+        </div>
+        <mat-list class="wishlist-list">
+          @for (item of wishlist(); track item.id) {
+            <mat-list-item class="wishlist-item">
+              <div matListItemTitle class="item-name">{{ item.tobaccoName }}</div>
+              <div matListItemLine class="item-date">
+                Added: {{ formattedDate(item) }}
+              </div>
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="removeFromWishlist(item)"
+                [disabled]="isRemoving(item)"
+                class="remove-btn"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-list-item>
+          }
+        </mat-list>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Search">
+    <div class="search-container">
+      <p>Go to search tab to discover new tobaccos</p>
+      <button mat-raised-button color="primary" routerLink="/search">
+        Go to Search
+      </button>
+    </div>
+  </mat-tab>
+</mat-tab-group>

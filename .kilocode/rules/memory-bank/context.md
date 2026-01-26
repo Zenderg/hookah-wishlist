@@ -53,12 +53,50 @@ The project structure has been initialized. Source code files have been created 
   - Inline keyboard buttons for mini-app access
   - Error handling for missing user IDs
   - Empty wishlist detection with helpful prompts
+- **Implemented Angular mini-app UI with Angular Material**:
+  - Updated dependencies: replaced `@telegram-apps/sdk` with `@tma.js/sdk` (v3.1.6)
+  - Added Angular Material v21.1.1 with proper theming
+  - Created [`app.routes.ts`](frontend/src/app/app.routes.ts) with lazy-loaded routes
+  - Updated [`main.ts`](frontend/src/main.ts) with `provideRouter` and `provideAnimations`
+  - Created [`SearchComponent`](frontend/src/app/components/search/search.component.ts):
+    - Uses `model()` for two-way binding (searchQuery, selectedBrand)
+    - Uses `signal()` for state management (brands, flavors, loading, error, addingToWishlist)
+    - Uses `computed()` for derived state (filteredBrands, selectedBrandName)
+    - Integrates with HookahDbService and WishlistService
+    - Implements search functionality with brand filtering
+    - Uses Angular Material components (mat-form-field, mat-select, mat-card, mat-button, mat-spinner)
+    - Includes tab navigation between Search and Wishlist views
+  - Created [`WishlistComponent`](frontend/src/app/components/wishlist/wishlist.component.ts):
+    - Uses `signal()` for state management (wishlist, loading, error, removing)
+    - Integrates with WishlistService and AuthService
+    - Displays user's wishlist with remove functionality
+    - Uses Angular Material components (mat-list, mat-card, mat-icon, mat-spinner)
+    - Includes tab navigation between Wishlist and Search views
+    - Handles empty wishlist state with helpful prompts
+  - Updated [`AuthService`](frontend/src/app/services/auth.service.ts):
+    - Integrates with `@tma.js/sdk` for Telegram Mini Apps
+    - Uses `initData.user()` to access Telegram user data
+    - Provides `getTelegramId()`, `validateUser()`, `authenticate()`, `logout()` methods
+  - Updated [`WishlistService`](frontend/src/app/services/wishlist.service.ts):
+    - Uses `AuthService` for getting Telegram ID
+    - Uses `HttpParams` for proper query parameter handling
+    - Provides `getWishlist()`, `addToWishlist()`, `removeFromWishlist()` methods
+  - Updated [`HookahDbService`](frontend/src/app/services/hookah-db.service.ts):
+    - Uses `HttpParams` for proper query parameter handling
+    - Provides methods for brands and flavors from hookah-db API
+    - Includes API key authentication via headers
+  - Updated [`styles.scss`](frontend/src/styles.scss) with Angular Material v21 theming:
+    - Uses `mat.m2-define-palette` and `mat.m2-define-light-theme`
+    - Configured primary (indigo), accent (green), and warn (red) colors
+  - Updated [`tsconfig.json`](frontend/tsconfig.json) with `moduleResolution: "bundler"` and `rootDir: "./src"`
+  - Updated environment files with API configuration
+  - Project successfully builds without errors
+  - Lazy-loaded chunks created for components
 
 ## Next Steps
 
-1. Implement mini-app UI (search, wishlist components)
-2. Integrate with hookah-db API
-3. Deploy using Docker Compose
+1. Test mini-app UI
+2. Deploy using Docker Compose
 
 ## Known Decisions
 

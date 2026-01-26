@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -18,20 +18,22 @@ export interface Flavor {
   providedIn: 'root',
 })
 export class HookahDbService {
+  private http = inject(HttpClient);
   private apiUrl = environment.hookahDbApiUrl;
   private apiKey = environment.hookahDbApiKey;
 
-  constructor(private http: HttpClient) {}
-
-  private getHeaders(): HttpHeaders {
-    return new HttpHeaders({
+  private getHeaders(): Record<string, string> {
+    return {
       'X-API-Key': this.apiKey,
-    });
+    };
   }
 
   getBrands(search?: string): Observable<Brand[]> {
-    // TODO: Implement get brands
-    const params = search ? { search } : {};
+    let params = new HttpParams();
+    if (search) {
+      params = params.set('search', search);
+    }
+
     return this.http.get<Brand[]>(`${this.apiUrl}/api/v1/brands`, {
       headers: this.getHeaders(),
       params,
@@ -39,17 +41,20 @@ export class HookahDbService {
   }
 
   getBrandBySlug(slug: string): Observable<Brand> {
-    // TODO: Implement get brand by slug
     return this.http.get<Brand>(`${this.apiUrl}/api/v1/brands/${slug}`, {
       headers: this.getHeaders(),
     });
   }
 
   getFlavors(search?: string, brand?: string): Observable<Flavor[]> {
-    // TODO: Implement get flavors
-    const params: any = {};
-    if (search) params.search = search;
-    if (brand) params.brand = brand;
+    let params = new HttpParams();
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (brand) {
+      params = params.set('brand', brand);
+    }
+
     return this.http.get<Flavor[]>(`${this.apiUrl}/api/v1/flavors`, {
       headers: this.getHeaders(),
       params,
@@ -57,7 +62,6 @@ export class HookahDbService {
   }
 
   getFlavorBySlug(slug: string): Observable<Flavor> {
-    // TODO: Implement get flavor by slug
     return this.http.get<Flavor>(`${this.apiUrl}/api/v1/flavors/${slug}`, {
       headers: this.getHeaders(),
     });

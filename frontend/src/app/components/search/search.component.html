@@ -1,0 +1,104 @@
+<mat-toolbar color="primary">
+  <span>🔍 Hookah Wishlist</span>
+</mat-toolbar>
+
+<mat-tab-group>
+  <mat-tab label="Search">
+    <div class="search-container">
+      <div class="search-form">
+        <mat-form-field appearance="fill">
+          <mat-label>Search by name</mat-label>
+          <input matInput [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="Enter tobacco name..." />
+        </mat-form-field>
+
+        @if (selectedBrand()) {
+          <mat-form-field appearance="fill">
+            <mat-label>Selected Brand</mat-label>
+            <div class="selected-brand">
+              <span>{{ selectedBrandName() }}</span>
+              <button mat-icon-button (click)="onClearBrand()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="fill">
+            <mat-label>Filter by Brand</mat-label>
+            <mat-select [(ngModel)]="selectedBrand" (selectionChange)="onSearch()">
+              <mat-option value="">All Brands</mat-option>
+              @for (brand of filteredBrands(); track brand.slug) {
+                <mat-option [value]="brand.slug">{{ brand.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <button mat-raised-button color="primary" (click)="onSearch()" [disabled]="loading()" class="search-btn">
+          <span *ngIf="!loading()">Search</span>
+          <span *ngIf="loading()">Searching...</span>
+        </button>
+      </div>
+
+      @if (error()) {
+        <mat-card class="error-card">
+          <mat-card-content>
+            <p class="error-message">{{ error() }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <div class="results-container">
+        @if (loading()) {
+          <div class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Loading...</p>
+          </div>
+        } @else if (flavors().length === 0 && (searchQuery() || selectedBrand())) {
+          <mat-card class="no-results-card">
+            <mat-card-content>
+              <p class="no-results">No flavors found</p>
+            </mat-card-content>
+          </mat-card>
+        } @else if (flavors().length > 0) {
+          <div class="results-header">
+            <h2>Results ({{ flavors().length }})</h2>
+          </div>
+          <div class="flavors-list">
+            @for (flavor of flavors(); track flavor.slug) {
+              <mat-card class="flavor-card">
+                <mat-card-content>
+                  <div class="flavor-info">
+                    <h3 class="flavor-name">{{ flavor.name }}</h3>
+                    <p class="flavor-brand">{{ flavor.brand }}</p>
+                  </div>
+                  <button
+                    mat-raised-button
+                    color="accent"
+                    (click)="addToWishlist(flavor)"
+                    [disabled]="isAdding(flavor)"
+                    class="add-btn"
+                  >
+                    @if (isAdding(flavor)) {
+                      <span>Adding...</span>
+                    } @else {
+                      <span>+ Add</span>
+                    }
+                  </button>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Wishlist">
+    <div class="wishlist-container">
+      <p>Go to wishlist tab to view your saved items</p>
+      <button mat-raised-button color="primary" routerLink="/wishlist">
+        View Wishlist
+      </button>
+    </div>
+  </mat-tab>
+</mat-tab-group>
