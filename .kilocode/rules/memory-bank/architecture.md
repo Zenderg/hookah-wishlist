@@ -29,6 +29,12 @@ The application follows a client-server architecture with three main components:
 │  │  - CRUD operations              │  │
 │  │  - User-specific data           │  │
 │  └─────────────────────────────────┘  │
+│  ┌─────────────────────────────────┐  │
+│  │  HookahDb Module (Proxy)       │  │
+│  │  - Proxy to hookah-db API      │  │
+│  │  - Brands endpoint             │  │
+│  │  - Flavors endpoint            │  │
+│  └─────────────────────────────────┘  │
 └────────┬──────────────────────────────┘
          │
          │ HTTP/REST (internal)
@@ -92,7 +98,7 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 1. **User Discovery Flow**:
    - User opens mini-app → Telegram sends user data
    - Mini-app validates user via API
-   - User searches tobaccos → Mini-app queries hookah-db API directly
+   - User searches tobaccos → Mini-app calls backend API → Backend proxies request to hookah-db API
    - User adds tobacco → API stores in SQLite
 
 2. **Wishlist Retrieval Flow**:
@@ -131,12 +137,14 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 - Easy to reproduce development environment
 - Simple backup with volume mounts
 
-### Why Direct Integration with hookah-db?
+### Why Proxy Pattern for hookah-db Integration?
+- **CORS Avoidance**: Backend acts as proxy to avoid CORS issues between frontend and external API
 - No duplication of tobacco/brand data
 - Single source of truth for tobacco information
 - Leverages existing search and filtering capabilities
 - Reduces maintenance overhead
 - hookah-db API provides comprehensive endpoints for all tobacco/brand operations
+- API key is stored securely on backend, not exposed to frontend
 
 ## Source Code Paths
 
@@ -211,15 +219,15 @@ hookah-wishlist/
 - `POST /api/wishlist` - Add tobacco to wishlist
 - `DELETE /api/wishlist/:id` - Remove tobacco from wishlist
 
-### External API (hookah-db)
-The frontend will directly call hookah-db API endpoints:
+### HookahDb Proxy Endpoints
+The backend provides proxy endpoints to hookah-db API to avoid CORS issues:
 
-- `GET https://hdb.coolify.dknas.org/api/v1/brands` - List brands with pagination and search
-- `GET https://hdb.coolify.dknas.org/api/v1/brands/:slug` - Get brand details
-- `GET https://hdb.coolify.dknas.org/api/v1/flavors` - List flavors with filtering and search
-- `GET https://hdb.coolify.dknas.org/api/v1/flavors/:slug` - Get flavor details
+- `GET /api/hookah-db/brands` - List brands with pagination and search
+- `GET /api/hookah-db/brands/:slug` - Get brand details
+- `GET /api/hookah-db/flavors` - List flavors with filtering and search
+- `GET /api/hookah-db/flavors/:slug` - Get flavor details
 
-**Note**: All hookah-db API endpoints require `X-API-Key` header for authentication.
+**Note**: All hookah-db API endpoints require `X-API-Key` header for authentication. The API key is stored securely on the backend and not exposed to the frontend.
 
 ## Security Considerations
 

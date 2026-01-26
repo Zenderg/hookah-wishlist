@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { BotModule } from './bot/bot.module';
 import { DatabaseModule } from './database/database.module';
+import { HookahDbModule } from './hookah-db/hookah-db.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DatabaseModule } from './database/database.module';
     WishlistModule,
     BotModule,
     DatabaseModule,
+    HookahDbModule,
   ],
 })
 export class AppModule {

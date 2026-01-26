@@ -136,9 +136,10 @@
 - **Endpoint**: `https://hdb.coolify.dknas.org`
 - **Repository**: https://github.com/Zenderg/hookah-db
 - **Authentication**: API key via `X-API-Key` header
-- **Usage**: Direct integration from frontend for tobacco/brand data
+- **Usage**: Backend proxies requests to hookah-db API to avoid CORS issues
 
 ### Available hookah-db Endpoints
+The backend provides proxy endpoints to hookah-db API:
 - `GET /api/v1/brands` - List brands with pagination and search
 - `GET /api/v1/brands/:slug` - Get brand details
 - `GET /api/v1/flavors` - List flavors with filtering and search
@@ -217,11 +218,17 @@ TELEGRAM_BOT_TOKEN=your-bot-token-here
 
 # CORS
 CORS_ORIGIN=https://t.me
+
+# hookah-db API (required for proxy)
+HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
+HOOKAH_DB_API_KEY=your-api-key-here
 ```
 
 **Important**: For Docker deployment, all environment variables are **hardcoded** in `docker-compose.yml`. Edit the `docker-compose.yml` file locally to change values before deployment.
 
-**Note**: The frontend directly calls the hookah-db API, so the backend does not need `HOOKAH_DB_API_KEY` or `HOOKAH_DB_API_URL` environment variables. Also, `TELEGRAM_WEBHOOK_URL` is not currently used as the bot does not have a webhook endpoint configured.
+**Important**: For Docker deployment, environment variables are passed via build arguments in [`docker-compose.yml`](docker-compose.yml). The Dockerfile uses Angular CLI's `--define` option to replace values at build time. This allows passing different values for `API_URL` without editing the environment files directly. The project uses the new Angular application builder (`@angular/build:application`) which supports build-time value replacement via the `--define` option. Global constants are declared in [`types.d.ts`](frontend/src/types.d.ts) and used in environment files with fallback values.
+
+**Note**: The frontend no longer needs `HOOKAH_DB_API_KEY` as it calls the backend, which proxies requests to the hookah-db API. Also, `TELEGRAM_WEBHOOK_URL` is not currently used as the bot does not have a webhook endpoint configured.
 
 ### Frontend
 Frontend uses Angular's environment configuration files, not `.env` files:
@@ -229,9 +236,9 @@ Frontend uses Angular's environment configuration files, not `.env` files:
 - `frontend/src/environments/environment.ts` - Development configuration
 - `frontend/src/environments/environment.prod.ts` - Production configuration
 
-These files are compiled into the application at build time. Update the appropriate environment file to change API URLs and keys.
+These files are compiled into the application at build time. Update the appropriate environment file to change API URLs.
 
-**Important**: For Docker deployment, environment variables are passed via build arguments in [`docker-compose.yml`](docker-compose.yml). The Dockerfile uses Angular CLI's `--define` option to replace values at build time. This allows passing different values for `API_URL` and `HOOKAH_DB_API_KEY` without editing the environment files directly.
+**Important**: For Docker deployment, environment variables are passed via build arguments in [`docker-compose.yml`](docker-compose.yml). The Dockerfile uses Angular CLI's `--define` option to replace values at build time. This allows passing different values for `API_URL` without editing the environment files directly.
 
 The project uses the new Angular application builder (`@angular/build:application`) which supports build-time value replacement via the `--define` option. Global constants are declared in [`types.d.ts`](frontend/src/types.d.ts) and used in environment files with fallback values.
 

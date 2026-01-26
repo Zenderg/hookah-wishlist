@@ -11,6 +11,13 @@ The project structure has been initialized. Source code files have been created 
 ## Recent Changes
 
 - Memory bank initialization completed
+- **Architecture change**: Updated documentation to reflect proxy pattern for hookah-db API integration
+  - Backend will now proxy requests to hookah-db API to avoid CORS issues
+  - Frontend will call backend instead of hookah-db API directly
+  - API key is stored securely on backend, not exposed to frontend
+- **CORS issue discovered**: During testing, found that frontend cannot directly call hookah-db API due to CORS policy
+  - Error: "Access to XMLHttpRequest at 'https://hdb.coolify.dknas.org/api/v1/brands' from origin 'http://localhost:4200' has been blocked by CORS policy"
+  - Solution: Implement proxy pattern in backend
 - Clarified project requirements through Q&A
 - Defined target audience: casual hookah enthusiasts
 - Confirmed minimal wishlist approach (tobacco names only)
@@ -110,11 +117,30 @@ The project structure has been initialized. Source code files have been created 
   - Updated [`environment.ts`](frontend/src/environments/environment.ts) and [`environment.prod.ts`](frontend/src/environments/environment.prod.ts) to use global constants with fallback values
   - Updated [`docker-compose.yml`](docker-compose.yml) with build arguments for frontend service
   - Verified Docker build and local build work correctly with environment variable replacement
+- **Implemented HookahDb module in backend**:
+  - Installed `@nestjs/axios` dependency for HTTP client functionality
+  - Created [`HookahDbModule`](backend/src/hookah-db/hookah-db.module.ts) with HttpModule configuration
+  - Created [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) with proxy methods:
+    - `getBrands(search?)` - Proxies to hookah-db API brands endpoint
+    - `getBrandBySlug(slug)` - Proxies to hookah-db API brand details endpoint
+    - `getFlavors(search?, brand?)` - Proxies to hookah-db API flavors endpoint
+    - `getFlavorBySlug(slug)` - Proxies to hookah-db API flavor details endpoint
+  - Created [`HookahDbController`](backend/src/hookah-db/hookah-db.controller.ts) with REST endpoints:
+    - `GET /api/hookah-db/brands` - List brands with optional search
+    - `GET /api/hookah-db/brands/:slug` - Get brand details
+    - `GET /api/hookah-db/flavors` - List flavors with optional search and brand filter
+    - `GET /api/hookah-db/flavors/:slug` - Get flavor details
+  - Created [`hookah-db.service.spec.ts`](backend/src/hookah-db/hookah-db.service.spec.ts) with 13 unit tests (all passing)
+  - Updated [`AppModule`](backend/src/app.module.ts) to import HookahDbModule
+  - Service includes proper error handling with AxiosError logging
+  - API key is stored securely in environment variables (HOOKAH_DB_API_KEY)
+  - All tests pass and backend builds successfully
 
 ## Next Steps
 
-1. Test mini-app UI
-2. Deploy using Docker Compose
+1. Update frontend HookahDbService to call backend instead of hookah-db API directly
+2. Test mini-app UI
+3. Deploy using Docker Compose
 
 ## Known Decisions
 
