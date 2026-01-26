@@ -202,17 +202,14 @@ DATABASE_PATH=./data/wishlist.db
 
 # Telegram Bot
 TELEGRAM_BOT_TOKEN=your-bot-token-here
-TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/bot/webhook
-
-# hookah-db API
-HOOKAH_DB_API_KEY=your-api-key-here
-HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
 
 # CORS
 CORS_ORIGIN=https://t.me
 ```
 
 **Important**: For Docker deployment, all environment variables are **hardcoded** in `docker-compose.yml`. Edit the `docker-compose.yml` file locally to change values before deployment.
+
+**Note**: The frontend directly calls the hookah-db API, so the backend does not need `HOOKAH_DB_API_KEY` or `HOOKAH_DB_API_URL` environment variables. Also, `TELEGRAM_WEBHOOK_URL` is not currently used as the bot does not have a webhook endpoint configured.
 
 ### Frontend
 Frontend uses Angular's environment configuration files, not `.env` files:

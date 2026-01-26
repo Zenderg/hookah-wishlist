@@ -13,9 +13,6 @@ services:
       - PORT=3000
       - DATABASE_PATH=/app/data/wishlist.db
       - TELEGRAM_BOT_TOKEN=your-bot-token-here
-      - TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/bot/webhook
-      - HOOKAH_DB_API_KEY=your-api-key-here
-      - HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
       - CORS_ORIGIN=https://t.me
     volumes:
       - backend-data:/app/data
