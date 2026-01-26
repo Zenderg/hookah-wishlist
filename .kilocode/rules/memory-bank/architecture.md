@@ -31,7 +31,15 @@ The application follows a client-server architecture with three main components:
 │  └─────────────────────────────────┘  │
 └────────┬──────────────────────────────┘
          │
-         │ HTTP/REST
+         │ HTTP/REST (internal)
+         │
+┌────────▼─────────────────────────────┐
+│  Nginx Reverse Proxy                 │
+│  - /api → Backend (port 3000)         │
+│  - / → Frontend (port 80)             │
+└────────┬──────────────────────────────┘
+         │
+         │ HTTP (external)
          │
 ┌────────▼────────┐
 │  Mini-App       │

@@ -105,13 +105,25 @@
 - **Base Images**:
   - Backend: `node:24-alpine`
   - Frontend: `nginx:alpine` (for serving static files)
+  - Reverse Proxy: `nginx:alpine`
 
 ### Docker Configuration
 - Multi-stage builds for optimized images
-- Named volumes for database persistence
+- Named volumes for database persistence only
 - Health checks for service monitoring
 - Restart policies for automatic recovery
 - **Hardcoded environment variables in docker-compose.yml** (edit file locally to change values)
+- **Nginx reverse proxy** for handling incoming traffic and routing to internal services
+
+### Reverse Proxy Configuration
+- **Nginx** serves as the entry point for all incoming traffic
+- **Path-based routing**:
+  - `/api/*` → Backend service (port 3000, internal)
+  - `/` → Frontend service (port 80, internal)
+- **Internal networking**: Backend and frontend services are not exposed externally
+- **Health check**: `/health` endpoint for reverse proxy monitoring
+- **Gzip compression**: Enabled for improved performance
+- **Logging**: Nginx logs are not persisted (container-only)
 
 ### Deployment Target
 - Personal VPS or home server
