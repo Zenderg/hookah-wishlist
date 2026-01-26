@@ -3,30 +3,23 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export interface Brand {
+export type Brand = {
   name: string;
   slug: string;
-}
+};
 
-export interface Flavor {
+export type Flavor = {
   name: string;
   slug: string;
   brand: string;
-}
+};
 
 @Injectable({
   providedIn: 'root',
 })
 export class HookahDbService {
   private http = inject(HttpClient);
-  private apiUrl = environment.hookahDbApiUrl;
-  private apiKey = environment.hookahDbApiKey;
-
-  private getHeaders(): Record<string, string> {
-    return {
-      'X-API-Key': this.apiKey,
-    };
-  }
+  private apiUrl = environment.apiUrl;
 
   getBrands(search?: string): Observable<Brand[]> {
     let params = new HttpParams();
@@ -34,16 +27,13 @@ export class HookahDbService {
       params = params.set('search', search);
     }
 
-    return this.http.get<Brand[]>(`${this.apiUrl}/api/v1/brands`, {
-      headers: this.getHeaders(),
+    return this.http.get<Brand[]>(`${this.apiUrl}/hookah-db/brands`, {
       params,
     });
   }
 
   getBrandBySlug(slug: string): Observable<Brand> {
-    return this.http.get<Brand>(`${this.apiUrl}/api/v1/brands/${slug}`, {
-      headers: this.getHeaders(),
-    });
+    return this.http.get<Brand>(`${this.apiUrl}/hookah-db/brands/${slug}`);
   }
 
   getFlavors(search?: string, brand?: string): Observable<Flavor[]> {
@@ -55,15 +45,12 @@ export class HookahDbService {
       params = params.set('brand', brand);
     }
 
-    return this.http.get<Flavor[]>(`${this.apiUrl}/api/v1/flavors`, {
-      headers: this.getHeaders(),
+    return this.http.get<Flavor[]>(`${this.apiUrl}/hookah-db/flavors`, {
       params,
     });
   }
 
   getFlavorBySlug(slug: string): Observable<Flavor> {
-    return this.http.get<Flavor>(`${this.apiUrl}/api/v1/flavors/${slug}`, {
-      headers: this.getHeaders(),
-    });
+    return this.http.get<Flavor>(`${this.apiUrl}/hookah-db/flavors/${slug}`);
   }
 }

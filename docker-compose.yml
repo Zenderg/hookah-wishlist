@@ -29,6 +29,8 @@ services:
       - DATABASE_PATH=/app/data/wishlist.db
       - TELEGRAM_BOT_TOKEN=your-bot-token-here
       - CORS_ORIGIN=https://t.me
+      - HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
+      - HOOKAH_DB_API_KEY=your-api-key-here
     volumes:
       - backend-data:/app/data
     restart: unless-stopped
@@ -45,7 +47,6 @@ services:
       dockerfile: Dockerfile
       args:
         - API_URL=https://your-domain.com/api
-        - HOOKAH_DB_API_KEY=your-api-key-here
     container_name: hookah-wishlist-frontend
     depends_on:
       - backend
