@@ -100,6 +100,16 @@ The project structure has been initialized. Source code files have been created 
   - Updated [`docker-compose.yml`](docker-compose.yml) with hardcoded environment variables
   - Users edit `docker-compose.yml` locally to change values for Docker deployment
   - Updated documentation in [`tech.md`](.kilocode/rules/memory-bank/tech.md) to reflect new approach
+- **Updated Angular build configuration for Docker deployment**:
+  - Updated [`angular.json`](frontend/angular.json) to use `@angular/build:application` builder instead of `@angular-devkit/build-angular:browser`
+  - Renamed `main` option to `browser` in angular.json to match application builder requirements
+  - Added `fileReplacements` configuration for production environment
+  - Updated [`Dockerfile`](frontend/Dockerfile) to use Angular CLI's `--define` option for build-time environment variable replacement
+  - Added build arguments (`ARG`) for `API_URL` and `HOOKAH_DB_API_KEY` in Dockerfile
+  - Created [`types.d.ts`](frontend/src/types.d.ts) with TypeScript declarations for global constants (`apiUrl`, `hookahDbApiKey`)
+  - Updated [`environment.ts`](frontend/src/environments/environment.ts) and [`environment.prod.ts`](frontend/src/environments/environment.prod.ts) to use global constants with fallback values
+  - Updated [`docker-compose.yml`](docker-compose.yml) with build arguments for frontend service
+  - Verified Docker build and local build work correctly with environment variable replacement
 
 ## Next Steps
 

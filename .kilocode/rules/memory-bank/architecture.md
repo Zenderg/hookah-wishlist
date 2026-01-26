@@ -107,6 +107,8 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 - Strong typing with TypeScript
 - Rich ecosystem and tooling
 - Good performance for single-page applications
+- Modern build system with `@angular/build:application` builder
+- Build-time environment variable replacement via `--define` option
 
 ### Why SQLite?
 - Zero configuration required

@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-domain.com/api',
+  apiUrl: typeof apiUrl !== 'undefined' ? apiUrl : 'https://your-domain.com/api',
   hookahDbApiUrl: 'https://hdb.coolify.dknas.org',
-  hookahDbApiKey: 'YOUR_API_KEY_HERE',
+  hookahDbApiKey: typeof hookahDbApiKey !== 'undefined' ? hookahDbApiKey : 'YOUR_API_KEY_HERE',
 };

@@ -31,6 +31,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - API_URL=https://your-domain.com/api
+        - HOOKAH_DB_API_KEY=your-api-key-here
     container_name: hookah-wishlist-frontend
     ports:
       - "80:80"

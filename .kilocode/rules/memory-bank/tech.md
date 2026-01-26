@@ -222,6 +222,10 @@ Frontend uses Angular's environment configuration files, not `.env` files:
 
 These files are compiled into the application at build time. Update the appropriate environment file to change API URLs and keys.
 
+**Important**: For Docker deployment, environment variables are passed via build arguments in [`docker-compose.yml`](docker-compose.yml). The Dockerfile uses Angular CLI's `--define` option to replace values at build time. This allows passing different values for `API_URL` and `HOOKAH_DB_API_KEY` without editing the environment files directly.
+
+The project uses the new Angular application builder (`@angular/build:application`) which supports build-time value replacement via the `--define` option. Global constants are declared in [`types.d.ts`](frontend/src/types.d.ts) and used in environment files with fallback values.
+
 ## Security
 
 ### Backend

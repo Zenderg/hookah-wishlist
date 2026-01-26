@@ -12,8 +12,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build application
-RUN npm run build
+# Build-time arguments for environment variables
+ARG API_URL=https://your-domain.com/api
+ARG HOOKAH_DB_API_KEY=YOUR_API_KEY_HERE
+
+# Build application with production configuration and define values
+RUN npm run build -- --configuration production --define "apiUrl='${API_URL}'" --define "hookahDbApiKey='${HOOKAH_DB_API_KEY}'"
 
 # Production stage
 FROM nginx:alpine AS production
