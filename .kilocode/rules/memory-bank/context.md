@@ -92,6 +92,14 @@ The project structure has been initialized. Source code files have been created 
   - Updated environment files with API configuration
   - Project successfully builds without errors
   - Lazy-loaded chunks created for components
+- **Reorganized environment configuration**:
+  - Removed root `.env.example` file
+  - Each subproject now has its own environment configuration:
+    - Backend: `backend/.env.example` (template for `backend/.env`)
+    - Frontend: Uses Angular's `environment.ts` files (not `.env` files)
+  - Updated [`docker-compose.yml`](docker-compose.yml) with hardcoded environment variables
+  - Users edit `docker-compose.yml` locally to change values for Docker deployment
+  - Updated documentation in [`tech.md`](.kilocode/rules/memory-bank/tech.md) to reflect new approach
 
 ## Next Steps
 

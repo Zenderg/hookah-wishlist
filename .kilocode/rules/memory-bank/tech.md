@@ -38,7 +38,7 @@
 - `prettier` - Code formatting
 
 ### Configuration
-- Environment variables via `.env` file
+- Environment variables via `backend/.env` file (use `backend/.env.example` as template)
 - TypeORM configuration for SQLite
 - Telegraf configuration for Telegram bot webhook
 - Swagger/OpenAPI documentation enabled
@@ -111,7 +111,7 @@
 - Named volumes for database persistence
 - Health checks for service monitoring
 - Restart policies for automatic recovery
-- Environment variables for configuration
+- **Hardcoded environment variables in docker-compose.yml** (edit file locally to change values)
 
 ### Deployment Target
 - Personal VPS or home server
@@ -190,35 +190,37 @@ docker-compose logs -f
 ## Environment Variables
 
 ### Backend
+Backend uses environment variables configured in `backend/.env` file. Use `backend/.env.example` as a template.
+
 ```env
 # Server
 PORT=3000
-NODE_ENV=production
+NODE_ENV=development
 
 # Database
 DATABASE_PATH=./data/wishlist.db
 
 # Telegram Bot
-TELEGRAM_BOT_TOKEN=your-bot-token
+TELEGRAM_BOT_TOKEN=your-bot-token-here
 TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/bot/webhook
 
 # hookah-db API
-HOOKAH_DB_API_KEY=your-api-key
+HOOKAH_DB_API_KEY=your-api-key-here
 HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
 
 # CORS
 CORS_ORIGIN=https://t.me
 ```
 
-### Frontend
-```env
-# API
-API_BASE_URL=https://your-domain.com/api
+**Important**: For Docker deployment, all environment variables are **hardcoded** in `docker-compose.yml`. Edit the `docker-compose.yml` file locally to change values before deployment.
 
-# hookah-db API
-HOOKAH_DB_API_URL=https://hdb.coolify.dknas.org
-HOOKAH_DB_API_KEY=your-api-key
-```
+### Frontend
+Frontend uses Angular's environment configuration files, not `.env` files:
+
+- `frontend/src/environments/environment.ts` - Development configuration
+- `frontend/src/environments/environment.prod.ts` - Production configuration
+
+These files are compiled into the application at build time. Update the appropriate environment file to change API URLs and keys.
 
 ## Security
 
