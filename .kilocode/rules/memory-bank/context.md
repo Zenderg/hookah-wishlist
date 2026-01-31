@@ -18,6 +18,13 @@ The project structure has been initialized. Source code files have been created 
 - **CORS issue discovered**: During testing, found that frontend cannot directly call hookah-db API due to CORS policy
   - Error: "Access to XMLHttpRequest at 'https://hdb.coolify.dknas.org/api/v1/brands' from origin 'http://localhost:4200' has been blocked by CORS policy"
   - Solution: Implement proxy pattern in backend
+- **API documentation updated**: Updated documentation to reflect new hookah-db API structure
+  - Endpoint paths changed from `/api/v1/*` to `/*` (no version prefix)
+  - Resource name changed from "flavors" to "tobaccos"
+  - Added new resource: "lines" (product lines within brands)
+  - ID format changed from slug-based to UUID-based
+  - Added new filter endpoints for countries and statuses
+  - Enhanced query parameters: pagination, sorting, and advanced filtering
 - Clarified project requirements through Q&A
 - Defined target audience: casual hookah enthusiasts
 - Confirmed minimal wishlist approach (tobacco names only)
@@ -138,9 +145,31 @@ The project structure has been initialized. Source code files have been created 
 
 ## Next Steps
 
-1. Update frontend HookahDbService to call backend instead of hookah-db API directly
-2. Test mini-app UI
-3. Deploy using Docker Compose
+1. **Update backend HookahDbModule** to support new API endpoints:
+   - Update service methods to use new endpoint paths (no `/api/v1` prefix)
+   - Change from slug-based IDs to UUID-based IDs
+   - Add support for new "lines" resource
+   - Add filter endpoints (countries, statuses)
+   - Update query parameters (pagination, sorting, advanced filtering)
+
+2. **Update frontend HookahDbService** to work with new backend proxy endpoints:
+   - Update API calls to use new endpoint structure
+   - Handle UUID-based IDs instead of slugs
+   - Add support for lines resource
+   - Update search and filtering to use new query parameters
+
+3. **Update SearchComponent** to support new features:
+   - Add line filtering option
+   - Implement pagination
+   - Add sorting by rating and name
+   - Add rating range filter
+   - Add country and status filters
+
+4. **Update backend tests** for HookahDbService to reflect new API structure
+
+5. **Test mini-app UI** with new API integration
+
+6. **Deploy using Docker Compose**
 
 ## Known Decisions
 

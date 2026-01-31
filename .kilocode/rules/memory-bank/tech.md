@@ -140,10 +140,38 @@
 
 ### Available hookah-db Endpoints
 The backend provides proxy endpoints to hookah-db API:
-- `GET /api/v1/brands` - List brands with pagination and search
-- `GET /api/v1/brands/:slug` - Get brand details
-- `GET /api/v1/flavors` - List flavors with filtering and search
-- `GET /api/v1/flavors/:slug` - Get flavor details
+
+#### Brands
+- `GET /api/hookah-db/brands` - List brands with pagination, filtering, sorting, and search
+  - Query params: `page`, `limit`, `sortBy` (rating, name), `order` (asc, desc), `country`, `status`, `search`
+- `GET /api/hookah-db/brands/:id` - Get brand details by UUID
+- `GET /api/hookah-db/brands/:id/tobaccos` - Get tobaccos of a brand
+- `GET /api/hookah-db/brands/countries` - Get list of countries for filtering
+- `GET /api/hookah-db/brands/statuses` - Get list of brand statuses for filtering
+
+#### Tobaccos
+- `GET /api/hookah-db/tobaccos` - List tobaccos with pagination, filtering, sorting, and search
+  - Query params: `page`, `limit`, `sortBy` (rating, name), `order` (asc, desc), `brandId`, `lineId`, `minRating`, `maxRating`, `country`, `status`, `search`
+- `GET /api/hookah-db/tobaccos/:id` - Get tobacco details by UUID
+- `GET /api/hookah-db/tobaccos/statuses` - Get list of tobacco statuses for filtering
+
+#### Lines (Линейки)
+- `GET /api/hookah-db/lines` - List lines with pagination, filtering, and search
+  - Query params: `page`, `limit`, `brandId`, `search`
+- `GET /api/hookah-db/lines/:id` - Get line details by UUID
+- `GET /api/hookah-db/lines/:id/tobaccos` - Get tobaccos of a line
+- `GET /api/hookah-db/lines/statuses` - Get list of line statuses for filtering
+
+#### Health Check
+- `GET /api/hookah-db/health` - Health check endpoint (public, no API key required)
+
+**Important Changes from Old API**:
+- Endpoint paths changed from `/api/v1/*` to `/*` (no version prefix)
+- Resource name changed from "flavors" to "tobaccos"
+- Added new resource: "lines" (product lines within brands)
+- ID format changed from slug-based to UUID-based
+- Added new filter endpoints for countries and statuses
+- Enhanced query parameters: pagination, sorting, and advanced filtering
 
 ## Development Setup
 
