@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatOptionModule } from '@angular/material/core';
-import { HookahDbService, Brand, Flavor } from '../../services/hookah-db.service';
+import { HookahDbService, Brand, Tobacco } from '../../services/hookah-db.service';
 import { WishlistService } from '../../services/wishlist.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -50,7 +50,7 @@ export class SearchComponent {
   searchQuery = model('');
   selectedBrand = model<string | null>(null);
   brands = signal<Brand[]>([]);
-  flavors = signal<Flavor[]>([]);
+  tobaccos = signal<Tobacco[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
   addingToWishlist = signal<Set<string>>(new Set());
@@ -65,11 +65,16 @@ export class SearchComponent {
   });
 
   selectedBrandName = computed(() => {
-    const brandSlug = this.selectedBrand();
-    if (!brandSlug) return '';
-    const brand = this.brands().find((b) => b.slug === brandSlug);
+    const brandId = this.selectedBrand();
+    if (!brandId) return '';
+    const brand = this.brands().find((b) => b.id === brandId);
     return brand?.name || '';
   });
+
+  getBrandName(brandId: string): string {
+    const brand = this.brands().find((b) => b.id === brandId);
+    return brand?.name || 'Unknown Brand';
+  }
 
   ngOnInit(): void {
     this.loadBrands();
@@ -79,8 +84,8 @@ export class SearchComponent {
     this.loading.set(true);
     this.error.set(null);
     this.hookahDbService.getBrands().subscribe({
-      next: (brands) => {
-        this.brands.set(brands);
+      next: (response) => {
+        this.brands.set(response.data);
         this.loading.set(false);
       },
       error: (err) => {
@@ -92,28 +97,31 @@ export class SearchComponent {
 
   onSearch(): void {
     if (!this.searchQuery() && !this.selectedBrand()) {
-      this.flavors.set([]);
+      this.tobaccos.set([]);
       return;
     }
 
     this.loading.set(true);
     this.error.set(null);
     this.hookahDbService
-      .getFlavors(this.searchQuery() || undefined, this.selectedBrand() || undefined)
+      .getTobaccos({
+        search: this.searchQuery() || undefined,
+        brandId: this.selectedBrand() || undefined,
+      })
       .subscribe({
-        next: (flavors) => {
-          this.flavors.set(flavors);
+        next: (response) => {
+          this.tobaccos.set(response.data);
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set('Failed to search flavors');
+          this.error.set('Failed to search tobaccos');
           this.loading.set(false);
         },
       });
   }
 
-  onBrandSelect(brandSlug: string): void {
-    this.selectedBrand.set(brandSlug);
+  onBrandSelect(brandId: string): void {
+    this.selectedBrand.set(brandId);
     this.onSearch();
   }
 
@@ -122,32 +130,32 @@ export class SearchComponent {
     this.onSearch();
   }
 
-  addToWishlist(flavor: Flavor): void {
-    const flavorId = flavor.slug;
+  addToWishlist(tobacco: Tobacco): void {
+    const tobaccoId = tobacco.id;
     const currentAdding = this.addingToWishlist();
     const newAdding = new Set(currentAdding);
-    newAdding.add(flavorId);
+    newAdding.add(tobaccoId);
     this.addingToWishlist.set(newAdding);
 
-    this.wishlistService.addToWishlist(flavor.slug, flavor.name).subscribe({
+    this.wishlistService.addToWishlist(tobacco.id, tobacco.name).subscribe({
       next: () => {
         const currentAdding = this.addingToWishlist();
         const newAdding = new Set(currentAdding);
-        newAdding.delete(flavorId);
+        newAdding.delete(tobaccoId);
         this.addingToWishlist.set(newAdding);
       },
       error: (err) => {
         const currentAdding = this.addingToWishlist();
         const newAdding = new Set(currentAdding);
-        newAdding.delete(flavorId);
+        newAdding.delete(tobaccoId);
         this.addingToWishlist.set(newAdding);
         this.error.set('Failed to add to wishlist');
       },
     });
   }
 
-  isAdding(flavor: Flavor): boolean {
-    return this.addingToWishlist().has(flavor.slug);
+  isAdding(tobacco: Tobacco): boolean {
+    return this.addingToWishlist().has(tobacco.id);
   }
 
   goToWishlist(): void {

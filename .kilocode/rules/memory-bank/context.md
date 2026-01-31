@@ -128,48 +128,78 @@ The project structure has been initialized. Source code files have been created 
   - Installed `@nestjs/axios` dependency for HTTP client functionality
   - Created [`HookahDbModule`](backend/src/hookah-db/hookah-db.module.ts) with HttpModule configuration
   - Created [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) with proxy methods:
-    - `getBrands(search?)` - Proxies to hookah-db API brands endpoint
-    - `getBrandBySlug(slug)` - Proxies to hookah-db API brand details endpoint
-    - `getFlavors(search?, brand?)` - Proxies to hookah-db API flavors endpoint
-    - `getFlavorBySlug(slug)` - Proxies to hookah-db API flavor details endpoint
+    - `healthCheck()` - Health check endpoint (public, no API key required)
+    - `getBrands(params?)` - List brands with pagination, filtering, sorting, and search
+    - `getBrandById(id)` - Get brand details by UUID
+    - `getBrandTobaccos(id, params?)` - Get tobaccos of a brand
+    - `getBrandCountries()` - Get list of countries for filtering
+    - `getBrandStatuses()` - Get list of brand statuses for filtering
+    - `getTobaccos(params?)` - List tobaccos with pagination, filtering, sorting, and search
+    - `getTobaccoById(id)` - Get tobacco details by UUID
+    - `getTobaccoStatuses()` - Get list of tobacco statuses for filtering
+    - `getLines(params?)` - List lines with pagination, filtering, and search
+    - `getLineById(id)` - Get line details by UUID
+    - `getLineTobaccos(id, params?)` - Get tobaccos of a line
+    - `getLineStatuses()` - Get list of line statuses for filtering
+    - Legacy methods: `getFlavors()`, `getFlavorBySlug()` (deprecated, for backward compatibility)
   - Created [`HookahDbController`](backend/src/hookah-db/hookah-db.controller.ts) with REST endpoints:
-    - `GET /api/hookah-db/brands` - List brands with optional search
-    - `GET /api/hookah-db/brands/:slug` - Get brand details
-    - `GET /api/hookah-db/flavors` - List flavors with optional search and brand filter
-    - `GET /api/hookah-db/flavors/:slug` - Get flavor details
-  - Created [`hookah-db.service.spec.ts`](backend/src/hookah-db/hookah-db.service.spec.ts) with 13 unit tests (all passing)
+    - `GET /api/hookah-db/health` - Health check (public)
+    - `GET /api/hookah-db/brands` - List brands with pagination, filtering, sorting, search
+    - `GET /api/hookah-db/brands/:id` - Get brand details by UUID
+    - `GET /api/hookah-db/brands/:id/tobaccos` - Get tobaccos of a brand
+    - `GET /api/hookah-db/brands/countries` - Get list of countries
+    - `GET /api/hookah-db/brands/statuses` - Get list of brand statuses
+    - `GET /api/hookah-db/tobaccos` - List tobaccos with pagination, filtering, sorting, search
+    - `GET /api/hookah-db/tobaccos/:id` - Get tobacco details by UUID
+    - `GET /api/hookah-db/tobaccos/statuses` - Get list of tobacco statuses
+    - `GET /api/hookah-db/lines` - List lines with pagination, filtering, search
+    - `GET /api/hookah-db/lines/:id` - Get line details by UUID
+    - `GET /api/hookah-db/lines/:id/tobaccos` - Get tobaccos of a line
+    - `GET /api/hookah-db/lines/statuses` - Get list of line statuses
+    - Legacy endpoints: `/flavors` (deprecated, for backward compatibility)
+  - Created [`hookah-db.service.spec.ts`](backend/src/hookah-db/hookah-db.service.spec.ts) with 31 unit tests (all passing)
   - Updated [`AppModule`](backend/src/app.module.ts) to import HookahDbModule
   - Service includes proper error handling with AxiosError logging
   - API key is stored securely in environment variables (HOOKAH_DB_API_KEY)
   - All tests pass and backend builds successfully
+   - **Updated to new hookah-db API structure**:
+     - Removed `/api/v1` prefix from all endpoint URLs
+     - Changed from slug-based IDs to UUID-based IDs
+     - Renamed "flavors" resource to "tobaccos"
+     - Added new "lines" resource support
+     - Added filter endpoints (countries, statuses)
+     - Enhanced query parameters (pagination, sorting, advanced filtering)
+- **Updated frontend HookahDbService** to work with new backend proxy endpoints:
+  - Renamed `Flavor` type to `Tobacco` with UUID-based `id` field
+  - Added `Line` type for product lines within brands
+  - Added `PaginatedResponse<T>` type for paginated API responses
+  - Updated all methods to return `PaginatedResponse<T>` instead of simple arrays
+  - Added new methods: `getTobaccos()`, `getTobaccoById()`, `getLines()`, `getLineById()`, `getLineTobaccos()`, `getBrandCountries()`, `getBrandStatuses()`, `getTobaccoStatuses()`, `getLineStatuses()`
+  - Updated `getBrands()` to accept `BrandsQueryParams` with pagination, sorting, filtering
+  - Updated brand methods to use UUID-based IDs instead of slugs
+  - Removed legacy methods `getFlavors()`, `getFlavorBySlug()` (no backward compatibility)
+- **Updated SearchComponent** to use new HookahDbService API:
+  - Renamed `flavors` signal to `tobaccos`
+  - Changed `Brand.slug` to `Brand.id` for brand filtering
+  - Changed `Flavor` type to `Tobacco` type
+  - Updated to handle `PaginatedResponse<Tobacco>` structure (extracts `response.data`)
+  - Added `getBrandName()` method to display brand name from brand ID
+  - Updated HTML template to use `tobaccos` instead of `flavors`
+  - Updated SCSS file to use `.tobaccos-list`, `.tobacco-card`, `.tobacco-info`, `.tobacco-name`, `.tobacco-brand` classes
+  - Both frontend and backend build successfully
 
 ## Next Steps
 
-1. **Update backend HookahDbModule** to support new API endpoints:
-   - Update service methods to use new endpoint paths (no `/api/v1` prefix)
-   - Change from slug-based IDs to UUID-based IDs
-   - Add support for new "lines" resource
-   - Add filter endpoints (countries, statuses)
-   - Update query parameters (pagination, sorting, advanced filtering)
-
-2. **Update frontend HookahDbService** to work with new backend proxy endpoints:
-   - Update API calls to use new endpoint structure
-   - Handle UUID-based IDs instead of slugs
-   - Add support for lines resource
-   - Update search and filtering to use new query parameters
-
-3. **Update SearchComponent** to support new features:
+1. **Update SearchComponent** to support new features:
    - Add line filtering option
    - Implement pagination
    - Add sorting by rating and name
    - Add rating range filter
    - Add country and status filters
 
-4. **Update backend tests** for HookahDbService to reflect new API structure
+2. **Test mini-app UI** with new API integration
 
-5. **Test mini-app UI** with new API integration
-
-6. **Deploy using Docker Compose**
+3. **Deploy using Docker Compose**
 
 ## Known Decisions
 

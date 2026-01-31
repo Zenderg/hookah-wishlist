@@ -26,8 +26,8 @@
             <mat-label>Filter by Brand</mat-label>
             <mat-select [(ngModel)]="selectedBrand" (selectionChange)="onSearch()">
               <mat-option value="">All Brands</mat-option>
-              @for (brand of filteredBrands(); track brand.slug) {
-                <mat-option [value]="brand.slug">{{ brand.name }}</mat-option>
+              @for (brand of filteredBrands(); track brand.id) {
+                <mat-option [value]="brand.id">{{ brand.name }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -53,32 +53,32 @@
             <mat-spinner diameter="40"></mat-spinner>
             <p>Loading...</p>
           </div>
-        } @else if (flavors().length === 0 && (searchQuery() || selectedBrand())) {
+        } @else if (tobaccos().length === 0 && (searchQuery() || selectedBrand())) {
           <mat-card class="no-results-card">
             <mat-card-content>
-              <p class="no-results">No flavors found</p>
+              <p class="no-results">No tobaccos found</p>
             </mat-card-content>
           </mat-card>
-        } @else if (flavors().length > 0) {
+        } @else if (tobaccos().length > 0) {
           <div class="results-header">
-            <h2>Results ({{ flavors().length }})</h2>
+            <h2>Results ({{ tobaccos().length }})</h2>
           </div>
-          <div class="flavors-list">
-            @for (flavor of flavors(); track flavor.slug) {
-              <mat-card class="flavor-card">
+          <div class="tobaccos-list">
+            @for (tobacco of tobaccos(); track tobacco.id) {
+              <mat-card class="tobacco-card">
                 <mat-card-content>
-                  <div class="flavor-info">
-                    <h3 class="flavor-name">{{ flavor.name }}</h3>
-                    <p class="flavor-brand">{{ flavor.brand }}</p>
+                  <div class="tobacco-info">
+                    <h3 class="tobacco-name">{{ tobacco.name }}</h3>
+                    <p class="tobacco-brand">{{ getBrandName(tobacco.brandId) }}</p>
                   </div>
                   <button
                     mat-raised-button
                     color="accent"
-                    (click)="addToWishlist(flavor)"
-                    [disabled]="isAdding(flavor)"
+                    (click)="addToWishlist(tobacco)"
+                    [disabled]="isAdding(tobacco)"
                     class="add-btn"
                   >
-                    @if (isAdding(flavor)) {
+                    @if (isAdding(tobacco)) {
                       <span>Adding...</span>
                     } @else {
                       <span>+ Add</span>

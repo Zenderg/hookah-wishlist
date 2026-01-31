@@ -74,24 +74,24 @@
     margin: 0;
   }
 
-  .flavors-list {
+  .tobaccos-list {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .flavor-card {
-    .flavor-info {
+  .tobacco-card {
+    .tobacco-info {
       margin-bottom: 1rem;
 
-      .flavor-name {
+      .tobacco-name {
         font-size: 1.1rem;
         font-weight: 600;
         margin: 0 0 0.25rem 0;
         color: #333;
       }
 
-      .flavor-brand {
+      .tobacco-brand {
         font-size: 0.9rem;
         color: #666;
         margin: 0;
