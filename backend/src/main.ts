@@ -30,5 +30,17 @@ async function bootstrap() {
   // Launch Telegram bot with polling
   const botService = app.get(BotService);
   await botService.launch();
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    logger.log(`Received ${signal}, shutting down gracefully...`);
+    await botService.stop();
+    await app.close();
+    logger.log('Application closed');
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 bootstrap();
