@@ -3,13 +3,16 @@
   [class.removing]="removing()"
   [class.with-checkmark]="withCheckmark()"
 >
-  <img
-    [src]="displayImageUrl()"
-    [alt]="displayTobaccoName()"
-    class="tobacco-image"
-    loading="lazy"
-    (error)="onImageError($event)"
-  />
+  <div class="tobacco-image-container">
+    <img
+      [ngSrc]="displayImageUrl()"
+      [alt]="displayTobaccoName()"
+      class="tobacco-image"
+      fill
+      loading="lazy"
+      (error)="onImageError($event)"
+    />
+  </div>
   <div class="tobacco-info">
     <h3 class="tobacco-name">{{ displayTobaccoName() }}</h3>
     <p class="tobacco-brand">{{ displayBrandName() }}</p>

@@ -5,13 +5,14 @@
       [wishlistTobaccoIds]="wishlistTobaccoIds()"
       (addToWishlist)="onAddToWishlist($event)"
       (removeFromWishlist)="onRemoveFromWishlist($event)"
+      (itemRemoved)="onItemRemoved($event)"
     />
   }
 
   <!-- Wishlist Tab -->
   @if (activeTab() === 'wishlist') {
     <app-wishlist-tab
-      (removeFromWishlist)="onMarkAsPurchased($event)"
+      (removeFromWishlist)="onRemoveFromWishlist($event.item, $event.alreadyRemoved)"
     />
   }
 

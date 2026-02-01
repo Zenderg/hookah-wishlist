@@ -1,0 +1,35 @@
+@if (open()) {
+  <div class="filter-modal-overlay" (click)="onClose()">
+    <div class="filter-modal" (click)="$event.stopPropagation()">
+      <div class="filter-modal-header">
+        <h2 class="filter-modal-title">Фильтры</h2>
+        <button mat-icon-button (click)="onClose()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="filter-modal-content">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Статус</mat-label>
+          <mat-select [value]="selectedStatus()" (selectionChange)="onStatusChange($event.value)">
+            <mat-option value="">Все</mat-option>
+            @for (status of availableStatuses(); track status) {
+              <mat-option [value]="status">{{ status }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Страна</mat-label>
+          <mat-select [value]="selectedCountry()" (selectionChange)="onCountryChange($event.value)">
+            <mat-option value="">Все</mat-option>
+            @for (country of availableCountries(); track country) {
+              <mat-option [value]="country">{{ country }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="filter-modal-actions">
+        <button mat-button (click)="onResetFilters()">Сбросить</button>
+      </div>
+    </div>
+  </div>
+}

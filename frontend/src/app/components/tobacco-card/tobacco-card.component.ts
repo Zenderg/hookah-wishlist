@@ -1,5 +1,5 @@
 import { Component, input, output, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,7 +9,7 @@ import type { WishlistItem } from '../../services/wishlist.service';
 @Component({
   selector: 'app-tobacco-card',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, NgOptimizedImage, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './tobacco-card.component.html',
   styleUrls: ['./tobacco-card.component.scss'],
 })

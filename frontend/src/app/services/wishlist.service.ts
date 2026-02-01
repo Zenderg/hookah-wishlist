@@ -40,4 +40,12 @@ export class WishlistService {
       params: { telegramId },
     });
   }
+
+  removeFromWishlistByTobaccoId(tobaccoId: string): Observable<void> {
+    const telegramId = this.authService.getTelegramId();
+
+    return this.http.delete<void>(`${this.apiUrl}/wishlist/tobacco/${tobaccoId}`, {
+      params: { telegramId },
+    });
+  }
 }

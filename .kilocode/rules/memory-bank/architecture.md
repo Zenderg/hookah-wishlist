@@ -29,12 +29,12 @@ The application follows a client-server architecture with three main components:
 │  │  - CRUD operations              │  │
 │  │  - User-specific data           │  │
 │  └─────────────────────────────────┘  │
-│  ┌─────────────────────────────────┐  │
-│  │  HookahDb Module (Proxy)       │  │
-│  │  - Proxy to hookah-db API      │  │
-│  │  - Brands endpoint             │  │
-│  │  - Flavors endpoint            │  │
-│  └─────────────────────────────────┘  │
+ │  ┌─────────────────────────────────┐  │
+ │  │  HookahDb Module (Proxy)       │  │
+ │  │  - Proxy to hookah-db API      │  │
+ │  │  - Brands endpoint             │  │
+ │  │  - Tobaccos endpoint           │  │
+ │  └─────────────────────────────────┘  │
 └────────┬──────────────────────────────┘
          │
          │ HTTP/REST (internal)
@@ -77,16 +77,15 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Wishlist items table
-CREATE TABLE wishlist_items (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  tobacco_id TEXT NOT NULL,
-  tobacco_name TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE(user_id, tobacco_id)
-);
+ -- Wishlist items table
+ CREATE TABLE wishlist_items (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   user_id INTEGER NOT NULL,
+   tobacco_id TEXT NOT NULL,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+   UNIQUE(user_id, tobacco_id)
+ );
 
 -- Indexes for performance
 CREATE INDEX idx_wishlist_user_id ON wishlist_items(user_id);
@@ -181,23 +180,52 @@ hookah-wishlist/
 │   ├── tsconfig.json
 │   └── nest-cli.json
 │
- ├── frontend/                   # Angular frontend
- │   ├── src/
- │   │   ├── app/
- │   │   │   ├── app.component.ts
- │   │   │   ├── app.component.html
- │   │   │   ├── app.component.scss
- │   │   │   ├── services/
- │   │   │   │   ├── auth.service.ts
- │   │   │   │   ├── wishlist.service.ts
- │   │   │   │   └── hookah-db.service.ts
- │   │   │   └── models/
- │   │   ├── environments/
- │   │   ├── index.html
- │   │   └── main.ts
- │   ├── package.json
- │   ├── angular.json
- │   └── tsconfig.json
+  ├── frontend/                   # Angular frontend
+  │   ├── src/
+  │   │   ├── app/
+  │   │   │   ├── app.component.ts
+  │   │   │   ├── app.component.html
+  │   │   │   ├── app.component.scss
+  │   │   │   ├── app.routes.ts
+  │   │   │   ├── components/
+  │   │   │   │   ├── tab-bar/          # Floating bottom navigation bar
+  │   │   │   │   ├── tab-bar.component.ts
+  │   │   │   │   ├── tab-bar.component.html
+  │   │   │   │   └── tab-bar.component.scss
+  │   │   │   ├── search-tab/       # Search tab component
+  │   │   │   │   ├── search-tab.component.ts
+  │   │   │   │   ├── search-tab.component.html
+  │   │   │   │   └── search-tab.component.scss
+  │   │   │   ├── wishlist-tab/      # Wishlist tab component
+  │   │   │   │   ├── wishlist-tab.component.ts
+  │   │   │   │   ├── wishlist-tab.component.html
+  │   │   │   │   └── wishlist-tab.component.scss
+  │   │   │   ├── tobacco-card/      # Unified tobacco card component
+  │   │   │   │   ├── tobacco-card.component.ts
+  │   │   │   │   ├── tobacco-card.component.html
+  │   │   │   │   └── tobacco-card.component.scss
+  │   │   │   ├── filter-modal/      # Filter modal component
+  │   │   │   │   ├── filter-modal.component.ts
+  │   │   │   │   ├── filter-modal.component.html
+  │   │   │   │   └── filter-modal.component.scss
+  │   │   │   └── skeleton-card/     # Skeleton loading card component
+  │   │   │       ├── skeleton-card.component.ts
+  │   │   │       ├── skeleton-card.component.html
+  │   │   │       └── skeleton-card.component.scss
+  │   │   ├── services/
+  │   │   │   ├── auth.service.ts
+  │   │   │   ├── wishlist.service.ts
+  │   │   │   ├── hookah-db.service.ts
+  │   │   │   ├── brand-cache.service.ts    # Brand name caching
+  │   │   │   └── tobacco-cache.service.ts  # Tobacco details caching
+  │   │   ├── environments/
+  │   │   ├── index.html
+  │   │   ├── main.ts
+  │   │   ├── styles.scss
+  │   │   └── types.d.ts
+  │   ├── package.json
+  │   ├── angular.json
+  │   └── tsconfig.json
 │
 ├── docker-compose.yml
 ├── Dockerfile.backend

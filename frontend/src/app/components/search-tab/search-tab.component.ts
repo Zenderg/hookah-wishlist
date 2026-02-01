@@ -11,6 +11,7 @@ import { WishlistService, type WishlistItem } from '../../services/wishlist.serv
 import { BrandCacheService } from '../../services/brand-cache.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
+import { FilterModalComponent } from '../filter-modal/filter-modal.component';
 
 @Component({
   selector: 'app-search-tab',
@@ -24,6 +25,7 @@ import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component'
     MatSelectModule,
     TobaccoCardComponent,
     SkeletonCardComponent,
+    FilterModalComponent,
   ],
   templateUrl: './search-tab.component.html',
   styleUrls: ['./search-tab.component.scss'],
@@ -37,8 +39,9 @@ export class SearchTabComponent implements OnInit {
   wishlistTobaccoIds = input.required<Set<string>>();
 
   // Outputs
-  addToWishlist = output<Tobacco>();
+  addToWishlist = output<WishlistItem>();
   removeFromWishlist = output<Tobacco | WishlistItem>();
+  itemRemoved = output<string>(); // Emit when item removal animation is complete
 
   // Search state
   searchQuery = signal('');
@@ -50,6 +53,8 @@ export class SearchTabComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   addingToWishlist = signal<Set<string>>(new Set());
+  removingFromWishlist = signal<Set<string>>(new Set());
+  itemsWithCheckmark = signal<Set<string>>(new Set());
 
   // Pagination state
   currentPage = signal(1);
@@ -74,6 +79,9 @@ export class SearchTabComponent implements OnInit {
   // Computed: Check if all data is ready (tobaccos have brand names)
   dataReady = computed(() => {
     const tobaccoList = this.tobaccos();
+    // If loading is complete and list is empty, data is ready (show empty state)
+    if (!this.loading() && tobaccoList.length === 0) return true;
+    // If list is empty but still loading, data is not ready (show skeleton)
     if (tobaccoList.length === 0) return false;
     // Check if all tobaccos have brand names loaded
     return tobaccoList.every((tobacco) => {
@@ -99,6 +107,7 @@ export class SearchTabComponent implements OnInit {
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => {
         this.currentPage.set(1);
+        this.tobaccos.set([]); // Clear list to show skeleton
         this.loadTobaccos();
       });
   }
@@ -119,12 +128,14 @@ export class SearchTabComponent implements OnInit {
   onStatusChange(status: string) {
     this.selectedStatus.set(status);
     this.currentPage.set(1);
+    this.tobaccos.set([]); // Clear list to show skeleton
     this.loadTobaccos();
   }
 
   onCountryChange(country: string) {
     this.selectedCountry.set(country);
     this.currentPage.set(1);
+    this.tobaccos.set([]); // Clear list to show skeleton
     this.loadTobaccos();
   }
 
@@ -132,6 +143,7 @@ export class SearchTabComponent implements OnInit {
     this.selectedStatus.set('');
     this.selectedCountry.set('');
     this.currentPage.set(1);
+    this.tobaccos.set([]); // Clear list to show skeleton
     this.loadTobaccos();
     this.showFilterModal.set(false);
   }
@@ -203,18 +215,42 @@ export class SearchTabComponent implements OnInit {
     const addingSet = this.addingToWishlist();
     this.addingToWishlist.set(new Set(addingSet).add(tobacco.id));
 
+    // Show removing animation (shrink + fade) while loading
+    this.removingFromWishlist.update((set) => new Set(set).add(tobacco.id));
+
     this.wishlistService.addToWishlist(tobacco.id).subscribe({
-      next: () => {
+      next: (wishlistItem) => {
         this.addingToWishlist.update((set) => {
           const newSet = new Set(set);
           newSet.delete(tobacco.id);
           return newSet;
         });
-        this.addToWishlist.emit(tobacco);
+        // Remove shrink animation (card returns to normal)
+        this.removingFromWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobacco.id);
+          return newSet;
+        });
+        // Show checkmark animation for 1.5 seconds
+        this.itemsWithCheckmark.update((set) => new Set(set).add(tobacco.id));
+        setTimeout(() => {
+          this.itemsWithCheckmark.update((set) => {
+            const newSet = new Set(set);
+            newSet.delete(tobacco.id);
+            return newSet;
+          });
+        }, 1500);
+        this.addToWishlist.emit(wishlistItem);
       },
       error: (err) => {
         console.error('Failed to add to wishlist:', err);
         this.addingToWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobacco.id);
+          return newSet;
+        });
+        // Remove shrink animation (card returns to normal)
+        this.removingFromWishlist.update((set) => {
           const newSet = new Set(set);
           newSet.delete(tobacco.id);
           return newSet;
@@ -224,7 +260,22 @@ export class SearchTabComponent implements OnInit {
   }
 
   onRemoveFromWishlist(item: Tobacco | WishlistItem) {
-    this.removeFromWishlist.emit(item);
+    let tobaccoId: string;
+
+    if ('tobaccoId' in item) {
+      // It's a WishlistItem
+      tobaccoId = (item as WishlistItem).tobaccoId;
+    } else {
+      // It's a Tobacco object
+      tobaccoId = (item as Tobacco).id;
+    }
+
+    // Show removing state
+    this.removingFromWishlist.update((set) => new Set(set).add(tobaccoId));
+
+    // Emit itemRemoved event immediately to trigger API call in parent
+    // Parent will handle API call and then remove item from wishlistTobaccoIds
+    this.itemRemoved.emit(tobaccoId);
   }
 
   private loadBrandNamesForTobaccos(tobaccos: Tobacco[]) {

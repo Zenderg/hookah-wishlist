@@ -80,14 +80,12 @@ describe('WishlistService', () => {
           id: 1,
           userId: 1,
           tobaccoId: 'tobacco-1',
-          tobaccoName: 'Tobacco 1',
           createdAt: new Date(),
         },
         {
           id: 2,
           userId: 1,
           tobaccoId: 'tobacco-2',
-          tobaccoName: 'Tobacco 2',
           createdAt: new Date(),
         },
       ];
@@ -111,7 +109,6 @@ describe('WishlistService', () => {
   describe('addToWishlist', () => {
     const telegramId = '123456789';
     const tobaccoId = 'tobacco-1';
-    const tobaccoName = 'Tobacco 1';
 
     it('should create user and new wishlist item when user not found', async () => {
       const user = {
@@ -125,7 +122,6 @@ describe('WishlistService', () => {
         id: 1,
         userId: 1,
         tobaccoId: 'tobacco-1',
-        tobaccoName: 'Tobacco 1',
         createdAt: new Date(),
       };
 
@@ -149,7 +145,6 @@ describe('WishlistService', () => {
       expect(mockWishlistRepository.create).toHaveBeenCalledWith({
         userId: user.id,
         tobaccoId,
-        tobaccoName,
       });
       expect(result).toEqual(newItem);
     });
@@ -166,7 +161,6 @@ describe('WishlistService', () => {
         id: 1,
         userId: 1,
         tobaccoId: 'tobacco-1',
-        tobaccoName: 'Tobacco 1',
         createdAt: new Date(),
       };
 
@@ -196,7 +190,6 @@ describe('WishlistService', () => {
         id: 1,
         userId: 1,
         tobaccoId: 'tobacco-1',
-        tobaccoName: 'Tobacco 1',
         createdAt: new Date(),
       };
 
@@ -216,7 +209,6 @@ describe('WishlistService', () => {
       expect(mockWishlistRepository.create).toHaveBeenCalledWith({
         userId: user.id,
         tobaccoId,
-        tobaccoName,
       });
       expect(mockWishlistRepository.save).toHaveBeenCalledWith(newItem);
       expect(result).toEqual(newItem);
@@ -282,7 +274,6 @@ describe('WishlistService', () => {
         id: 1,
         userId: 2,
         tobaccoId: 'tobacco-1',
-        tobaccoName: 'Tobacco 1',
         createdAt: new Date(),
       };
 
@@ -306,7 +297,6 @@ describe('WishlistService', () => {
         id: 1,
         userId: 1,
         tobaccoId: 'tobacco-1',
-        tobaccoName: 'Tobacco 1',
         createdAt: new Date(),
       };
 

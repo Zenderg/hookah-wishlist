@@ -21,16 +21,19 @@
   transform: scale(0.95);
 }
 
-.tobacco-card.with-checkmark {
-  background-color: var(--mat-sys-primary-container);
+.tobacco-image-container {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  border-radius: var(--mat-sys-corner-small);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .tobacco-image {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: var(--mat-sys-corner-small);
-  flex-shrink: 0;
 }
 
 .tobacco-info {
@@ -81,6 +84,10 @@
 .button-spinner {
   width: 20px;
   height: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* Checkmark overlay */
@@ -90,7 +97,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--mat-sys-primary);
   display: flex;
   justify-content: center;
   align-items: center;

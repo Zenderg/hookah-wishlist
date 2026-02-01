@@ -2,11 +2,39 @@
 
 ## Current State
 
-The project structure has been initialized. Source code files have been created with placeholder logic (TODO comments). The memory bank has been initialized with core documentation including:
-- Project brief with requirements and scope
-- Product description with user experience and design principles
-- Architecture and technology decisions
-- Technology stack documentation
+The project is in a mature state with a fully functional MVP. The application has been implemented with all core features:
+
+**Backend (NestJS)**:
+- Complete REST API with authentication, wishlist management, and hookah-db proxy
+- Telegram bot with all command handlers (`/start`, `/help`, `/wishlist`)
+- SQLite database with proper schema and TypeORM integration
+- Comprehensive test coverage (57 unit tests, all passing)
+
+**Frontend (Angular)**:
+- Modern single-page application with floating bottom tab bar
+- Search tab with real-time search, filtering, and pagination
+- Wishlist tab with item management and mark-as-purchased functionality
+- Unified tobacco card component for both tabs
+- Skeleton loading for better perceived performance
+- Filter modal for status and country filtering
+- Image optimization with NgOptimizedImage directive
+- Mock user support for local development
+
+**Key Features Implemented**:
+- Real-time tobacco search with debouncing (300ms)
+- Infinite scroll pagination
+- Brand and tobacco name caching to avoid duplicate API calls
+- Toast notifications for user feedback
+- Checkmark animation for add/remove actions
+- Responsive design with Material Design 3 tokens
+- Skeleton loading to prevent visual glitches
+
+**Architecture Improvements**:
+- Refactored AppComponent into smaller, focused components
+- Created dedicated cache services for brands and tobaccos
+- Extracted filter modal into separate component
+- Unified tobacco card component for both search and wishlist tabs
+- Removed tobaccoName from database schema (fetch from API instead)
 
 ## Recent Changes
 
@@ -271,156 +299,12 @@ The project structure has been initialized. Source code files have been created 
   - All 57 backend tests pass, both backend and frontend build successfully
   - This makes the wishlist service more robust and provides better user experience
 
-  ## Next Steps
+   ## Next Steps
 
 1. **Test mini-app UI** with new API integration
 
 2. **Deploy using Docker Compose**
 
-   ## Recent Changes (2026-02-01)
-  - **Refactored AppComponent into smaller, focused components**:
-    - Created [`SearchTabComponent`](frontend/src/app/components/search-tab/) with all search and filter logic
-    - Created [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/) with all wishlist management logic
-    - Created [`BrandCacheService`](frontend/src/app/services/brand-cache.service.ts) for centralized brand name caching
-    - Created [`TobaccoCacheService`](frontend/src/app/services/tobacco-cache.service.ts) for centralized tobacco details caching
-    - Updated [`AppComponent`](frontend/src/app/app.component.ts) to use new tab components
-    - [`AppComponent`](frontend/src/app/app.component.ts) now only handles:
-      - Tab navigation (`activeTab`, `onTabChange`)
-      - Global wishlist state (`wishlist`, `wishlistTobaccoIds`)
-      - Event handling from child components (`onAddToWishlist`, `onRemoveFromWishlist`, `onMarkAsPurchased`)
-      - Toast notifications (`showSuccessToast`, `showErrorToast`)
-    - Updated [`app.component.html`](frontend/src/app/app.component.html) to use component selectors
-    - Updated [`app.component.scss`](frontend/src/app/app.component.scss) to only contain global styles
-    - All component-specific styles moved to respective component SCSS files
-    - Communication between components via `@Input`/`@Output` pattern (simple and clear)
-    - Both backend and frontend compile successfully without errors
-
-   - **Unified tobacco card components**:
-     - Created unified [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) that works for both search and wishlist tabs
-     - Component uses conditional display based on available data:
-       - Shows rating if `rating` and `ratingsCount` are provided (search tab)
-       - Shows date if `formattedDate` is provided (wishlist tab)
-     - Supports both `Tobacco` and `WishlistItem` data types
-     - All inputs are optional for maximum flexibility
-     - Button behavior: adds to wishlist if not in wishlist, removes if in wishlist
-     - Supports checkmark animation for wishlist items (via `withCheckmark` input)
-     - Supports removing state with opacity/scale transform
-     - Unified styling from both previous components
-     - Deleted [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/) directory
-     - Updated [`AppComponent`](frontend/src/app/app.component.ts) to use unified component for both tabs
-     - Updated [`app.component.html`](frontend/src/app/app.component.html) to use unified component
-     - Updated methods `onRemoveFromWishlist()` and `onMarkAsPurchased()` to handle both `Tobacco` and `WishlistItem` types
-     - Project builds successfully (767.16 kB, budget warning remains)
-
-   - **Fixed console error when switching to search tab**:
-
-   - **Fixed console error when switching to search tab**:
-     - Root cause: [`loadBrandNamesForWishlist()`](frontend/src/app/app.component.ts:304) was using `item.tobaccoId` as a brand ID, but `tobaccoId` is a UUID of tobacco, not a brand
-     - Solution: Now fetches tobacco details first using `getTobaccoById()`, extracts `brandId` from tobacco, then fetches brand name
-     - Added [`tobaccoCache`](frontend/src/app/app.component.ts:83) signal for caching tobacco details to avoid duplicate API calls
-     - Added [`getTobaccoName()`](frontend/src/app/app.component.ts:324) method to get tobacco name from cache
-
-   - **Removed tobaccoName from database schema** (per user requirement):
-     - Updated [`WishlistItem`](backend/src/wishlist/entities/wishlist-item.entity.ts) entity to remove `tobaccoName` column
-     - Database file deleted and will be recreated with new schema
-     - Updated [`WishlistService.addToWishlist()`](backend/src/wishlist/wishlist.service.ts:31) to only accept `tobaccoId`
-     - Updated [`AddToWishlistDto`](backend/src/wishlist/dto/add-to-wishlist.dto.ts) to remove `tobaccoName` field
-     - Updated [`WishlistController`](backend/src/wishlist/wishlist.controller.ts:16) to pass only 2 arguments
-     - Updated [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) tests to match new signature
-
-   - **Updated bot handler to fetch tobacco details**:
-     - Updated [`WishlistHandler`](backend/src/bot/handlers/wishlist.handler.ts:40) to fetch tobacco details via API for each wishlist item
-     - Added [`HookahDbService`](backend/src/bot/handlers/wishlist.handler.ts:4) injection to [`BotModule`](backend/src/bot/bot.module.ts:10)
-     - Updated [`wishlist.handler.spec.ts`](backend/src/bot/handlers/wishlist.handler.spec.ts) tests with mock tobacco data
-
-   - **Updated frontend to use tobacco details from API**:
-     - Updated [`WishlistItem`](frontend/src/app/services/wishlist.service.ts:7) interface to remove `tobaccoName` field
-     - Updated [`WishlistService.addToWishlist()`](frontend/src/app/services/wishlist.service.ts:28) to only send `tobaccoId`
-     - Added [`getTobaccoName()`](frontend/src/app/app.component.ts:324) method to get tobacco name from cache
-     - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:17) to accept `tobaccoName` input
-     - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:13) template to use `tobaccoName` input
-     - Updated [`AppComponent`](frontend/src/app/app.component.html:152) to pass `tobaccoName` to wishlist card
-
-   - **Fixed UUID instead of brand name in search tab**:
-     - Root cause: [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.html:10) was displaying `tobacco().brandId` (UUID) instead of actual brand name
-     - Solution: Added `brandName` input to [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts:18)
-     - Added [`loadBrandNamesForTobaccos()`](frontend/src/app/app.component.ts:357) method to fetch brand names for tobaccos displayed in search tab
-     - Updated [`app.component.html`](frontend/src/app/app.component.html:58) to pass `brandName` to tobacco card component
-     - Removed "Бренд: " label from card display (now only shows brand name directly)
-
-   - **Fixed cards spacing issue**:
-     - Root cause: The `.tobaccos-list` class had no CSS styling for spacing between cards
-     - Solution: Added CSS for `.tobaccos-list` in [`app.component.scss`](frontend/src/app/app.component.scss:119-123) with `gap: 12px` (per design spec requirement of 12-16px)
-     - Added CSS for `.wishlist-list` with same spacing for consistency
-
-   - **Fixed wishlist tab data loading issue**:
-     - Root cause: [`loadBrandNamesForWishlist()`](frontend/src/app/app.component.ts:309) was only called when wishlist was empty. When switching to wishlist tab after adding an item, the method was never called, so tobacco details and brand names were not loaded.
-     - Solution: Updated [`onTabChange()`](frontend/src/app/app.component.ts:276-284) method to call `loadBrandNamesForWishlist()` when switching to wishlist tab, even if wishlist already has items
-     - This ensures tobacco details and brand names are loaded every time you switch to the wishlist tab
-
-   - **Fixed tobacco image not loading in wishlist card**:
-     - Root cause: [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:7) was using a hardcoded placeholder URL `https://via.placeholder.com/80` instead of actual tobacco image URL from API
-     - Solution 1: Added `imageUrl` input to [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:17)
-     - Solution 2: Added [`getTobaccoImageUrl()`](frontend/src/app/app.component.ts:376-381) method in [`AppComponent`](frontend/src/app/app.component.ts:376-381) to get image URL from tobacco cache
-     - Solution 3: Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:7) template to use `[src]="imageUrl() || 'https://via.placeholder.com/80'"` with fallback to placeholder if URL is invalid
-
-    - **Implementation verified**:
-      - Backend compiles successfully without errors
-      - Frontend compiles successfully without errors
-      - No console errors when switching to search tab
-      - No console errors when switching to wishlist tab
-      - Network requests work correctly:
-        - `/api/hookah-db/tobaccos/statuses` - [200] OK
-        - `/api/hookah-db/brands/countries` - [200] OK
-        - `/api/hookah-db/tobaccos?page=1&limit=20` - [200] OK
-        - `/api/wishlist?telegramId=test-user-123` - [200] OK
-        - `/api/hookah-db/tobaccos/{id}` - Fetches tobacco details for wishlist items ✓
-        - `/api/hookah-db/brands/{id}` - Fetches brand names for wishlist items ✓
-      - All data displays correctly:
-        - Tobacco name displays correctly
-        - Brand name displays correctly (not UUID!)
-        - Date displays correctly
-        - Tobacco image loads correctly from API
-        - No errors in console
-
-   - **Implemented skeleton loading for initial load** (2026-02-01):
-     - Created [`SkeletonCardComponent`](frontend/src/app/components/skeleton-card/skeleton-card.component.ts) - reusable skeleton card component
-     - Skeleton card structure matches tobacco card layout:
-       - Square image placeholder (80x80px) on left
-       - Name placeholder (70% width)
-       - Brand placeholder (50% width)
-       - Rating placeholder (30% width)
-       - Button placeholder (40x40px circle) on right
-     - Shimmer animation effect using CSS `@keyframes shimmer`:
-       - Linear gradient animation from left to right
-       - Semi-transparent white highlight (30% opacity)
-       - 1.5s animation duration, infinite loop
-     - Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts) to use skeleton cards:
-       - Replaced spinner with 5 skeleton cards for initial load
-       - Kept spinner for "loading more" state (pagination)
-       - Added `dataReady()` computed signal to track when all data (tobaccos + brand names) is loaded
-       - Updated skeleton condition: show when loading OR data not ready
-       - Updated real cards condition: show when not loading AND data ready
-       - Added `.skeleton-list` CSS class with 12px gap
-     - Updated [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/wishlist-tab.component.ts) to use skeleton cards:
-       - Replaced spinner with 5 skeleton cards for initial load
-       - Added `dataReady()` computed signal to track when all data (tobacco details + brand names + images) is loaded
-       - Updated skeleton condition: show when loading OR data not ready
-       - Updated real cards condition: show when not loading AND data ready
-       - Added `.skeleton-list` CSS class with 12px gap
-     - Fixed visual glitch issue:
-       - **Problem**: Real cards were appearing before their data (tobacco details, brand names, images) was ready
-       - **Symptoms**: UUIDs appeared instead of names, broken images, then normal data appeared
-       - **Solution**: Added `dataReady()` computed signals to track when ALL data is loaded
-       - **Result**: Skeleton cards now show until all data is ready, preventing visual glitches
-     - Frontend builds successfully without errors (773.56 kB bundle)
-     - Skeleton loading improves perceived performance and user experience
-     - Matches UI design specification: "Skeleton loading: Placeholder cards while loading data"
-
-   ## Optional improvements (future work)
-- Extract filter modal to separate component
-- Display brand name instead of UUID (requires API call)
-- Add NgOptimizedImage for image optimization
 
 ## Known Decisions
 

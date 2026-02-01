@@ -30,7 +30,7 @@ export class WishlistTabComponent implements OnInit {
   private tobaccoCacheService = inject(TobaccoCacheService);
 
   // Outputs
-  removeFromWishlist = output<WishlistItem>();
+  removeFromWishlist = output<{ item: WishlistItem; alreadyRemoved: boolean }>();
 
   // Wishlist state
   wishlist = signal<WishlistItem[]>([]);
@@ -40,6 +40,9 @@ export class WishlistTabComponent implements OnInit {
   itemsWithCheckmark = signal<Set<string>>(new Set());
   dataReady = computed(() => {
     const items = this.wishlist();
+    // If loading is complete and list is empty, data is ready (show empty state)
+    if (!this.wishlistLoading() && items.length === 0) return true;
+    // If list is empty but still loading, data is not ready (show skeleton)
     if (items.length === 0) return false;
     // Check if all items have tobacco details and brand names
     return items.every((item) => {
@@ -136,7 +139,7 @@ export class WishlistTabComponent implements OnInit {
             newSet.delete(itemId);
             return newSet;
           });
-          this.removeFromWishlist.emit(wishlistItem);
+          this.removeFromWishlist.emit({ item: wishlistItem, alreadyRemoved: true });
         },
         error: (err) => {
           console.error('Failed to remove from wishlist:', err);

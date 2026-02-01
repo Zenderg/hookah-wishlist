@@ -69,12 +69,13 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // Handle add to wishlist from search tab
-  onAddToWishlist(tobacco: Tobacco) {
+  onAddToWishlist(wishlistItem: WishlistItem) {
+    this.wishlist.update((items) => [...items, wishlistItem]);
     this.showSuccessToast('Добавлено в wishlist');
   }
 
   // Handle remove from wishlist
-  onRemoveFromWishlist(item: Tobacco | WishlistItem) {
+  onRemoveFromWishlist(item: Tobacco | WishlistItem, alreadyRemoved: boolean = false) {
     let wishlistItem: WishlistItem | undefined;
 
     if ('tobaccoId' in item) {
@@ -91,9 +92,50 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     const itemId = wishlistItem.id;
-    this.wishlistService.removeFromWishlist(itemId).subscribe({
+
+    if (alreadyRemoved) {
+      // Item was already removed by WishlistTabComponent, just update local state
+      this.wishlist.update((items) => items.filter(i => i.id !== itemId));
+    } else {
+      // Remove from wishlist via API (called from SearchTabComponent)
+      this.wishlistService.removeFromWishlist(itemId).subscribe({
+        next: () => {
+          this.wishlist.update((items) => items.filter(i => i.id !== itemId));
+          this.showSuccessToast('Удалено из wishlist');
+        },
+        error: (err) => {
+          console.error('Failed to remove from wishlist:', err);
+          this.showErrorToast('Не удалось удалить из wishlist');
+        },
+      });
+    }
+  }
+
+  // Handle item removed animation complete (from search tab)
+  onItemRemoved(tobaccoId: string) {
+    // Find the wishlist item and remove it via API
+    const wishlistItem = this.wishlist().find(wi => wi.tobaccoId === tobaccoId);
+    if (!wishlistItem) {
+      console.error('Wishlist item not found for tobacco:', tobaccoId);
+      // Don't return - still try to remove via API (item might not be in wishlist yet)
+      // Try to get item ID from tobaccoId directly
+      this.wishlistService.removeFromWishlistByTobaccoId(tobaccoId).subscribe({
+        next: () => {
+          // Item removed successfully, refresh wishlist
+          this.loadWishlist();
+          this.showSuccessToast('Удалено из wishlist');
+        },
+        error: (err) => {
+          console.error('Failed to remove from wishlist:', err);
+          this.showErrorToast('Не удалось удалить из wishlist');
+        },
+      });
+      return;
+    }
+
+    this.wishlistService.removeFromWishlist(wishlistItem.id).subscribe({
       next: () => {
-        this.wishlist.update((items) => items.filter(i => i.id !== itemId));
+        this.wishlist.update((items) => items.filter(i => i.id !== wishlistItem.id));
         this.showSuccessToast('Удалено из wishlist');
       },
       error: (err) => {
