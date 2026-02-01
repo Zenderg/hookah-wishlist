@@ -86,6 +86,14 @@
 - Telegram Mini Apps SDK integration
 - Angular Material v21.1.1 with Material 3 theming configured in `styles.scss`
 
+### Local Development
+- **Mock User Support**: For local development without Telegram context, the app provides a mock user:
+  - Mock Telegram ID: `'123456789'`
+  - Mock username: `'mock_user'`
+  - Only active in development mode (`!environment.production`)
+  - Allows testing Wishlist tab and other features without Telegram Mini Apps context
+  - Implemented in [`AuthService.getMockTelegramId()`](frontend/src/app/services/auth.service.ts:47) and [`getUsername()`](frontend/src/app/services/auth.service.ts:75)
+
 ## Database
 
 ### SQLite

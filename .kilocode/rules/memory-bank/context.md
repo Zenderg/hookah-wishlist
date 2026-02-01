@@ -243,7 +243,20 @@ The project structure has been initialized. Source code files have been created 
      - Responsive design with media queries
      - Hover effects on cards (shadow elevation)
      - Toast notification styles (success/error)
-   - Project builds successfully with warnings about bundle size (754.09 kB, budget 500 kB)
+    - Project builds successfully with warnings about bundle size (754.09 kB, budget 500 kB)
+- **Implemented local development mock user support**:
+  - Added mock Telegram ID (`'123456789'`) and mock username (`'mock_user'`) for local development
+  - Updated [`AuthService.getTelegramId()`](frontend/src/app/services/auth.service.ts:28) to fall back to mock user when Telegram context is unavailable
+  - Updated [`AuthService.getUsername()`](frontend/src/app/services/auth.service.ts:75) to return mock username for local development
+  - Added [`AuthService.getMockTelegramId()`](frontend/src/app/services/auth.service.ts:47) private method for mock ID generation
+  - Mock user is only active in development mode (`!environment.production`)
+  - Allows testing Wishlist tab locally without Telegram Mini Apps context
+- **Fixed WishlistController HTTP method decorators**:
+  - Updated [`getWishlist()`](backend/src/wishlist/wishlist.controller.ts:9) to use `@Query('telegramId')` instead of `@Body()` for GET request
+  - Updated [`removeFromWishlist()`](backend/src/wishlist/wishlist.controller.ts:24) to use `@Query('telegramId')` instead of `@Body()` for DELETE request
+  - Added `Query` decorator import from `@nestjs/common`
+  - Fixes error "Cannot read properties of undefined (reading 'telegramId')" when switching to Wishlist tab
+  - Backend and frontend build successfully, all 57 backend tests pass
 
 ## Next Steps
 

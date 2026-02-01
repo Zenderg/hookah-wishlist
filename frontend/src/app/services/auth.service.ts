@@ -35,11 +35,23 @@ export class AuthService {
         return telegramId;
       }
 
-      return '';
+      // Fallback to localStorage or mock user for local development
+      return localStorage.getItem('telegramId') || this.getMockTelegramId();
     } catch (error) {
       console.error('Failed to get Telegram ID:', error);
-      return localStorage.getItem('telegramId') || '';
+      // Fallback to localStorage or mock user for local development
+      return localStorage.getItem('telegramId') || this.getMockTelegramId();
     }
+  }
+
+  private getMockTelegramId(): string {
+    // Use mock user only in development mode
+    if (!environment.production) {
+      const mockId = '123456789'; // Mock Telegram ID for local development
+      console.warn('Using mock Telegram ID for local development:', mockId);
+      return mockId;
+    }
+    return '';
   }
 
   validateUser(telegramId: string, username?: string): Observable<User> {
@@ -66,6 +78,10 @@ export class AuthService {
       return user?.username;
     } catch (error) {
       console.error('Failed to get username:', error);
+      // Return mock username for local development
+      if (!environment.production) {
+        return 'mock_user';
+      }
       return undefined;
     }
   }

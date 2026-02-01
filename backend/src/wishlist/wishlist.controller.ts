@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { WishlistService } from './wishlist.service';
 import { AddToWishlistDto } from './dto/add-to-wishlist.dto';
 
@@ -7,8 +7,8 @@ export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
   @Get()
-  async getWishlist(@Body() body: { telegramId: string }) {
-    return this.wishlistService.getUserWishlist(body.telegramId);
+  async getWishlist(@Query('telegramId') telegramId: string) {
+    return this.wishlistService.getUserWishlist(telegramId);
   }
 
   @Post()
@@ -23,7 +23,7 @@ export class WishlistController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async removeFromWishlist(@Param('id') id: string, @Body() body: { telegramId: string }) {
-    return this.wishlistService.removeFromWishlist(id, body.telegramId);
+  async removeFromWishlist(@Param('id') id: string, @Query('telegramId') telegramId: string) {
+    return this.wishlistService.removeFromWishlist(id, telegramId);
   }
 }
