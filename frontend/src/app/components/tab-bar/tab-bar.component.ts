@@ -1,4 +1,4 @@
-import { Component, input, output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class TabBarComponent {
   activeTab = input<'search' | 'wishlist'>('search');
-  tabChange = new EventEmitter<'search' | 'wishlist'>();
+  tabChange = output<'search' | 'wishlist'>();
 
   onTabClick(tab: 'search' | 'wishlist') {
     this.tabChange.emit(tab);
