@@ -13,7 +13,7 @@ export class WishlistHandler {
     const telegramId = ctx.from?.id?.toString();
 
     if (!telegramId) {
-      await ctx.reply('❌ Unable to identify user. Please try again.');
+      await ctx.reply('❌ Не удалось определить пользователя. Попробуйте еще раз.');
       return;
     }
 
@@ -21,47 +21,47 @@ export class WishlistHandler {
 
     if (wishlist.length === 0) {
       const emptyMessage = `
-📭 <b>Your wishlist is empty</b>
+📭 <b>Ваш вишлист пуст</b>
 
-Use the mini-app to discover and add tobaccos to your wishlist!
+Используйте мини-приложение, чтобы найти и добавить табаки в ваш вишлист!
       `;
       await ctx.reply(emptyMessage, {
         parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '🔍 Discover Tobaccos',
-                url: process.env.TELEGRAM_MINI_APP_URL || 'https://t.me/your_bot/your_app',
-              },
-            ],
-          ],
-        },
       });
       return;
     }
 
-    let message = `📋 <b>Your Wishlist (${wishlist.length} items)</b>\n\n`;
+    let message = `📋 <b>Ваш вишлист (${wishlist.length} элементов)</b>\n\n`;
 
     // Fetch tobacco details for each wishlist item
     for (const [index, item] of wishlist.entries()) {
-      const date = new Date(item.createdAt).toLocaleDateString('en-US', {
+      const date = new Date(item.createdAt).toLocaleDateString('ru-RU', {
         month: 'short',
         day: 'numeric',
       });
 
       try {
         const tobacco = await this.hookahDbService.getTobaccoById(item.tobaccoId);
+        let brandName = 'Неизвестный бренд';
+
+        try {
+          const brand = await this.hookahDbService.getBrandById(tobacco.brandId);
+          brandName = brand.name;
+        } catch (brandError) {
+          // If brand fetch fails, use default text
+        }
+
         message += `${index + 1}. <b>${tobacco.name}</b>\n`;
-        message += `   📅 Added: ${date}\n\n`;
+        message += `   🏭 Бренд: ${brandName}\n`;
+        message += `   📅 Добавлен: ${date}\n\n`;
       } catch (error) {
         // If tobacco fetch fails, show tobacco ID as fallback
         message += `${index + 1}. <b>${item.tobaccoId}</b>\n`;
-        message += `   📅 Added: ${date}\n\n`;
+        message += `   📅 Добавлен: ${date}\n\n`;
       }
     }
 
-    message += `💡 <b>Tip:</b> Show this list at a tobacco shop to help staff find your desired tobaccos.`;
+    message += `💡 <b>Совет:</b> Покажите этот список в магазине табаков, чтобы помочь сотрудникам найти желаемые табаки.`;
 
     await ctx.reply(message, {
       parse_mode: 'HTML',

@@ -25,18 +25,9 @@ describe('StartHandler', () => {
       await handler.handle(mockCtx);
 
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining('Welcome to Hookah Wishlist!'),
+        expect.stringContaining('Добро пожаловать в Hookah Wishlist!'),
         expect.objectContaining({
           parse_mode: 'HTML',
-          reply_markup: expect.objectContaining({
-            inline_keyboard: expect.arrayContaining([
-              expect.arrayContaining([
-                expect.objectContaining({
-                  text: '🔍 Open Mini-App',
-                }),
-              ]),
-            ]),
-          }),
         }),
       );
     });

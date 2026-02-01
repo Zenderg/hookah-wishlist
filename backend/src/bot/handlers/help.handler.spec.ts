@@ -25,7 +25,7 @@ describe('HelpHandler', () => {
       await handler.handle(mockCtx);
 
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining('How to use Hookah Wishlist'),
+        expect.stringContaining('Как использовать Hookah Wishlist'),
         expect.objectContaining({
           parse_mode: 'HTML',
         }),
@@ -40,11 +40,11 @@ describe('HelpHandler', () => {
       await handler.handle(mockCtx);
 
       const message = mockCtx.reply.mock.calls[0][0];
-      expect(message).toContain('Discover Tobaccos');
-      expect(message).toContain('Save to Wishlist');
-      expect(message).toContain('View Your Wishlist');
-      expect(message).toContain('Visit a Tobacco Shop');
-      expect(message).toContain('Tips');
+      expect(message).toContain('Найти табаки');
+      expect(message).toContain('Сохранить в вишлист');
+      expect(message).toContain('Посмотреть ваш вишлист');
+      expect(message).toContain('Посетить магазин табаков');
+      expect(message).toContain('Советы');
     });
   });
 });

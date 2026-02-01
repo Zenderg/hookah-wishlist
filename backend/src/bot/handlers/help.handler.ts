@@ -4,33 +4,33 @@ import { Injectable } from '@nestjs/common';
 export class HelpHandler {
   async handle(ctx: any) {
     const helpMessage = `
-📖 <b>How to use Hookah Wishlist</b>
+📖 <b>Как использовать Hookah Wishlist</b>
 
-<b>1. Discover Tobaccos</b>
-• Use the mini-app to search for tobaccos
-• Filter by brand to find specific flavors
-• View detailed information about each tobacco
+<b>1. Найти табаки</b>
+• Используйте мини-приложение для поиска табаков
+• Фильтруйте по бренду, чтобы найти определенные вкусы
+• Просматривайте подробную информацию о каждом табаке
 
-<b>2. Save to Wishlist</b>
-• Click the "Add" button on any tobacco
-• Your wishlist is saved automatically
+<b>2. Сохранить в вишлист</b>
+• Нажмите кнопку "Добавить" на любом табаке
+• Ваш вишлист сохраняется автоматически
 
-<b>3. View Your Wishlist</b>
-• Use the /wishlist command to see all saved tobaccos
-• Items are sorted by date added (newest first)
+<b>3. Посмотреть ваш вишлист</b>
+• Используйте команду /wishlist, чтобы увидеть все сохраненные табаки
+• Элементы отсортированы по дате добавления (сначала новые)
 
-<b>4. Visit a Tobacco Shop</b>
-• Open Telegram and send /wishlist
-• Show your wishlist to the shop staff
-• Purchase your desired tobaccos
+<b>4. Посетить магазин табаков</b>
+• Откройте Telegram и отправьте /wishlist
+• Покажите свой вишлист сотрудникам магазина
+• Купите желаемые табаки
 
-💡 <b>Tips:</b>
-• The mini-app works best in Telegram
-• Your wishlist is linked to your Telegram account
-• No registration required!
+💡 <b>Советы:</b>
+• Мини-приложение лучше всего работает в Telegram
+• Ваш вишлист привязан к вашему аккаунту Telegram
+• Регистрация не требуется!
 
-❓ <b>Need help?</b>
-Contact support for assistance.
+❓ <b>Нужна помощь?</b>
+Свяжитесь с поддержкой для получения помощи.
     `;
 
     await ctx.reply(helpMessage, {

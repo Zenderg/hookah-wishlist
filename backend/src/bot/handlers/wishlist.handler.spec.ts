@@ -27,6 +27,7 @@ describe('WishlistHandler', () => {
 
     const mockHookahDbService = {
       getTobaccoById: jest.fn(),
+      getBrandById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -62,7 +63,7 @@ describe('WishlistHandler', () => {
       await handler.handle(mockCtx);
 
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        '❌ Unable to identify user. Please try again.',
+        '❌ Не удалось определить пользователя. Попробуйте еще раз.',
       );
       expect(wishlistService.getUserWishlist).not.toHaveBeenCalled();
     });
@@ -79,18 +80,9 @@ describe('WishlistHandler', () => {
 
       expect(wishlistService.getUserWishlist).toHaveBeenCalledWith('123456789');
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining('Your wishlist is empty'),
+        expect.stringContaining('Ваш вишлист пуст'),
         expect.objectContaining({
           parse_mode: 'HTML',
-          reply_markup: expect.objectContaining({
-            inline_keyboard: expect.arrayContaining([
-              expect.arrayContaining([
-                expect.objectContaining({
-                  text: '🔍 Discover Tobaccos',
-                }),
-              ]),
-            ]),
-          }),
         }),
       );
     });
@@ -126,6 +118,17 @@ describe('WishlistHandler', () => {
         },
       ];
 
+      const mockBrands = [
+        {
+          id: 'brand-1',
+          name: 'Starbuzz',
+        },
+        {
+          id: 'brand-2',
+          name: 'Al Fakher',
+        },
+      ];
+
       const mockCtx = {
         from: { id: 123456789 },
         reply: jest.fn().mockResolvedValue({}),
@@ -135,12 +138,15 @@ describe('WishlistHandler', () => {
       hookahDbService.getTobaccoById.mockImplementation((id) => {
         return Promise.resolve(mockTobaccos.find(t => t.id === id) as any);
       });
+      hookahDbService.getBrandById.mockImplementation((id) => {
+        return Promise.resolve(mockBrands.find(b => b.id === id) as any);
+      });
 
       await handler.handle(mockCtx);
 
       expect(wishlistService.getUserWishlist).toHaveBeenCalledWith('123456789');
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining('Your Wishlist (2 items)'),
+        expect.stringContaining('Ваш вишлист (2 элементов)'),
         expect.objectContaining({
           parse_mode: 'HTML',
         }),
@@ -149,6 +155,9 @@ describe('WishlistHandler', () => {
       const message = mockCtx.reply.mock.calls[0][0];
       expect(message).toContain('Mint Chocolate');
       expect(message).toContain('Blueberry Muffin');
+      expect(message).toContain('Starbuzz');
+      expect(message).toContain('Al Fakher');
+      expect(message).toContain('🏭 Бренд:');
     });
 
     it('should display items in the order returned by service', async () => {
