@@ -64,6 +64,11 @@ export class SearchTabComponent implements OnInit {
   availableCountries = signal<string[]>([]);
   loadingFilters = signal(false);
 
+  // Computed: Check if any filters are active
+  hasActiveFilters = computed(() => {
+    return this.selectedStatus() !== '' || this.selectedCountry() !== '';
+  });
+
   ngOnInit() {
     this.loadFilters();
     this.setupSearchDebounce();
@@ -97,10 +102,16 @@ export class SearchTabComponent implements OnInit {
     this.showFilterModal.set(false);
   }
 
-  onApplyFilters() {
+  onStatusChange(status: string) {
+    this.selectedStatus.set(status);
     this.currentPage.set(1);
     this.loadTobaccos();
-    this.showFilterModal.set(false);
+  }
+
+  onCountryChange(country: string) {
+    this.selectedCountry.set(country);
+    this.currentPage.set(1);
+    this.loadTobaccos();
   }
 
   onResetFilters() {

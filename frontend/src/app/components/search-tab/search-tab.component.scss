@@ -30,6 +30,18 @@
 
 .filter-button {
   flex-shrink: 0;
+  position: relative;
+}
+
+.filter-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--mat-sys-primary);
+  border-radius: 50%;
+  border: 2px solid var(--mat-sys-surface);
 }
 
 /* Main content */
