@@ -297,7 +297,26 @@ The project is in a mature state with a fully functional MVP. The application ha
   - Modified [`WishlistService.removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) to automatically create user if they don't exist
   - Updated tests in [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) to verify new behavior
   - All 57 backend tests pass, both backend and frontend build successfully
-  - This makes the wishlist service more robust and provides better user experience
+   - This makes the wishlist service more robust and provides better user experience
+- **Fixed animation issue when removing tobacco from wishlist on search tab**:
+   - Root cause: `onRemoveFromWishlist()` was emitting `itemRemoved` event immediately without waiting for API call, so `removingFromWishlist` signal was never cleared
+   - Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts):
+     - Changed input from `wishlistTobaccoIds` to `wishlistItems` (full wishlist items)
+     - Added computed property `wishlistTobaccoIds` to derive IDs from items
+     - Updated `onRemoveFromWishlist()` to make API call directly (like `onAddToWishlist()`)
+     - Method now finds wishlist item by tobaccoId and calls `removeFromWishlist(item.id)`
+     - Clears `removingFromWishlist` signal when API call completes (success or error)
+     - Shows checkmark animation for 1.5 seconds after successful removal
+     - Removed unused `itemRemoved` output
+   - Updated [`AppComponent`](frontend/src/app/app.component.ts):
+     - Updated `onRemoveFromWishlist()` to handle new flow where search tab makes API call
+     - Now just updates local state and shows success toast (no duplicate API call)
+     - Removed unused `onItemRemoved()` method
+   - Updated [`app.component.html`](frontend/src/app/app.component.html):
+     - Changed input from `wishlistTobaccoIds` to `wishlistItems`
+     - Removed unused `itemRemoved` event handler
+   - Removed incorrect `removeFromWishlistByTobaccoId()` method from [`WishlistService`](frontend/src/app/services/wishlist.service.ts) (uses non-existent endpoint)
+   - Animation flow now works correctly: shrink animation → API call → clear animation → checkmark → update state
 
    ## Next Steps
 

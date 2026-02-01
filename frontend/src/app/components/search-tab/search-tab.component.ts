@@ -36,12 +36,11 @@ export class SearchTabComponent implements OnInit {
   private brandCacheService = inject(BrandCacheService);
 
   // Inputs
-  wishlistTobaccoIds = input.required<Set<string>>();
+  wishlistItems = input.required<WishlistItem[]>();
 
   // Outputs
   addToWishlist = output<WishlistItem>();
   removeFromWishlist = output<Tobacco | WishlistItem>();
-  itemRemoved = output<string>(); // Emit when item removal animation is complete
 
   // Search state
   searchQuery = signal('');
@@ -52,9 +51,12 @@ export class SearchTabComponent implements OnInit {
   tobaccos = signal<Tobacco[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
-  addingToWishlist = signal<Set<string>>(new Set());
-  removingFromWishlist = signal<Set<string>>(new Set());
-  itemsWithCheckmark = signal<Set<string>>(new Set());
+  addingToWishlist = signal<Set<string>>(new Set<string>());
+  removingFromWishlist = signal<Set<string>>(new Set<string>());
+  itemsWithCheckmark = signal<Set<string>>(new Set<string>());
+
+  // Computed: Get wishlist tobacco IDs from wishlist items
+  wishlistTobaccoIds = computed(() => new Set(this.wishlistItems().map(item => item.tobaccoId)));
 
   // Pagination state
   currentPage = signal(1);
@@ -260,22 +262,58 @@ export class SearchTabComponent implements OnInit {
   }
 
   onRemoveFromWishlist(item: Tobacco | WishlistItem) {
-    let tobaccoId: string;
+    let wishlistItem: WishlistItem | undefined;
 
     if ('tobaccoId' in item) {
       // It's a WishlistItem
-      tobaccoId = (item as WishlistItem).tobaccoId;
+      wishlistItem = item as WishlistItem;
     } else {
-      // It's a Tobacco object
-      tobaccoId = (item as Tobacco).id;
+      // It's a Tobacco object - find the wishlist item
+      const tobacco = item as Tobacco;
+      wishlistItem = this.wishlistItems().find(wi => wi.tobaccoId === tobacco.id);
     }
+
+    if (!wishlistItem) {
+      console.error('Wishlist item not found for tobacco:', item);
+      return;
+    }
+
+    const tobaccoId = wishlistItem.tobaccoId;
 
     // Show removing state
     this.removingFromWishlist.update((set) => new Set(set).add(tobaccoId));
 
-    // Emit itemRemoved event immediately to trigger API call in parent
-    // Parent will handle API call and then remove item from wishlistTobaccoIds
-    this.itemRemoved.emit(tobaccoId);
+    // Make API call directly to control animation lifecycle
+    this.wishlistService.removeFromWishlist(wishlistItem.id).subscribe({
+      next: () => {
+        // Clear removing state (card returns to normal)
+        this.removingFromWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobaccoId);
+          return newSet;
+        });
+        // Show checkmark animation for 1.5 seconds
+        this.itemsWithCheckmark.update((set) => new Set(set).add(tobaccoId));
+        setTimeout(() => {
+          this.itemsWithCheckmark.update((set) => {
+            const newSet = new Set(set);
+            newSet.delete(tobaccoId);
+            return newSet;
+          });
+        }, 1500);
+        // Notify parent to update wishlist state
+        this.removeFromWishlist.emit(wishlistItem);
+      },
+      error: (err) => {
+        console.error('Failed to remove from wishlist:', err);
+        // Clear removing state (card returns to normal)
+        this.removingFromWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobaccoId);
+          return newSet;
+        });
+      },
+    });
   }
 
   private loadBrandNamesForTobaccos(tobaccos: Tobacco[]) {

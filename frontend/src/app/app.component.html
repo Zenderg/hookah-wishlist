@@ -2,10 +2,9 @@
   <!-- Search Tab -->
   @if (activeTab() === 'search') {
     <app-search-tab
-      [wishlistTobaccoIds]="wishlistTobaccoIds()"
+      [wishlistItems]="wishlist()"
       (addToWishlist)="onAddToWishlist($event)"
       (removeFromWishlist)="onRemoveFromWishlist($event)"
-      (itemRemoved)="onItemRemoved($event)"
     />
   }
 
