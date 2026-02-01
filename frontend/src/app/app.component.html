@@ -153,7 +153,8 @@
             <app-wishlist-card
               [item]="item"
               [tobaccoName]="getTobaccoName(item.tobaccoId)"
-              [brandName]="getBrandName(item.tobaccoId)"
+              [brandName]="getBrandNameByTobaccoId(item.tobaccoId)"
+              [imageUrl]="getTobaccoImageUrl(item.tobaccoId)"
               [formattedDate]="formatDate(item.createdAt)"
               [removing]="removingFromWishlist().has(item.id)"
               [withCheckmark]="itemsWithCheckmark().has(item.id)"

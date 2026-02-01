@@ -16,8 +16,16 @@ export class WishlistCardComponent {
   item = input.required<WishlistItem>();
   tobaccoName = input.required<string>();
   brandName = input.required<string>();
+  imageUrl = input.required<string>();
   formattedDate = input.required<string>();
   removing = input<boolean>(false);
   withCheckmark = input<boolean>(false);
   markAsPurchased = output<WishlistItem>();
+
+  onImageError(event: Event) {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = 'https://via.placeholder.com/80';
+    }
+  }
 }

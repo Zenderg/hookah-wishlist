@@ -4,7 +4,7 @@
   [class.removing]="removing()"
 >
   <img
-    [src]="'https://via.placeholder.com/80'"
+    [src]="imageUrl() || 'https://via.placeholder.com/80'"
     [alt]="tobaccoName()"
     class="wishlist-image"
     loading="lazy"

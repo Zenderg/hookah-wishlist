@@ -275,8 +275,13 @@ export class AppComponent implements OnInit, OnDestroy {
   // Tab navigation
   onTabChange(tab: 'search' | 'wishlist') {
     this.activeTab.set(tab);
-    if (tab === 'wishlist' && this.wishlist().length === 0 && !this.wishlistLoading()) {
-      this.loadWishlist();
+    if (tab === 'wishlist') {
+      if (this.wishlist().length === 0 && !this.wishlistLoading()) {
+        this.loadWishlist();
+      } else if (this.wishlist().length > 0) {
+        // Load brand names for existing wishlist items
+        this.loadBrandNamesForWishlist(this.wishlist());
+      }
     }
   }
 
@@ -369,6 +374,19 @@ export class AppComponent implements OnInit, OnDestroy {
   getTobaccoName(tobaccoId: string): string {
     const tobacco = this.tobaccoCache().get(tobaccoId);
     return tobacco?.name || tobaccoId;
+  }
+
+  getTobaccoImageUrl(tobaccoId: string): string {
+    const tobacco = this.tobaccoCache().get(tobaccoId);
+    return tobacco?.imageUrl || 'https://via.placeholder.com/80';
+  }
+
+  getBrandNameByTobaccoId(tobaccoId: string): string {
+    const tobacco = this.tobaccoCache().get(tobaccoId);
+    if (tobacco?.brandId) {
+      return this.getBrandName(tobacco.brandId);
+    }
+    return tobaccoId;
   }
 
   formatDate(dateString: string): string {
