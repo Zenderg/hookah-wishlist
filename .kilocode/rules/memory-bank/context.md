@@ -187,6 +187,23 @@ The project structure has been initialized. Source code files have been created 
    - Updated HTML template to use `tobaccos` instead of `flavors`
    - Updated SCSS file to use `.tobaccos-list`, `.tobacco-card`, `.tobacco-info`, `.tobacco-name`, `.tobacco-brand` classes
    - Both frontend and backend build successfully
+- **Created comprehensive UI design specification** in [`docs/frontend-ui-design.md`](docs/frontend-ui-design.md):
+   - Design philosophy: Minimalist Apple-inspired, cold palette (Telegram-like), modern sans-serif typography
+   - Single page design with floating bottom tab bar (text-only tabs: "Поиск" and "Wishlist")
+   - Search tab: search bar + filter button, tobacco cards in vertical list
+   - Wishlist tab: compact cards with mark-as-purchased button (removes from wishlist)
+   - Filter modal: center modal with rounded corners, filters for status and country only
+   - Card design: square image on left, name, brand, rating (e.g., "4.5 (123)")
+   - Add to wishlist: small button in bottom-right corner (heart icon)
+   - Mark as purchased: button with icon (checkmark), shows checkmark before card disappears
+   - NO gestures (swipe actions removed, all interactions via buttons only)
+   - Animations: smooth tab transitions, hover effects, skeleton loading, checkmark animation
+   - Loading: infinite scroll, skeleton screens
+   - Error handling: toast notifications at bottom
+   - Empty states: minimalist text only
+   - Card spacing: 12-16px between cards
+   - Card styling: medium border radius (12-16px), subtle shadow
+   - Typography: modern sans-serif (Inter/SF Pro style)
 - **Deleted all UI components**:
   - Removed [`SearchComponent`](frontend/src/app/components/search/) directory (search.component.ts, .html, .scss)
   - Removed [`WishlistComponent`](frontend/src/app/components/wishlist/) directory (wishlist.component.ts, .html, .scss)
@@ -199,13 +216,25 @@ The project structure has been initialized. Source code files have been created 
 
 ## Next Steps
 
-1. **Design new UI** for the mini-app:
+1. **Implement new UI** for the mini-app based on design specification:
    - Previous UI implementation was unsatisfactory and had too many problems
-   - Need to design a more detailed and user-friendly interface
+   - Design specification created in [`docs/frontend-ui-design.md`](docs/frontend-ui-design.md)
    - Angular Material v21.1.1 is available for use in the new UI
    - Services (AuthService, WishlistService, HookahDbService) are ready and can be reused
+   - Design philosophy: Minimalist Apple-inspired, cold palette (Telegram-like), modern sans-serif typography
 
-2. **Implement new UI components** based on the detailed design
+2. **Implement UI components** following design specification:
+   - Single page design with floating bottom tab bar (text-only tabs)
+   - Search tab with search bar, filter button, tobacco cards
+   - Wishlist tab with compact cards and mark-as-purchased functionality
+   - Filter modal (center modal with rounded corners)
+   - Skeleton loading for data fetching
+   - Infinite scroll for pagination
+   - Toast notifications for errors
+   - Hover effects on cards
+   - Smooth tab transitions
+   - Checkmark animation when removing from wishlist
+   - NO gestures (all interactions via buttons only)
 
 3. **Test mini-app UI** with new API integration
 
