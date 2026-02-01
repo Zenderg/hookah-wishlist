@@ -1,0 +1,27 @@
+<div class="tobacco-card">
+  <img
+    [src]="tobacco().imageUrl"
+    [alt]="tobacco().name"
+    class="tobacco-image"
+    loading="lazy"
+  />
+  <div class="tobacco-info">
+    <h3 class="tobacco-name">{{ tobacco().name }}</h3>
+    <p class="tobacco-brand">Бренд: {{ tobacco().brandId }}</p>
+    <p class="tobacco-rating">
+      {{ tobacco().rating }} ({{ tobacco().ratingsCount }})
+    </p>
+  </div>
+  <button
+    mat-icon-button
+    class="add-button"
+    (click)="addToWishlist.emit(tobacco())"
+    [disabled]="adding()"
+  >
+    @if (!adding()) {
+      <mat-icon>favorite_border</mat-icon>
+    } @else {
+      <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+    }
+  </button>
+</div>

@@ -1,0 +1,63 @@
+/* Tobacco card */
+.tobacco-card {
+  display: flex;
+  background-color: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  box-shadow: var(--mat-sys-level1);
+  padding: 12px;
+  gap: 12px;
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.tobacco-card:hover {
+  box-shadow: var(--mat-sys-level2);
+}
+
+.tobacco-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--mat-sys-corner-small);
+  flex-shrink: 0;
+}
+
+.tobacco-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+
+.tobacco-name {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+  margin: 0;
+  font-weight: 600;
+}
+
+.tobacco-brand {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+.tobacco-rating {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+.add-button {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  color: var(--mat-sys-primary);
+}
+
+.button-spinner {
+  width: 20px;
+  height: 20px;
+}

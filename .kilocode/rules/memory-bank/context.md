@@ -204,41 +204,59 @@ The project structure has been initialized. Source code files have been created 
    - Card spacing: 12-16px between cards
    - Card styling: medium border radius (12-16px), subtle shadow
    - Typography: modern sans-serif (Inter/SF Pro style)
-- **Deleted all UI components**:
-  - Removed [`SearchComponent`](frontend/src/app/components/search/) directory (search.component.ts, .html, .scss)
-  - Removed [`WishlistComponent`](frontend/src/app/components/wishlist/) directory (wishlist.component.ts, .html, .scss)
-  - Removed [`components/`](frontend/src/app/components/) directory
-  - Cleaned up [`app.routes.ts`](frontend/src/app/app.routes.ts) to remove all routes
-  - Kept Angular Material v21.1.1 dependencies and theming for new UI
-  - Services (AuthService, WishlistService, HookahDbService) remain intact and can be reused
-  - Previous UI implementation was unsatisfactory and had too many problems
-  - Will design a new, more detailed and user-friendly interface
+ - **Deleted all UI components**:
+   - Removed [`SearchComponent`](frontend/src/app/components/search/) directory (search.component.ts, .html, .scss)
+   - Removed [`WishlistComponent`](frontend/src/app/components/wishlist/) directory (wishlist.component.ts, .html, .scss)
+   - Removed [`components/`](frontend/src/app/components/) directory
+   - Cleaned up [`app.routes.ts`](frontend/src/app/app.routes.ts) to remove all routes
+   - Kept Angular Material v21.1.1 dependencies and theming for new UI
+   - Services (AuthService, WishlistService, HookahDbService) remain intact and can be reused
+   - Previous UI implementation was unsatisfactory and had too many problems
+   - Will design a new, more detailed and user-friendly interface
+- **Implemented Search Tab UI** in main component:
+- **Decomposed app.component into smaller components**:
+   - Created [`TabBarComponent`](frontend/src/app/components/tab-bar/) - floating bottom navigation bar
+   - Created [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) - reusable tobacco card
+   - Created [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/) - reusable wishlist card
+   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) to use new components
+   - Updated [`app.component.html`](frontend/src/app/app.component.html) to use component selectors
+   - Updated [`app.component.scss`](frontend/src/app/app.component.scss) to remove duplicate styles
+   - Project builds successfully with warnings about bundle size (764.01 kB, budget 500 kB)
+   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) with search functionality
+   - Implemented debounced search (300ms) for optimized API requests
+   - Added signals for state management: `searchQuery`, `tobaccos`, `loading`, `error`, `addingToWishlist`
+   - Implemented pagination state: `currentPage`, `totalPages`, `hasMore` (computed)
+   - Added filter state: `selectedStatus`, `selectedCountry`, `availableStatuses`, `availableCountries`
+   - Implemented infinite scroll with `onLoadMore()` method
+   - Implemented `onAddToWishlist()` method with loading indicator
+   - Added toast notifications via MatSnackBar for success/error states
+   - Updated [`app.component.html`](frontend/src/app/app.component.html) with search UI:
+     - Search bar with icon and filter button
+     - Vertical list of tobacco cards with 12px spacing
+     - Card design: image (80x80px), name, brand, rating, add button (heart icon)
+     - Loading states: spinner for initial load, spinner for "load more"
+     - Error state: message with retry button
+     - Empty state: "Ничего не найдено" text
+     - Filter modal: status and country dropdowns, apply/reset buttons
+   - Updated [`app.component.scss`](frontend/src/app/app.component.scss) with Material Design 3 tokens:
+     - Uses `--mat-sys-*` CSS variables for theming
+     - Responsive design with media queries
+     - Hover effects on cards (shadow elevation)
+     - Toast notification styles (success/error)
+   - Project builds successfully with warnings about bundle size (754.09 kB, budget 500 kB)
 
 ## Next Steps
 
-1. **Implement new UI** for the mini-app based on design specification:
-   - Previous UI implementation was unsatisfactory and had too many problems
-   - Design specification created in [`docs/frontend-ui-design.md`](docs/frontend-ui-design.md)
-   - Angular Material v21.1.1 is available for use in the new UI
-   - Services (AuthService, WishlistService, HookahDbService) are ready and can be reused
-   - Design philosophy: Minimalist Apple-inspired, cold palette (Telegram-like), modern sans-serif typography
+1. **Test mini-app UI** with new API integration
 
-2. **Implement UI components** following design specification:
-   - Single page design with floating bottom tab bar (text-only tabs)
-   - Search tab with search bar, filter button, tobacco cards
-   - Wishlist tab with compact cards and mark-as-purchased functionality
-   - Filter modal (center modal with rounded corners)
-   - Skeleton loading for data fetching
-   - Infinite scroll for pagination
-   - Toast notifications for errors
-   - Hover effects on cards
-   - Smooth tab transitions
-   - Checkmark animation when removing from wishlist
-   - NO gestures (all interactions via buttons only)
+2. **Deploy using Docker Compose**
 
-3. **Test mini-app UI** with new API integration
+## Optional improvements (future work)
 
-4. **Deploy using Docker Compose**
+- Skeleton loading states (replace spinners with skeleton cards)
+- Extract filter modal to separate component
+- Display brand name instead of UUID (requires API call)
+- Add NgOptimizedImage for image optimization
 
 ## Known Decisions
 

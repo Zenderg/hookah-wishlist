@@ -1,0 +1,34 @@
+<div
+  class="wishlist-card"
+  [class.with-checkmark]="withCheckmark()"
+  [class.removing]="removing()"
+>
+  <img
+    [src]="'https://via.placeholder.com/80'"
+    [alt]="item().tobaccoName"
+    class="wishlist-image"
+    loading="lazy"
+  />
+  <div class="wishlist-info">
+    <h3 class="wishlist-name">{{ item().tobaccoName }}</h3>
+    <p class="wishlist-brand">Бренд: {{ brandName() }}</p>
+    <p class="wishlist-date">{{ formattedDate() }}</p>
+  </div>
+  <button
+    mat-icon-button
+    class="mark-purchased-button"
+    (click)="markAsPurchased.emit(item())"
+    [disabled]="removing()"
+  >
+    @if (!removing()) {
+      <mat-icon>check_circle</mat-icon>
+    } @else {
+      <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+    }
+  </button>
+  @if (withCheckmark()) {
+    <div class="checkmark-overlay">
+      <mat-icon class="checkmark-icon">check</mat-icon>
+    </div>
+  }
+</div>

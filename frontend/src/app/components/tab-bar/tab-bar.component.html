@@ -1,0 +1,16 @@
+<nav class="tab-bar">
+  <button
+    class="tab-button"
+    [class.active]="activeTab() === 'search'"
+    (click)="onTabClick('search')"
+  >
+    <span class="tab-text">Поиск</span>
+  </button>
+  <button
+    class="tab-button"
+    [class.active]="activeTab() === 'wishlist'"
+    (click)="onTabClick('wishlist')"
+  >
+    <span class="tab-text">Wishlist</span>
+  </button>
+</nav>
