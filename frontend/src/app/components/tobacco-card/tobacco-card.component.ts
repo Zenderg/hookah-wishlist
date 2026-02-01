@@ -1,4 +1,4 @@
-import { Component, input, output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,5 +15,5 @@ import type { Tobacco } from '../../services/hookah-db.service';
 export class TobaccoCardComponent {
   tobacco = input.required<Tobacco>();
   adding = input<boolean>(false);
-  addToWishlist = new EventEmitter<Tobacco>();
+  addToWishlist = output<Tobacco>();
 }

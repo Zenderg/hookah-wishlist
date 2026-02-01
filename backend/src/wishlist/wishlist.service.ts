@@ -29,12 +29,17 @@ export class WishlistService {
   }
 
   async addToWishlist(telegramId: string, tobaccoId: string, tobaccoName: string): Promise<WishlistItem> {
-    const user = await this.userRepository.findOne({
+    let user = await this.userRepository.findOne({
       where: { telegramId },
     });
 
+    // Create user if they don't exist (for better UX, especially with mock users)
     if (!user) {
-      throw new NotFoundException('User not found');
+      user = this.userRepository.create({
+        telegramId,
+        username: null, // Username will be updated when user validates via auth endpoint
+      });
+      await this.userRepository.save(user);
     }
 
     const existingItem = await this.wishlistRepository.findOne({
@@ -55,12 +60,17 @@ export class WishlistService {
   }
 
   async removeFromWishlist(id: string, telegramId: string): Promise<void> {
-    const user = await this.userRepository.findOne({
+    let user = await this.userRepository.findOne({
       where: { telegramId },
     });
 
+    // Create user if they don't exist (for better UX, especially with mock users)
     if (!user) {
-      throw new NotFoundException('User not found');
+      user = this.userRepository.create({
+        telegramId,
+        username: null, // Username will be updated when user validates via auth endpoint
+      });
+      await this.userRepository.save(user);
     }
 
     const wishlistItem = await this.wishlistRepository.findOne({

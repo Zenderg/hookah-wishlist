@@ -256,9 +256,16 @@ The project structure has been initialized. Source code files have been created 
   - Updated [`removeFromWishlist()`](backend/src/wishlist/wishlist.controller.ts:24) to use `@Query('telegramId')` instead of `@Body()` for DELETE request
   - Added `Query` decorator import from `@nestjs/common`
   - Fixes error "Cannot read properties of undefined (reading 'telegramId')" when switching to Wishlist tab
-  - Backend and frontend build successfully, all 57 backend tests pass
+   - Backend and frontend build successfully, all 57 backend tests pass
+- **Fixed tobacco card add button click issue**:
+   - Updated [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts:18) to use modern `output()` syntax instead of `new EventEmitter()`
+   - Added `z-index: 10` to `.add-button` in [`tobacco-card.component.scss`](frontend/src/app/components/tobacco-card/tobacco-card.component.scss:57) to prevent overlap issues
+   - Replaced heart icon `favorite_border` with plus icon `add` in [`tobacco-card.component.html`](frontend/src/app/components/tobacco-card/tobacco-card.component.html:22)
+   - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:21) to use modern `output()` syntax
+   - Removed `$any()` type assertions from events in [`app.component.html`](frontend/src/app/app.component.html) for better type safety
+   - Root causes: old EventEmitter syntax, missing z-index, poor type typing with `$any()`
 
-## Next Steps
+  ## Next Steps
 
 1. **Test mini-app UI** with new API integration
 

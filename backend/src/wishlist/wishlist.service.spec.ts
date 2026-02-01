@@ -21,6 +21,8 @@ describe('WishlistService', () => {
 
   const mockUserRepository = {
     findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -111,12 +113,45 @@ describe('WishlistService', () => {
     const tobaccoId = 'tobacco-1';
     const tobaccoName = 'Tobacco 1';
 
-    it('should throw NotFoundException when user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+    it('should create user and new wishlist item when user not found', async () => {
+      const user = {
+        id: 1,
+        telegramId: '123456789',
+        username: null,
+        createdAt: new Date(),
+      };
 
-      await expect(service.addToWishlist(telegramId, tobaccoId, tobaccoName)).rejects.toThrow(
-        NotFoundException,
-      );
+      const newItem = {
+        id: 1,
+        userId: 1,
+        tobaccoId: 'tobacco-1',
+        tobaccoName: 'Tobacco 1',
+        createdAt: new Date(),
+      };
+
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // First call for user lookup
+      mockUserRepository.create.mockReturnValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+      mockWishlistRepository.findOne.mockResolvedValue(null); // Check for existing item
+      mockWishlistRepository.create.mockReturnValue(newItem);
+      mockWishlistRepository.save.mockResolvedValue(newItem);
+
+      const result = await service.addToWishlist(telegramId, tobaccoId, tobaccoName);
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { telegramId },
+      });
+      expect(mockUserRepository.create).toHaveBeenCalledWith({
+        telegramId,
+        username: null,
+      });
+      expect(mockUserRepository.save).toHaveBeenCalledWith(user);
+      expect(mockWishlistRepository.create).toHaveBeenCalledWith({
+        userId: user.id,
+        tobaccoId,
+        tobaccoName,
+      });
+      expect(result).toEqual(newItem);
     });
 
     it('should return existing item if already in wishlist', async () => {
@@ -192,12 +227,31 @@ describe('WishlistService', () => {
     const telegramId = '123456789';
     const itemId = '1';
 
-    it('should throw NotFoundException when user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+    it('should create user when not found and throw NotFoundException for missing item', async () => {
+      const user = {
+        id: 1,
+        telegramId: '123456789',
+        username: null,
+        createdAt: new Date(),
+      };
+
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // First call for user lookup
+      mockUserRepository.create.mockReturnValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+      mockWishlistRepository.findOne.mockResolvedValue(null); // Item not found
 
       await expect(service.removeFromWishlist(itemId, telegramId)).rejects.toThrow(
         NotFoundException,
       );
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { telegramId },
+      });
+      expect(mockUserRepository.create).toHaveBeenCalledWith({
+        telegramId,
+        username: null,
+      });
+      expect(mockUserRepository.save).toHaveBeenCalledWith(user);
     });
 
     it('should throw NotFoundException when wishlist item not found', async () => {
