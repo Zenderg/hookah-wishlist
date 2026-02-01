@@ -22,6 +22,7 @@
 - `class-validator` (v0.14.x) - Input validation decorators
 - `class-transformer` (v0.5.x) - Object transformation
 - `reflect-metadata` (v0.2.x) - Required for decorators
+- `@tma.js/init-data-node` (v2.0.6) - Telegram Mini Apps init data parsing and validation (backend)
 
 ### Development Dependencies
 - `@nestjs/cli` - NestJS CLI for project generation
@@ -291,12 +292,21 @@ The project uses the new Angular application builder (`@angular/build:applicatio
 - CORS configuration for Telegram Mini Apps
 - API key authentication for hookah-db integration
 - Environment variable management for sensitive data
+- Telegram Mini Apps init data validation using `@tma.js/init-data-node`:
+  - Validates signature using bot token
+  - Extracts user data (telegramId, username)
+  - Finds or creates user in database
+  - Updates username if it has changed
 
 ### Frontend
 - Content Security Policy (CSP)
 - HTTPS required for Telegram Mini Apps
 - Secure storage of API keys (environment variables)
 - Input sanitization
+- Telegram Mini Apps SDK integration with `@tma.js/sdk`:
+  - Automatically includes `X-Telegram-Init-Data` header in all HTTP requests via interceptor
+  - Retrieves raw init data using `retrieveRawInitData()` function
+  - Initializes SDK before bootstrapping app via `init()` function
 
 ## Performance
 

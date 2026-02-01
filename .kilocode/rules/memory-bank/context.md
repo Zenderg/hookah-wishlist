@@ -38,6 +38,26 @@ The project is in a mature state with a fully functional MVP. The application ha
 
 ## Recent Changes
 
+- **Implemented Telegram Mini Apps init data validation**:
+  - Added `@tma.js/init-data-node` (v2.0.6) dependency to backend
+  - Created [`ValidateInitDataDto`](backend/src/auth/dto/validate-init-data.dto.ts) for init data validation
+  - Added [`validateInitData()`](backend/src/auth/auth.service.ts:46) method to [`AuthService`](backend/src/auth/auth.service.ts):
+    - Parses Telegram Mini Apps init data using `@tma.js/init-data-node`
+    - Validates signature using bot token (throws error if invalid)
+    - Extracts user data (telegramId, username)
+    - Finds or creates user in database
+    - Updates username if it has changed
+  - Added `validate-init-data` endpoint to [`AuthController`](backend/src/auth/auth.controller.ts:16):
+    - Accepts init data from either header (`X-Telegram-Init-Data`) or body
+    - Calls `validateInitData()` service method
+- **Implemented init data interceptor in frontend**:
+  - Created [`initDataInterceptor`](frontend/src/app/interceptors/init-data.interceptor.ts:10) to automatically include `X-Telegram-Init-Data` header in all HTTP requests
+  - Reads init data from localStorage
+  - Registered interceptor in [`main.ts`](frontend/src/main.ts:16) with `provideHttpClient(withInterceptors([initDataInterceptor]))`
+- **Updated frontend AuthService**:
+  - Added [`getInitDataRaw()`](frontend/src/app/services/auth.service.ts:28) method using `retrieveRawInitData()` from `@tma.js/sdk`
+  - Added [`authenticateWithInitData()`](frontend/src/app/services/auth.service.ts:101) method to call new `/auth/validate-init-data` endpoint
+  - Updated [`main.ts`](frontend/src/main.ts:8) to initialize Telegram Mini Apps SDK with `init()` before bootstrapping the app
 - **Fixed bot not responding issue**: Bot was initialized but never started to receive updates from Telegram
   - Added [`BotService.launch()`](backend/src/bot/bot.service.ts:52) method to start bot with polling
   - Updated [`main.ts`](backend/src/main.ts:29) to launch bot after application starts

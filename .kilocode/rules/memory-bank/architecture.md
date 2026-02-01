@@ -24,18 +24,19 @@ The application follows a client-server architecture with three main components:
 │  ┌─────────────────────────────────┐  │
 │  │  Auth Module                    │  │
 │  │  - Telegram user ID validation  │  │
+│  │  - Init data validation         │  │
 │  └─────────────────────────────────┘  │
 │  ┌─────────────────────────────────┐  │
 │  │  Wishlist Module                │  │
 │  │  - CRUD operations              │  │
 │  │  - User-specific data           │  │
 │  └─────────────────────────────────┘  │
- │  ┌─────────────────────────────────┐  │
- │  │  HookahDb Module (Proxy)       │  │
- │  │  - Proxy to hookah-db API      │  │
- │  │  - Brands endpoint             │  │
- │  │  - Tobaccos endpoint           │  │
- │  └─────────────────────────────────┘  │
+│  ┌─────────────────────────────────┐  │
+│  │  HookahDb Module (Proxy)       │  │
+│  │  - Proxy to hookah-db API      │  │
+│  │  - Brands endpoint             │  │
+│  │  - Tobaccos endpoint           │  │
+│  └─────────────────────────────────┘  │
 └────────┬──────────────────────────────┘
          │
          │ HTTP/REST (internal)
@@ -96,8 +97,8 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 ### Data Flow
 
 1. **User Discovery Flow**:
-   - User opens mini-app → Telegram sends user data
-   - Mini-app validates user via API
+   - User opens mini-app → Telegram sends user data (init data)
+   - Mini-app validates user via API using init data
    - User searches tobaccos → Mini-app calls backend API → Backend proxies request to hookah-db API
    - User adds tobacco → API stores in SQLite
 
@@ -146,6 +147,12 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 - hookah-db API provides comprehensive endpoints for all tobacco/brand operations
 - API key is stored securely on backend, not exposed to frontend
 
+### Why Telegram Mini Apps Init Data Validation?
+- **Security**: Validates that init data comes from legitimate Telegram source using signature verification
+- **User Authentication**: Extracts user ID from init data for secure authentication
+- **Flexibility**: Accepts init data from either header or body for different client implementations
+- **Automatic User Creation**: Creates users automatically if they don't exist in database
+
 ## Source Code Paths
 
 ```
@@ -157,11 +164,16 @@ hookah-wishlist/
 │   │   ├── auth/
 │   │   │   ├── auth.module.ts
 │   │   │   ├── auth.controller.ts
-│   │   │   └── auth.service.ts
+│   │   │   ├── auth.service.ts
+│   │   │   └── dto/
+│   │   │       ├── validate-user.dto.ts
+│   │   │       └── validate-init-data.dto.ts
 │   │   ├── wishlist/
 │   │   │   ├── wishlist.module.ts
 │   │   │   ├── wishlist.controller.ts
 │   │   │   ├── wishlist.service.ts
+│   │   │   ├── dto/
+│   │   │   │   └── add-to-wishlist.dto.ts
 │   │   │   └── entities/
 │   │   │       └── wishlist-item.entity.ts
 │   │   ├── bot/
@@ -171,6 +183,10 @@ hookah-wishlist/
 │   │   │       ├── start.handler.ts
 │   │   │       ├── help.handler.ts
 │   │   │       └── wishlist.handler.ts
+│   │   ├── hookah-db/
+│   │   │   ├── hookah-db.module.ts
+│   │   │   ├── hookah-db.controller.ts
+│   │   │   └── hookah-db.service.ts
 │   │   └── database/
 │   │       ├── database.module.ts
 │   │       ├── entities/
@@ -219,6 +235,8 @@ hookah-wishlist/
   │   │   │   ├── hookah-db.service.ts
   │   │   │   ├── brand-cache.service.ts    # Brand name caching
   │   │   │   └── tobacco-cache.service.ts  # Tobacco details caching
+  │   │   ├── interceptors/
+  │   │   │   └── init-data.interceptor.ts  # HTTP interceptor for Telegram init data
   │   │   ├── environments/
   │   │   ├── index.html
   │   │   ├── main.ts
@@ -238,6 +256,7 @@ hookah-wishlist/
 
 ### Authentication
 - `POST /api/auth/validate` - Validate Telegram user data
+- `POST /api/auth/validate-init-data` - Validate Telegram Mini Apps init data (accepts init data from header `X-Telegram-Init-Data` or body)
 
 ### Wishlist
 - `GET /api/wishlist` - Get user's wishlist
@@ -284,6 +303,7 @@ The backend provides proxy endpoints to hookah-db API to avoid CORS issues:
 ## Security Considerations
 
 - Telegram user ID is the primary authentication mechanism
+- Telegram Mini Apps init data is validated using signature verification
 - No sensitive data stored beyond user ID and username
 - HTTPS required for all API communications
 - Input validation on all endpoints
