@@ -364,28 +364,60 @@ The project structure has been initialized. Source code files have been created 
      - Solution 2: Added [`getTobaccoImageUrl()`](frontend/src/app/app.component.ts:376-381) method in [`AppComponent`](frontend/src/app/app.component.ts:376-381) to get image URL from tobacco cache
      - Solution 3: Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:7) template to use `[src]="imageUrl() || 'https://via.placeholder.com/80'"` with fallback to placeholder if URL is invalid
 
-   - **Implementation verified**:
-     - Backend compiles successfully without errors
-     - Frontend compiles successfully without errors
-     - No console errors when switching to search tab
-     - No console errors when switching to wishlist tab
-     - Network requests work correctly:
-       - `/api/hookah-db/tobaccos/statuses` - [200] OK
-       - `/api/hookah-db/brands/countries` - [200] OK
-       - `/api/hookah-db/tobaccos?page=1&limit=20` - [200] OK
-       - `/api/wishlist?telegramId=test-user-123` - [200] OK
-       - `/api/hookah-db/tobaccos/{id}` - Fetches tobacco details for wishlist items ✓
-       - `/api/hookah-db/brands/{id}` - Fetches brand names for wishlist items ✓
-     - All data displays correctly:
-       - Tobacco name displays correctly
-       - Brand name displays correctly (not UUID!)
-       - Date displays correctly
-       - Tobacco image loads correctly from API
-       - No errors in console
+    - **Implementation verified**:
+      - Backend compiles successfully without errors
+      - Frontend compiles successfully without errors
+      - No console errors when switching to search tab
+      - No console errors when switching to wishlist tab
+      - Network requests work correctly:
+        - `/api/hookah-db/tobaccos/statuses` - [200] OK
+        - `/api/hookah-db/brands/countries` - [200] OK
+        - `/api/hookah-db/tobaccos?page=1&limit=20` - [200] OK
+        - `/api/wishlist?telegramId=test-user-123` - [200] OK
+        - `/api/hookah-db/tobaccos/{id}` - Fetches tobacco details for wishlist items ✓
+        - `/api/hookah-db/brands/{id}` - Fetches brand names for wishlist items ✓
+      - All data displays correctly:
+        - Tobacco name displays correctly
+        - Brand name displays correctly (not UUID!)
+        - Date displays correctly
+        - Tobacco image loads correctly from API
+        - No errors in console
+
+   - **Implemented skeleton loading for initial load** (2026-02-01):
+     - Created [`SkeletonCardComponent`](frontend/src/app/components/skeleton-card/skeleton-card.component.ts) - reusable skeleton card component
+     - Skeleton card structure matches tobacco card layout:
+       - Square image placeholder (80x80px) on left
+       - Name placeholder (70% width)
+       - Brand placeholder (50% width)
+       - Rating placeholder (30% width)
+       - Button placeholder (40x40px circle) on right
+     - Shimmer animation effect using CSS `@keyframes shimmer`:
+       - Linear gradient animation from left to right
+       - Semi-transparent white highlight (30% opacity)
+       - 1.5s animation duration, infinite loop
+     - Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts) to use skeleton cards:
+       - Replaced spinner with 5 skeleton cards for initial load
+       - Kept spinner for "loading more" state (pagination)
+       - Added `dataReady()` computed signal to track when all data (tobaccos + brand names) is loaded
+       - Updated skeleton condition: show when loading OR data not ready
+       - Updated real cards condition: show when not loading AND data ready
+       - Added `.skeleton-list` CSS class with 12px gap
+     - Updated [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/wishlist-tab.component.ts) to use skeleton cards:
+       - Replaced spinner with 5 skeleton cards for initial load
+       - Added `dataReady()` computed signal to track when all data (tobacco details + brand names + images) is loaded
+       - Updated skeleton condition: show when loading OR data not ready
+       - Updated real cards condition: show when not loading AND data ready
+       - Added `.skeleton-list` CSS class with 12px gap
+     - Fixed visual glitch issue:
+       - **Problem**: Real cards were appearing before their data (tobacco details, brand names, images) was ready
+       - **Symptoms**: UUIDs appeared instead of names, broken images, then normal data appeared
+       - **Solution**: Added `dataReady()` computed signals to track when ALL data is loaded
+       - **Result**: Skeleton cards now show until all data is ready, preventing visual glitches
+     - Frontend builds successfully without errors (773.56 kB bundle)
+     - Skeleton loading improves perceived performance and user experience
+     - Matches UI design specification: "Skeleton loading: Placeholder cards while loading data"
 
    ## Optional improvements (future work)
-
-- Skeleton loading states (replace spinners with skeleton cards)
 - Extract filter modal to separate component
 - Display brand name instead of UUID (requires API call)
 - Add NgOptimizedImage for image optimization

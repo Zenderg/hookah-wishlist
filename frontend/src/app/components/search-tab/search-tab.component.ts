@@ -10,6 +10,7 @@ import { HookahDbService, type Tobacco, type PaginatedResponse } from '../../ser
 import { WishlistService, type WishlistItem } from '../../services/wishlist.service';
 import { BrandCacheService } from '../../services/brand-cache.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
+import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 
 @Component({
   selector: 'app-search-tab',
@@ -22,6 +23,7 @@ import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
     MatProgressSpinnerModule,
     MatSelectModule,
     TobaccoCardComponent,
+    SkeletonCardComponent,
   ],
   templateUrl: './search-tab.component.html',
   styleUrls: ['./search-tab.component.scss'],
@@ -67,6 +69,18 @@ export class SearchTabComponent implements OnInit {
   // Computed: Check if any filters are active
   hasActiveFilters = computed(() => {
     return this.selectedStatus() !== '' || this.selectedCountry() !== '';
+  });
+
+  // Computed: Check if all data is ready (tobaccos have brand names)
+  dataReady = computed(() => {
+    const tobaccoList = this.tobaccos();
+    if (tobaccoList.length === 0) return false;
+    // Check if all tobaccos have brand names loaded
+    return tobaccoList.every((tobacco) => {
+      const brandName = this.getBrandName(tobacco.brandId);
+      // Data is ready if brand name is not the UUID
+      return brandName !== tobacco.brandId;
+    });
   });
 
   ngOnInit() {

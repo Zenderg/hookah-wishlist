@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, input, output } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -8,6 +8,7 @@ import { BrandCacheService } from '../../services/brand-cache.service';
 import { TobaccoCacheService } from '../../services/tobacco-cache.service';
 import { type Tobacco } from '../../services/hookah-db.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
+import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 
 @Component({
   selector: 'app-wishlist-tab',
@@ -17,6 +18,7 @@ import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
     MatButtonModule,
     MatProgressSpinnerModule,
     TobaccoCardComponent,
+    SkeletonCardComponent,
   ],
   templateUrl: './wishlist-tab.component.html',
   styleUrls: ['./wishlist-tab.component.scss'],
@@ -36,6 +38,22 @@ export class WishlistTabComponent implements OnInit {
   wishlistError = signal<string | null>(null);
   removingFromWishlist = signal<Set<string>>(new Set());
   itemsWithCheckmark = signal<Set<string>>(new Set());
+  dataReady = computed(() => {
+    const items = this.wishlist();
+    if (items.length === 0) return false;
+    // Check if all items have tobacco details and brand names
+    return items.every((item) => {
+      const tobaccoName = this.getTobaccoName(item.tobaccoId);
+      const brandName = this.getBrandNameByTobaccoId(item.tobaccoId);
+      const imageUrl = this.getTobaccoImageUrl(item.tobaccoId);
+      // Data is ready if we have tobacco name (not UUID), brand name (not UUID), and image URL
+      return (
+        tobaccoName !== item.tobaccoId &&
+        brandName !== item.tobaccoId &&
+        imageUrl !== ''
+      );
+    });
+  });
 
   ngOnInit() {
     this.loadWishlist();

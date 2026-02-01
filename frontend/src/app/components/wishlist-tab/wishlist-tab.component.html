@@ -1,8 +1,10 @@
 <main class="main-content wishlist-content">
-  <!-- Loading state -->
-  @if (wishlistLoading()) {
-    <div class="loading-container">
-      <mat-spinner diameter="40"></mat-spinner>
+  <!-- Loading state - Skeleton cards -->
+  @if (wishlistLoading() || !dataReady()) {
+    <div class="skeleton-list">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <app-skeleton-card />
+      }
     </div>
   }
 
@@ -22,7 +24,7 @@
   }
 
   <!-- Wishlist items list -->
-  @if (!wishlistLoading() && !wishlistError() && wishlist().length > 0) {
+  @if (!wishlistLoading() && !wishlistError() && wishlist().length > 0 && dataReady()) {
     <div class="wishlist-list">
       @for (item of wishlist(); track item.id) {
         <app-tobacco-card
