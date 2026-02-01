@@ -58,9 +58,12 @@
 - `@angular/http` (v21.x) - HTTP client
 - `@angular/platform-browser` (v21.x) - Browser platform
 - `@angular/platform-browser-dynamic` (v21.x) - Dynamic browser platform
+- `@angular/animations` (v21.x) - Animation support
+- `@angular/cdk` (v21.x) - Angular Component Development Kit
+- `@angular/material` (v21.x) - Material Design components
 - `rxjs` (v7.x) - Reactive Extensions for JavaScript
 - `zone.js` (v0.15.x) - Zone.js for change detection
-- `@telegram-apps/sdk` (v2.x) - Telegram Mini Apps SDK
+- `@tma.js/sdk` (v3.1.6) - Telegram Mini Apps SDK
 - `axios` (v1.x) - HTTP client for API calls
 
 ### Development Dependencies
@@ -81,6 +84,7 @@
 - Environment-specific configuration in `environments/` directory
 - TypeScript configuration in `tsconfig.json`
 - Telegram Mini Apps SDK integration
+- Angular Material v21.1.1 with Material 3 theming configured in `styles.scss`
 
 ## Database
 

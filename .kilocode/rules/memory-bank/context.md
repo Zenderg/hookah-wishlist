@@ -184,22 +184,32 @@ The project structure has been initialized. Source code files have been created 
   - Changed `Flavor` type to `Tobacco` type
   - Updated to handle `PaginatedResponse<Tobacco>` structure (extracts `response.data`)
   - Added `getBrandName()` method to display brand name from brand ID
-  - Updated HTML template to use `tobaccos` instead of `flavors`
-  - Updated SCSS file to use `.tobaccos-list`, `.tobacco-card`, `.tobacco-info`, `.tobacco-name`, `.tobacco-brand` classes
-  - Both frontend and backend build successfully
+   - Updated HTML template to use `tobaccos` instead of `flavors`
+   - Updated SCSS file to use `.tobaccos-list`, `.tobacco-card`, `.tobacco-info`, `.tobacco-name`, `.tobacco-brand` classes
+   - Both frontend and backend build successfully
+- **Deleted all UI components**:
+  - Removed [`SearchComponent`](frontend/src/app/components/search/) directory (search.component.ts, .html, .scss)
+  - Removed [`WishlistComponent`](frontend/src/app/components/wishlist/) directory (wishlist.component.ts, .html, .scss)
+  - Removed [`components/`](frontend/src/app/components/) directory
+  - Cleaned up [`app.routes.ts`](frontend/src/app/app.routes.ts) to remove all routes
+  - Kept Angular Material v21.1.1 dependencies and theming for new UI
+  - Services (AuthService, WishlistService, HookahDbService) remain intact and can be reused
+  - Previous UI implementation was unsatisfactory and had too many problems
+  - Will design a new, more detailed and user-friendly interface
 
 ## Next Steps
 
-1. **Update SearchComponent** to support new features:
-   - Add line filtering option
-   - Implement pagination
-   - Add sorting by rating and name
-   - Add rating range filter
-   - Add country and status filters
+1. **Design new UI** for the mini-app:
+   - Previous UI implementation was unsatisfactory and had too many problems
+   - Need to design a more detailed and user-friendly interface
+   - Angular Material v21.1.1 is available for use in the new UI
+   - Services (AuthService, WishlistService, HookahDbService) are ready and can be reused
 
-2. **Test mini-app UI** with new API integration
+2. **Implement new UI components** based on the detailed design
 
-3. **Deploy using Docker Compose**
+3. **Test mini-app UI** with new API integration
+
+4. **Deploy using Docker Compose**
 
 ## Known Decisions
 

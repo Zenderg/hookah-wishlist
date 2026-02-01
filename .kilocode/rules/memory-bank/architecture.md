@@ -181,27 +181,23 @@ hookah-wishlist/
 │   ├── tsconfig.json
 │   └── nest-cli.json
 │
-├── frontend/                   # Angular frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── app.component.ts
-│   │   │   ├── app.component.html
-│   │   │   ├── app.component.scss
-│   │   │   ├── services/
-│   │   │   │   ├── auth.service.ts
-│   │   │   │   ├── wishlist.service.ts
-│   │   │   │   └── hookah-db.service.ts
-│   │   │   ├── components/
-│   │   │   │   ├── search/
-│   │   │   │   ├── wishlist/
-│   │   │   │   └── shared/
-│   │   │   └── models/
-│   │   ├── environments/
-│   │   ├── index.html
-│   │   └── main.ts
-│   ├── package.json
-│   ├── angular.json
-│   └── tsconfig.json
+ ├── frontend/                   # Angular frontend
+ │   ├── src/
+ │   │   ├── app/
+ │   │   │   ├── app.component.ts
+ │   │   │   ├── app.component.html
+ │   │   │   ├── app.component.scss
+ │   │   │   ├── services/
+ │   │   │   │   ├── auth.service.ts
+ │   │   │   │   ├── wishlist.service.ts
+ │   │   │   │   └── hookah-db.service.ts
+ │   │   │   └── models/
+ │   │   ├── environments/
+ │   │   ├── index.html
+ │   │   └── main.ts
+ │   ├── package.json
+ │   ├── angular.json
+ │   └── tsconfig.json
 │
 ├── docker-compose.yml
 ├── Dockerfile.backend
