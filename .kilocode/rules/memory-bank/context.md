@@ -264,6 +264,13 @@ The project structure has been initialized. Source code files have been created 
    - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:21) to use modern `output()` syntax
    - Removed `$any()` type assertions from events in [`app.component.html`](frontend/src/app/app.component.html) for better type safety
    - Root causes: old EventEmitter syntax, missing z-index, poor type typing with `$any()`
+- **Fixed "User not found" error when adding tobacco to wishlist**:
+  - Root cause: Frontend uses mock Telegram ID (`'123456789'`) for local development, but user was never created in database
+  - Modified [`WishlistService.addToWishlist()`](backend/src/wishlist/wishlist.service.ts:31) to automatically create user if they don't exist
+  - Modified [`WishlistService.removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) to automatically create user if they don't exist
+  - Updated tests in [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) to verify new behavior
+  - All 57 backend tests pass, both backend and frontend build successfully
+  - This makes the wishlist service more robust and provides better user experience
 
   ## Next Steps
 
