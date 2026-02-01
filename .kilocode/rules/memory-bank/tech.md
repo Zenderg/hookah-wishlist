@@ -40,7 +40,7 @@
 ### Configuration
 - Environment variables via `backend/.env` file (use `backend/.env.example` as template)
 - TypeORM configuration for SQLite
-- Telegraf configuration for Telegram bot webhook
+- Telegraf configuration for Telegram bot polling
 - Swagger/OpenAPI documentation enabled
 
 ## Frontend (Angular)
@@ -254,6 +254,7 @@ NODE_ENV=development
 DATABASE_PATH=./data/wishlist.db
 
 # Telegram Bot
+# The bot uses polling to receive updates from Telegram
 TELEGRAM_BOT_TOKEN=your-bot-token-here
 
 # CORS
@@ -268,7 +269,7 @@ HOOKAH_DB_API_KEY=your-api-key-here
 
 **Important**: For Docker deployment, environment variables are passed via build arguments in [`docker-compose.yml`](docker-compose.yml). The Dockerfile uses Angular CLI's `--define` option to replace values at build time. This allows passing different values for `API_URL` without editing the environment files directly. The project uses the new Angular application builder (`@angular/build:application`) which supports build-time value replacement via the `--define` option. Global constants are declared in [`types.d.ts`](frontend/src/types.d.ts) and used in environment files with fallback values.
 
-**Note**: The frontend no longer needs `HOOKAH_DB_API_KEY` as it calls the backend, which proxies requests to the hookah-db API. Also, `TELEGRAM_WEBHOOK_URL` is not currently used as the bot does not have a webhook endpoint configured.
+**Note**: The frontend no longer needs `HOOKAH_DB_API_KEY` as it calls the backend, which proxies requests to the hookah-db API. Also, `TELEGRAM_WEBHOOK_URL` is not currently used as the bot uses polling to receive updates from Telegram.
 
 ### Frontend
 Frontend uses Angular's environment configuration files, not `.env` files:

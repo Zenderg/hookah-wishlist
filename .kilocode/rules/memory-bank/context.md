@@ -38,6 +38,12 @@ The project is in a mature state with a fully functional MVP. The application ha
 
 ## Recent Changes
 
+- **Fixed bot not responding issue**: Bot was initialized but never started to receive updates from Telegram
+  - Added [`BotService.launch()`](backend/src/bot/bot.service.ts:52) method to start bot with polling
+  - Updated [`main.ts`](backend/src/main.ts:29) to launch bot after application starts
+  - Added graceful shutdown handlers (SIGTERM, SIGINT) for proper bot termination
+  - Updated [`backend/.env.example`](backend/.env.example) with polling documentation
+  - All 57 backend tests pass, backend builds successfully
 - Memory bank initialization completed
 - **Architecture change**: Updated documentation to reflect proxy pattern for hookah-db API integration
   - Backend will now proxy requests to hookah-db API to avoid CORS issues
@@ -320,8 +326,7 @@ The project is in a mature state with a fully functional MVP. The application ha
 
    ## Next Steps
 
-1. **Test mini-app UI** with new API integration
-
+1. **Deploy backend with polling** - Bot now uses polling to receive updates from Telegram
 2. **Deploy using Docker Compose**
 
 
@@ -340,3 +345,4 @@ The project is in a mature state with a fully functional MVP. The application ha
 - Must use SQLite for data persistence
 - Must be deployable via Docker Compose
 - Must use npm as package manager
+- Bot uses polling (not webhook) to receive updates from Telegram

@@ -14,9 +14,10 @@ The application follows a client-server architecture with three main components:
 ┌─────────────────┐
 │  Telegram Bot   │
 │   (NestJS)      │
+│  (Polling)      │
 └────────┬────────┘
          │
-         │ Webhook
+         │ Updates
          │
 ┌────────▼─────────────────────────────┐
 │       REST API (NestJS)               │
