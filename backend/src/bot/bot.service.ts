@@ -47,4 +47,16 @@ export class BotService {
   getBot(): Telegraf<Context> {
     return this.bot;
   }
+
+  async launch(): Promise<void> {
+    this.logger.log('Launching Telegram bot with polling...');
+    await this.bot.launch();
+    this.logger.log('Telegram bot is running and listening for updates');
+  }
+
+  async stop(): Promise<void> {
+    this.logger.log('Stopping Telegram bot...');
+    await this.bot.stop();
+    this.logger.log('Telegram bot stopped');
+  }
 }

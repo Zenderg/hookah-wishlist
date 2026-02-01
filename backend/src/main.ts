@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { BotService } from './bot/bot.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
   
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe({
@@ -23,6 +25,10 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Application is running on: http://localhost:${port}`);
+
+  // Launch Telegram bot with polling
+  const botService = app.get(BotService);
+  await botService.launch();
 }
 bootstrap();
