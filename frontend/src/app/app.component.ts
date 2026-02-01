@@ -76,6 +76,7 @@ export class AppComponent implements OnInit, OnDestroy {
   wishlistError = signal<string | null>(null);
   removingFromWishlist = signal<Set<string>>(new Set());
   itemsWithCheckmark = signal<Set<string>>(new Set());
+  wishlistTobaccoIds = computed(() => new Set(this.wishlist().map(item => item.tobaccoId)));
 
   // Brand cache for displaying brand names
   brandCache = signal<Map<string, string>>(new Map());
@@ -84,6 +85,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadFilters();
     this.setupSearchDebounce();
     this.loadTobaccos();
+    this.loadWishlist();
   }
 
   ngOnDestroy() {
@@ -194,12 +196,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.addingToWishlist.set(new Set(addingSet).add(tobacco.id));
 
     this.wishlistService.addToWishlist(tobacco.id, tobacco.name).subscribe({
-      next: () => {
+      next: (item) => {
         this.addingToWishlist.update((set) => {
           const newSet = new Set(set);
           newSet.delete(tobacco.id);
           return newSet;
         });
+        this.wishlist.update((items) => [...items, item]);
         this.showSuccessToast('Добавлено в wishlist');
       },
       error: (err) => {
@@ -210,6 +213,38 @@ export class AppComponent implements OnInit, OnDestroy {
           return newSet;
         });
         this.showErrorToast('Не удалось добавить в wishlist');
+      },
+    });
+  }
+
+  onRemoveFromWishlist(tobacco: Tobacco) {
+    const wishlistItem = this.wishlist().find(item => item.tobaccoId === tobacco.id);
+    if (!wishlistItem) {
+      console.error('Wishlist item not found for tobacco:', tobacco.id);
+      return;
+    }
+
+    const addingSet = this.addingToWishlist();
+    this.addingToWishlist.set(new Set(addingSet).add(tobacco.id));
+
+    this.wishlistService.removeFromWishlist(wishlistItem.id).subscribe({
+      next: () => {
+        this.addingToWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobacco.id);
+          return newSet;
+        });
+        this.wishlist.update((items) => items.filter(item => item.id !== wishlistItem.id));
+        this.showSuccessToast('Удалено из wishlist');
+      },
+      error: (err) => {
+        console.error('Failed to remove from wishlist:', err);
+        this.addingToWishlist.update((set) => {
+          const newSet = new Set(set);
+          newSet.delete(tobacco.id);
+          return newSet;
+        });
+        this.showErrorToast('Не удалось удалить из wishlist');
       },
     });
   }

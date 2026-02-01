@@ -15,5 +15,15 @@ import type { Tobacco } from '../../services/hookah-db.service';
 export class TobaccoCardComponent {
   tobacco = input.required<Tobacco>();
   adding = input<boolean>(false);
+  inWishlist = input<boolean>(false);
   addToWishlist = output<Tobacco>();
+  removeFromWishlist = output<Tobacco>();
+
+  onButtonClick() {
+    if (this.inWishlist()) {
+      this.removeFromWishlist.emit(this.tobacco());
+    } else {
+      this.addToWishlist.emit(this.tobacco());
+    }
+  }
 }

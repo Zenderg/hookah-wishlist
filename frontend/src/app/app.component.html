@@ -56,7 +56,9 @@
             <app-tobacco-card
               [tobacco]="tobacco"
               [adding]="addingToWishlist().has(tobacco.id)"
+              [inWishlist]="wishlistTobaccoIds().has(tobacco.id)"
               (addToWishlist)="onAddToWishlist($event)"
+              (removeFromWishlist)="onRemoveFromWishlist($event)"
             />
           }
         </div>

@@ -15,11 +15,16 @@
   <button
     mat-icon-button
     class="add-button"
-    (click)="addToWishlist.emit(tobacco())"
+    [class.in-wishlist]="inWishlist()"
+    (click)="onButtonClick()"
     [disabled]="adding()"
   >
     @if (!adding()) {
-      <mat-icon>add</mat-icon>
+      @if (inWishlist()) {
+        <mat-icon>check_circle</mat-icon>
+      } @else {
+        <mat-icon>add</mat-icon>
+      }
     } @else {
       <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
     }

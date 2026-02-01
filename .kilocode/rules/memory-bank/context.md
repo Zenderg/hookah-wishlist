@@ -278,6 +278,26 @@ The project structure has been initialized. Source code files have been created 
 
 2. **Deploy using Docker Compose**
 
+## Recent Changes (2026-02-01)
+
+- **Implemented wishlist state tracking on tobacco cards in search tab**:
+  - Updated [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts) to support wishlist state and remove action
+  - Added `inWishlist` input to indicate if tobacco is in user's wishlist
+  - Added `removeFromWishlist` output event for handling removal from wishlist
+  - Button now shows different icons based on wishlist state:
+    - Plus icon (`add`) when tobacco is NOT in wishlist
+    - Check circle icon (`check_circle`) when tobacco IS in wishlist
+  - Updated [`TobaccoCardComponent HTML`](frontend/src/app/components/tobacco-card/tobacco-card.component.html) to use new inputs/outputs
+  - Updated [`TobaccoCardComponent SCSS`](frontend/src/app/components/tobacco-card/tobacco-card.component.scss) with `.in-wishlist` styling
+  - Modified [`AppComponent`](frontend/src/app/app.component.ts) to:
+    - Load wishlist on component initialization (not just when switching tabs)
+    - Track wishlist tobacco IDs via `wishlistTobaccoIds` computed property
+    - Handle `onRemoveFromWishlist()` event from tobacco cards
+    - Update wishlist signal after add/remove operations
+  - Updated [`AppComponent HTML`](frontend/src/app/app.component.html) to pass `inWishlist` and `removeFromWishlist` bindings to tobacco cards
+  - Both frontend and backend build successfully
+  - All 57 backend tests pass
+
 ## Optional improvements (future work)
 
 - Skeleton loading states (replace spinners with skeleton cards)
