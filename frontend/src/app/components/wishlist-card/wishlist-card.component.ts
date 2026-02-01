@@ -14,6 +14,7 @@ import type { WishlistItem } from '../../services/wishlist.service';
 })
 export class WishlistCardComponent {
   item = input.required<WishlistItem>();
+  tobaccoName = input.required<string>();
   brandName = input.required<string>();
   formattedDate = input.required<string>();
   removing = input<boolean>(false);

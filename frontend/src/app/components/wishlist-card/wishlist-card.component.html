@@ -5,12 +5,12 @@
 >
   <img
     [src]="'https://via.placeholder.com/80'"
-    [alt]="item().tobaccoName"
+    [alt]="tobaccoName()"
     class="wishlist-image"
     loading="lazy"
   />
   <div class="wishlist-info">
-    <h3 class="wishlist-name">{{ item().tobaccoName }}</h3>
+    <h3 class="wishlist-name">{{ tobaccoName() }}</h3>
     <p class="wishlist-brand">Бренд: {{ brandName() }}</p>
     <p class="wishlist-date">{{ formattedDate() }}</p>
   </div>

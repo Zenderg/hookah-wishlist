@@ -7,7 +7,6 @@ import { AuthService } from './auth.service';
 export interface WishlistItem {
   id: string;
   tobaccoId: string;
-  tobaccoName: string;
   createdAt: string;
 }
 
@@ -25,13 +24,12 @@ export class WishlistService {
     });
   }
 
-  addToWishlist(tobaccoId: string, tobaccoName: string): Observable<WishlistItem> {
+  addToWishlist(tobaccoId: string): Observable<WishlistItem> {
     const telegramId = this.authService.getTelegramId();
 
     return this.http.post<WishlistItem>(`${this.apiUrl}/wishlist`, {
       telegramId,
       tobaccoId,
-      tobaccoName,
     });
   }
 

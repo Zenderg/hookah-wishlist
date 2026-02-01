@@ -3,10 +3,12 @@ import { WishlistHandler } from './wishlist.handler';
 import { WishlistService } from '../../wishlist/wishlist.service';
 import { WishlistItem } from '../../wishlist/entities/wishlist-item.entity';
 import { User } from '../../database/entities/user.entity';
+import { HookahDbService } from '../../hookah-db/hookah-db.service';
 
 describe('WishlistHandler', () => {
   let handler: WishlistHandler;
   let wishlistService: jest.Mocked<Pick<WishlistService, 'getUserWishlist'>>;
+  let hookahDbService: jest.Mocked<Partial<HookahDbService>>;
 
   const mockUser: User = {
     id: 1,
@@ -23,6 +25,10 @@ describe('WishlistHandler', () => {
       removeFromWishlist: jest.fn(),
     };
 
+    const mockHookahDbService = {
+      getTobaccoById: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WishlistHandler,
@@ -30,11 +36,16 @@ describe('WishlistHandler', () => {
           provide: WishlistService,
           useValue: mockWishlistService,
         },
+        {
+          provide: HookahDbService,
+          useValue: mockHookahDbService,
+        },
       ],
     }).compile();
 
     handler = module.get<WishlistHandler>(WishlistHandler);
     wishlistService = mockWishlistService as jest.Mocked<Pick<WishlistService, 'getUserWishlist'>>;
+    hookahDbService = mockHookahDbService as jest.Mocked<Partial<HookahDbService>>;
   });
 
   it('should be defined', () => {
@@ -90,7 +101,6 @@ describe('WishlistHandler', () => {
           id: 1,
           userId: 1,
           tobaccoId: 'tobacco-1',
-          tobaccoName: 'Mint Chocolate',
           createdAt: new Date('2024-01-15'),
           user: mockUser,
         },
@@ -98,9 +108,21 @@ describe('WishlistHandler', () => {
           id: 2,
           userId: 1,
           tobaccoId: 'tobacco-2',
-          tobaccoName: 'Blueberry Muffin',
           createdAt: new Date('2024-01-20'),
           user: mockUser,
+        },
+      ];
+
+      const mockTobaccos = [
+        {
+          id: 'tobacco-1',
+          name: 'Mint Chocolate',
+          brandId: 'brand-1',
+        },
+        {
+          id: 'tobacco-2',
+          name: 'Blueberry Muffin',
+          brandId: 'brand-2',
         },
       ];
 
@@ -110,6 +132,9 @@ describe('WishlistHandler', () => {
       };
 
       wishlistService.getUserWishlist.mockResolvedValue(mockWishlistItems);
+      hookahDbService.getTobaccoById.mockImplementation((id) => {
+        return Promise.resolve(mockTobaccos.find(t => t.id === id) as any);
+      });
 
       await handler.handle(mockCtx);
 
@@ -131,18 +156,29 @@ describe('WishlistHandler', () => {
         {
           id: 1,
           userId: 1,
-          tobaccoId: 'tobacco-1',
-          tobaccoName: 'New Tobacco',
-          createdAt: new Date('2024-01-20'),
+          tobaccoId: 'tobacco-2',
+          createdAt: new Date('2024-01-10'),
           user: mockUser,
         },
         {
           id: 2,
           userId: 1,
-          tobaccoId: 'tobacco-2',
-          tobaccoName: 'Old Tobacco',
-          createdAt: new Date('2024-01-10'),
+          tobaccoId: 'tobacco-1',
+          createdAt: new Date('2024-01-20'),
           user: mockUser,
+        },
+      ];
+
+      const mockTobaccos = [
+        {
+          id: 'tobacco-2',
+          name: 'New Tobacco',
+          brandId: 'brand-2',
+        },
+        {
+          id: 'tobacco-1',
+          name: 'Old Tobacco',
+          brandId: 'brand-1',
         },
       ];
 
@@ -152,6 +188,9 @@ describe('WishlistHandler', () => {
       };
 
       wishlistService.getUserWishlist.mockResolvedValue(mockWishlistItems);
+      hookahDbService.getTobaccoById.mockImplementation((id) => {
+        return Promise.resolve(mockTobaccos.find(t => t.id === id) as any);
+      });
 
       await handler.handle(mockCtx);
 

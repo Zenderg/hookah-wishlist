@@ -17,7 +17,6 @@ export class WishlistController {
     return this.wishlistService.addToWishlist(
       addToWishlistDto.telegramId,
       addToWishlistDto.tobaccoId,
-      addToWishlistDto.tobaccoName,
     );
   }
 

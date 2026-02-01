@@ -28,7 +28,7 @@ export class WishlistService {
     });
   }
 
-  async addToWishlist(telegramId: string, tobaccoId: string, tobaccoName: string): Promise<WishlistItem> {
+  async addToWishlist(telegramId: string, tobaccoId: string): Promise<WishlistItem> {
     let user = await this.userRepository.findOne({
       where: { telegramId },
     });
@@ -53,7 +53,6 @@ export class WishlistService {
     const wishlistItem = this.wishlistRepository.create({
       userId: user.id,
       tobaccoId,
-      tobaccoName,
     });
 
     return this.wishlistRepository.save(wishlistItem);

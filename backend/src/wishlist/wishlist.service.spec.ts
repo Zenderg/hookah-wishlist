@@ -136,7 +136,7 @@ describe('WishlistService', () => {
       mockWishlistRepository.create.mockReturnValue(newItem);
       mockWishlistRepository.save.mockResolvedValue(newItem);
 
-      const result = await service.addToWishlist(telegramId, tobaccoId, tobaccoName);
+      const result = await service.addToWishlist(telegramId, tobaccoId);
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { telegramId },
@@ -173,7 +173,7 @@ describe('WishlistService', () => {
       mockUserRepository.findOne.mockResolvedValue(user);
       mockWishlistRepository.findOne.mockResolvedValue(existingItem);
 
-      const result = await service.addToWishlist(telegramId, tobaccoId, tobaccoName);
+      const result = await service.addToWishlist(telegramId, tobaccoId);
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { telegramId },
@@ -205,7 +205,7 @@ describe('WishlistService', () => {
       mockWishlistRepository.create.mockReturnValue(newItem);
       mockWishlistRepository.save.mockResolvedValue(newItem);
 
-      const result = await service.addToWishlist(telegramId, tobaccoId, tobaccoName);
+      const result = await service.addToWishlist(telegramId, tobaccoId);
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { telegramId },

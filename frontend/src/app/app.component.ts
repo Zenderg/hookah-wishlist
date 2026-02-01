@@ -81,6 +81,9 @@ export class AppComponent implements OnInit, OnDestroy {
   // Brand cache for displaying brand names
   brandCache = signal<Map<string, string>>(new Map());
 
+  // Tobacco details cache for displaying tobacco names and brand IDs
+  tobaccoCache = signal<Map<string, Tobacco>>(new Map());
+
   ngOnInit() {
     this.loadFilters();
     this.setupSearchDebounce();
@@ -195,7 +198,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const addingSet = this.addingToWishlist();
     this.addingToWishlist.set(new Set(addingSet).add(tobacco.id));
 
-    this.wishlistService.addToWishlist(tobacco.id, tobacco.name).subscribe({
+    this.wishlistService.addToWishlist(tobacco.id).subscribe({
       next: (item) => {
         this.addingToWishlist.update((set) => {
           const newSet = new Set(set);
@@ -302,19 +305,35 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private loadBrandNamesForWishlist(items: WishlistItem[]) {
-    const brandIds = [...new Set(items.map((item) => item.tobaccoId))];
-    const currentCache = this.brandCache();
+    const tobaccoIds = [...new Set(items.map((item) => item.tobaccoId))];
+    const currentTobaccoCache = this.tobaccoCache();
+    const currentBrandCache = this.brandCache();
 
-    brandIds.forEach((brandId) => {
-      if (!currentCache.has(brandId)) {
-        this.hookahDbService.getBrandById(brandId).subscribe({
-          next: (brand) => {
-            this.brandCache.update((cache) => new Map(cache).set(brandId, brand.name));
+    tobaccoIds.forEach((tobaccoId) => {
+      if (!currentTobaccoCache.has(tobaccoId)) {
+        // Fetch tobacco details first to get brandId
+        this.hookahDbService.getTobaccoById(tobaccoId).subscribe({
+          next: (tobacco) => {
+            // Cache tobacco details
+            this.tobaccoCache.update((cache) => new Map(cache).set(tobaccoId, tobacco));
+
+            // Fetch brand name using brandId from tobacco
+            const brandId = tobacco.brandId;
+            if (brandId && !currentBrandCache.has(brandId)) {
+              this.hookahDbService.getBrandById(brandId).subscribe({
+                next: (brand) => {
+                  this.brandCache.update((cache) => new Map(cache).set(brandId, brand.name));
+                },
+                error: (err) => {
+                  console.error(`Failed to load brand ${brandId}:`, err);
+                  // Use brand ID as fallback name
+                  this.brandCache.update((cache) => new Map(cache).set(brandId, brandId));
+                },
+              });
+            }
           },
           error: (err) => {
-            console.error(`Failed to load brand ${brandId}:`, err);
-            // Use brand ID as fallback name
-            this.brandCache.update((cache) => new Map(cache).set(brandId, brandId));
+            console.error(`Failed to load tobacco ${tobaccoId}:`, err);
           },
         });
       }
@@ -323,6 +342,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getBrandName(brandId: string): string {
     return this.brandCache().get(brandId) || brandId;
+  }
+
+  getTobaccoName(tobaccoId: string): string {
+    const tobacco = this.tobaccoCache().get(tobaccoId);
+    return tobacco?.name || tobaccoId;
   }
 
   formatDate(dateString: string): string {

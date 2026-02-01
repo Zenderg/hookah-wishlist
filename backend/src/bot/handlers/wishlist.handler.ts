@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { WishlistService } from '../../wishlist/wishlist.service';
+import { HookahDbService } from '../../hookah-db/hookah-db.service';
 
 @Injectable()
 export class WishlistHandler {
-  constructor(private readonly wishlistService: WishlistService) {}
+  constructor(
+    private readonly wishlistService: WishlistService,
+    private readonly hookahDbService: HookahDbService,
+  ) {}
 
   async handle(ctx: any) {
     const telegramId = ctx.from?.id?.toString();
@@ -39,14 +43,23 @@ Use the mini-app to discover and add tobaccos to your wishlist!
 
     let message = `📋 <b>Your Wishlist (${wishlist.length} items)</b>\n\n`;
 
-    wishlist.forEach((item, index) => {
+    // Fetch tobacco details for each wishlist item
+    for (const [index, item] of wishlist.entries()) {
       const date = new Date(item.createdAt).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
       });
-      message += `${index + 1}. <b>${item.tobaccoName}</b>\n`;
-      message += `   📅 Added: ${date}\n\n`;
-    });
+
+      try {
+        const tobacco = await this.hookahDbService.getTobaccoById(item.tobaccoId);
+        message += `${index + 1}. <b>${tobacco.name}</b>\n`;
+        message += `   📅 Added: ${date}\n\n`;
+      } catch (error) {
+        // If tobacco fetch fails, show tobacco ID as fallback
+        message += `${index + 1}. <b>${item.tobaccoId}</b>\n`;
+        message += `   📅 Added: ${date}\n\n`;
+      }
+    }
 
     message += `💡 <b>Tip:</b> Show this list at a tobacco shop to help staff find your desired tobaccos.`;
 

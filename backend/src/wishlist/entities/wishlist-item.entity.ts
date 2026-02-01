@@ -17,9 +17,6 @@ export class WishlistItem {
   @Column()
   tobaccoId: string;
 
-  @Column()
-  tobaccoName: string;
-
   @CreateDateColumn()
   createdAt: Date;
 }

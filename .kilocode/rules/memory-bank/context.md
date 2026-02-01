@@ -280,23 +280,42 @@ The project structure has been initialized. Source code files have been created 
 
 ## Recent Changes (2026-02-01)
 
-- **Implemented wishlist state tracking on tobacco cards in search tab**:
-  - Updated [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts) to support wishlist state and remove action
-  - Added `inWishlist` input to indicate if tobacco is in user's wishlist
-  - Added `removeFromWishlist` output event for handling removal from wishlist
-  - Button now shows different icons based on wishlist state:
-    - Plus icon (`add`) when tobacco is NOT in wishlist
-    - Check circle icon (`check_circle`) when tobacco IS in wishlist
-  - Updated [`TobaccoCardComponent HTML`](frontend/src/app/components/tobacco-card/tobacco-card.component.html) to use new inputs/outputs
-  - Updated [`TobaccoCardComponent SCSS`](frontend/src/app/components/tobacco-card/tobacco-card.component.scss) with `.in-wishlist` styling
-  - Modified [`AppComponent`](frontend/src/app/app.component.ts) to:
-    - Load wishlist on component initialization (not just when switching tabs)
-    - Track wishlist tobacco IDs via `wishlistTobaccoIds` computed property
-    - Handle `onRemoveFromWishlist()` event from tobacco cards
-    - Update wishlist signal after add/remove operations
-  - Updated [`AppComponent HTML`](frontend/src/app/app.component.html) to pass `inWishlist` and `removeFromWishlist` bindings to tobacco cards
-  - Both frontend and backend build successfully
-  - All 57 backend tests pass
+- **Fixed console error when switching to search tab**:
+  - Root cause: [`loadBrandNamesForWishlist()`](frontend/src/app/app.component.ts:304) was using `item.tobaccoId` as a brand ID, but `tobaccoId` is a UUID of tobacco, not a brand
+  - Solution: Now fetches tobacco details first using `getTobaccoById()`, extracts `brandId` from tobacco, then fetches brand name
+  - Added [`tobaccoCache`](frontend/src/app/app.component.ts:83) signal for caching tobacco details to avoid duplicate API calls
+  - Added [`getTobaccoName()`](frontend/src/app/app.component.ts:324) method to get tobacco name from cache
+
+- **Removed tobaccoName from database schema** (per user requirement):
+  - Updated [`WishlistItem`](backend/src/wishlist/entities/wishlist-item.entity.ts) entity to remove `tobaccoName` column
+  - Database file deleted and will be recreated with new schema
+  - Updated [`WishlistService.addToWishlist()`](backend/src/wishlist/wishlist.service.ts:31) to only accept `tobaccoId`
+  - Updated [`AddToWishlistDto`](backend/src/wishlist/dto/add-to-wishlist.dto.ts) to remove `tobaccoName` field
+  - Updated [`WishlistController`](backend/src/wishlist/wishlist.controller.ts:16) to pass only 2 arguments
+  - Updated [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) tests to match new signature
+
+- **Updated bot handler to fetch tobacco details**:
+  - Updated [`WishlistHandler`](backend/src/bot/handlers/wishlist.handler.ts:40) to fetch tobacco details via API for each wishlist item
+  - Added [`HookahDbService`](backend/src/bot/handlers/wishlist.handler.ts:4) injection to [`BotModule`](backend/src/bot/bot.module.ts:10)
+  - Updated [`wishlist.handler.spec.ts`](backend/src/bot/handlers/wishlist.handler.spec.ts) tests with mock tobacco data
+
+- **Updated frontend to use tobacco details from API**:
+  - Updated [`WishlistItem`](frontend/src/app/services/wishlist.service.ts:7) interface to remove `tobaccoName` field
+  - Updated [`WishlistService.addToWishlist()`](frontend/src/app/services/wishlist.service.ts:28) to only send `tobaccoId`
+  - Added [`getTobaccoName()`](frontend/src/app/app.component.ts:324) method to get tobacco name from cache
+  - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:17) to accept `tobaccoName` input
+  - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:13) template to use `tobaccoName` input
+  - Updated [`AppComponent`](frontend/src/app/app.component.html:152) to pass `tobaccoName` to wishlist card
+
+- **Implementation verified**:
+  - Backend compiles successfully without errors
+  - Frontend compiles successfully without errors
+  - No console errors when switching to search tab
+  - Network requests work correctly:
+    - `/api/hookah-db/tobaccos/statuses` - [200] OK
+    - `/api/hookah-db/brands/countries` - [200] OK
+    - `/api/hookah-db/tobaccos?page=1&limit=20` - [200] OK
+    - `/api/wishlist?telegramId=test-user-123` - [200] OK
 
 ## Optional improvements (future work)
 

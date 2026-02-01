@@ -151,6 +151,7 @@
           @for (item of wishlist(); track item.id) {
             <app-wishlist-card
               [item]="item"
+              [tobaccoName]="getTobaccoName(item.tobaccoId)"
               [brandName]="getBrandName(item.tobaccoId)"
               [formattedDate]="formatDate(item.createdAt)"
               [removing]="removingFromWishlist().has(item.id)"

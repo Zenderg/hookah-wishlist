@@ -8,8 +8,4 @@ export class AddToWishlistDto {
   @IsString()
   @IsNotEmpty()
   tobaccoId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  tobaccoName: string;
 }
