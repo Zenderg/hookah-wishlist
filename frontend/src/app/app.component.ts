@@ -39,6 +39,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Load wishlist on init
   ngOnInit() {
+    // Save Telegram init data to localStorage before making any API calls
+    this.authService.getInitDataRaw();
     this.loadWishlist();
   }
 
