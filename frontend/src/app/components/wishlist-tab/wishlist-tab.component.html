@@ -1,0 +1,42 @@
+<main class="main-content wishlist-content">
+  <!-- Loading state -->
+  @if (wishlistLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (wishlistError() && !wishlistLoading()) {
+    <div class="error-container">
+      <p class="error-text">{{ wishlistError() }}</p>
+      <button mat-button (click)="loadWishlist()">Попробовать снова</button>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!wishlistLoading() && !wishlistError() && wishlist().length === 0) {
+    <div class="empty-container">
+      <p class="empty-text">Wishlist пуст</p>
+    </div>
+  }
+
+  <!-- Wishlist items list -->
+  @if (!wishlistLoading() && !wishlistError() && wishlist().length > 0) {
+    <div class="wishlist-list">
+      @for (item of wishlist(); track item.id) {
+        <app-tobacco-card
+          [wishlistItem]="item"
+          [tobaccoName]="getTobaccoName(item.tobaccoId)"
+          [brandName]="getBrandNameByTobaccoId(item.tobaccoId)"
+          [imageUrl]="getTobaccoImageUrl(item.tobaccoId)"
+          [formattedDate]="formatDate(item.createdAt)"
+          [removing]="removingFromWishlist().has(item.id)"
+          [withCheckmark]="itemsWithCheckmark().has(item.id)"
+          [inWishlist]="true"
+          (removeFromWishlist)="onMarkAsPurchased($event)"
+        />
+      }
+    </div>
+  }
+</main>

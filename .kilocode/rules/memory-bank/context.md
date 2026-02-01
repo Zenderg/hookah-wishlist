@@ -214,14 +214,13 @@ The project structure has been initialized. Source code files have been created 
    - Previous UI implementation was unsatisfactory and had too many problems
    - Will design a new, more detailed and user-friendly interface
 - **Implemented Search Tab UI** in main component:
-- **Decomposed app.component into smaller components**:
+   - **Decomposed app.component into smaller components**:
    - Created [`TabBarComponent`](frontend/src/app/components/tab-bar/) - floating bottom navigation bar
-   - Created [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) - reusable tobacco card
-   - Created [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/) - reusable wishlist card
-   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) to use new components
+   - Created [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) - unified tobacco card for both search and wishlist tabs
+   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) to use unified component
    - Updated [`app.component.html`](frontend/src/app/app.component.html) to use component selectors
    - Updated [`app.component.scss`](frontend/src/app/app.component.scss) to remove duplicate styles
-   - Project builds successfully with warnings about bundle size (764.01 kB, budget 500 kB)
+   - Project builds successfully with warnings about bundle size (767.16 kB, budget 500 kB)
    - Updated [`app.component.ts`](frontend/src/app/app.component.ts) with search functionality
    - Implemented debounced search (300ms) for optimized API requests
    - Added signals for state management: `searchQuery`, `tobaccos`, `loading`, `error`, `addingToWishlist`
@@ -279,6 +278,41 @@ The project structure has been initialized. Source code files have been created 
 2. **Deploy using Docker Compose**
 
    ## Recent Changes (2026-02-01)
+  - **Refactored AppComponent into smaller, focused components**:
+    - Created [`SearchTabComponent`](frontend/src/app/components/search-tab/) with all search and filter logic
+    - Created [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/) with all wishlist management logic
+    - Created [`BrandCacheService`](frontend/src/app/services/brand-cache.service.ts) for centralized brand name caching
+    - Created [`TobaccoCacheService`](frontend/src/app/services/tobacco-cache.service.ts) for centralized tobacco details caching
+    - Updated [`AppComponent`](frontend/src/app/app.component.ts) to use new tab components
+    - [`AppComponent`](frontend/src/app/app.component.ts) now only handles:
+      - Tab navigation (`activeTab`, `onTabChange`)
+      - Global wishlist state (`wishlist`, `wishlistTobaccoIds`)
+      - Event handling from child components (`onAddToWishlist`, `onRemoveFromWishlist`, `onMarkAsPurchased`)
+      - Toast notifications (`showSuccessToast`, `showErrorToast`)
+    - Updated [`app.component.html`](frontend/src/app/app.component.html) to use component selectors
+    - Updated [`app.component.scss`](frontend/src/app/app.component.scss) to only contain global styles
+    - All component-specific styles moved to respective component SCSS files
+    - Communication between components via `@Input`/`@Output` pattern (simple and clear)
+    - Both backend and frontend compile successfully without errors
+
+   - **Unified tobacco card components**:
+     - Created unified [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) that works for both search and wishlist tabs
+     - Component uses conditional display based on available data:
+       - Shows rating if `rating` and `ratingsCount` are provided (search tab)
+       - Shows date if `formattedDate` is provided (wishlist tab)
+     - Supports both `Tobacco` and `WishlistItem` data types
+     - All inputs are optional for maximum flexibility
+     - Button behavior: adds to wishlist if not in wishlist, removes if in wishlist
+     - Supports checkmark animation for wishlist items (via `withCheckmark` input)
+     - Supports removing state with opacity/scale transform
+     - Unified styling from both previous components
+     - Deleted [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/) directory
+     - Updated [`AppComponent`](frontend/src/app/app.component.ts) to use unified component for both tabs
+     - Updated [`app.component.html`](frontend/src/app/app.component.html) to use unified component
+     - Updated methods `onRemoveFromWishlist()` and `onMarkAsPurchased()` to handle both `Tobacco` and `WishlistItem` types
+     - Project builds successfully (767.16 kB, budget warning remains)
+
+   - **Fixed console error when switching to search tab**:
 
    - **Fixed console error when switching to search tab**:
      - Root cause: [`loadBrandNamesForWishlist()`](frontend/src/app/app.component.ts:304) was using `item.tobaccoId` as a brand ID, but `tobaccoId` is a UUID of tobacco, not a brand

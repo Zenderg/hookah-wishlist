@@ -1,0 +1,63 @@
+/* Main content */
+.main-content {
+  flex: 1;
+  padding: 16px;
+  padding-bottom: 80px; /* Space for tab bar */
+  overflow-y: auto;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+/* Error state */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.error-text {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-error);
+  text-align: center;
+}
+
+/* Empty state */
+.empty-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.empty-text {
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+/* Wishlist list */
+.wishlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .main-content {
+    padding: 24px;
+  }
+}

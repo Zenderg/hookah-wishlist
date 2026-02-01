@@ -1,25 +1,35 @@
-<div class="tobacco-card">
+<div
+  class="tobacco-card"
+  [class.removing]="removing()"
+  [class.with-checkmark]="withCheckmark()"
+>
   <img
-    [src]="tobacco().imageUrl"
-    [alt]="tobacco().name"
+    [src]="displayImageUrl()"
+    [alt]="displayTobaccoName()"
     class="tobacco-image"
     loading="lazy"
+    (error)="onImageError($event)"
   />
   <div class="tobacco-info">
-    <h3 class="tobacco-name">{{ tobacco().name }}</h3>
-    <p class="tobacco-brand">{{ brandName() }}</p>
-    <p class="tobacco-rating">
-      {{ tobacco().rating }} ({{ tobacco().ratingsCount }})
-    </p>
+    <h3 class="tobacco-name">{{ displayTobaccoName() }}</h3>
+    <p class="tobacco-brand">{{ displayBrandName() }}</p>
+    @if (showRating()) {
+      <p class="tobacco-rating">
+        {{ displayRating() }} ({{ displayRatingsCount() }})
+      </p>
+    }
+    @if (showDate()) {
+      <p class="tobacco-date">{{ displayDate() }}</p>
+    }
   </div>
   <button
     mat-icon-button
     class="add-button"
     [class.in-wishlist]="inWishlist()"
     (click)="onButtonClick()"
-    [disabled]="adding()"
+    [disabled]="isLoading()"
   >
-    @if (!adding()) {
+    @if (!isLoading()) {
       @if (inWishlist()) {
         <mat-icon>check_circle</mat-icon>
       } @else {
@@ -29,4 +39,9 @@
       <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
     }
   </button>
+  @if (withCheckmark()) {
+    <div class="checkmark-overlay">
+      <mat-icon class="checkmark-icon">check</mat-icon>
+    </div>
+  }
 </div>

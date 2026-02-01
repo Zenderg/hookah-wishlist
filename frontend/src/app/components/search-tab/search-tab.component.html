@@ -1,0 +1,118 @@
+<!-- Header with search -->
+<header class="search-header">
+  <div class="search-bar">
+    <mat-form-field appearance="outline" class="search-input">
+      <mat-icon matPrefix class="search-icon">search</mat-icon>
+      <input
+        matInput
+        type="text"
+        placeholder="Поиск табаков..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event.target.value)"
+      />
+    </mat-form-field>
+    <button
+      mat-icon-button
+      class="filter-button"
+      (click)="onFilterClick()"
+      [disabled]="loadingFilters()"
+    >
+      <mat-icon>tune</mat-icon>
+    </button>
+  </div>
+</header>
+
+<!-- Main content -->
+<main class="main-content" (scroll)="onLoadMore()">
+  <!-- Loading state -->
+  @if (loading() && tobaccos().length === 0) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error() && !loading()) {
+    <div class="error-container">
+      <p class="error-text">{{ error() }}</p>
+      <button mat-button (click)="loadTobaccos()">Попробовать снова</button>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading() && !error() && tobaccos().length === 0) {
+    <div class="empty-container">
+      <p class="empty-text">Ничего не найдено</p>
+    </div>
+  }
+
+  <!-- Tobacco cards list -->
+  @if (!loading() || tobaccos().length > 0) {
+    <div class="tobaccos-list">
+      @for (tobacco of tobaccos(); track tobacco.id) {
+        <app-tobacco-card
+          [tobacco]="tobacco"
+          [brandName]="getBrandName(tobacco.brandId)"
+          [adding]="addingToWishlist().has(tobacco.id)"
+          [inWishlist]="wishlistTobaccoIds().has(tobacco.id)"
+          (addToWishlist)="onAddToWishlist($event)"
+          (removeFromWishlist)="onRemoveFromWishlist($event)"
+        />
+      }
+    </div>
+  }
+
+  <!-- Loading more indicator -->
+  @if (loading() && tobaccos().length > 0) {
+    <div class="loading-more">
+      <mat-spinner diameter="30"></mat-spinner>
+    </div>
+  }
+
+  <!-- No more items indicator -->
+  @if (!loading() && !hasMore() && tobaccos().length > 0) {
+    <div class="end-message">
+      <p>Показаны все результаты</p>
+    </div>
+  }
+</main>
+
+<!-- Filter Modal -->
+@if (showFilterModal()) {
+  <div class="filter-modal-overlay" (click)="onFilterModalClose()">
+    <div class="filter-modal" (click)="$event.stopPropagation()">
+      <div class="filter-modal-header">
+        <h2 class="filter-modal-title">Фильтры</h2>
+        <button mat-icon-button (click)="onFilterModalClose()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="filter-modal-content">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Статус</mat-label>
+          <mat-select [value]="selectedStatus()" (valueChange)="selectedStatus.set($event)">
+            <mat-option value="">Все</mat-option>
+            @for (status of availableStatuses(); track status) {
+              <mat-option [value]="status">{{ status }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Страна</mat-label>
+          <mat-select [value]="selectedCountry()" (valueChange)="selectedCountry.set($event)">
+            <mat-option value="">Все</mat-option>
+            @for (country of availableCountries(); track country) {
+              <mat-option [value]="country">{{ country }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="filter-modal-actions">
+        <button mat-button (click)="onResetFilters()">Сбросить</button>
+        <button mat-flat-button color="primary" (click)="onApplyFilters()">
+          Применить
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,4 +1,4 @@
-/* Tobacco card */
+/* Unified tobacco card */
 .tobacco-card {
   display: flex;
   background-color: var(--mat-sys-surface);
@@ -8,11 +8,21 @@
   padding: 12px;
   gap: 12px;
   position: relative;
-  transition: box-shadow 0.2s ease;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .tobacco-card:hover {
   box-shadow: var(--mat-sys-level2);
+}
+
+.tobacco-card.removing {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.tobacco-card.with-checkmark {
+  background-color: var(--mat-sys-primary-container);
 }
 
 .tobacco-image {
@@ -50,6 +60,12 @@
   margin: 0;
 }
 
+.tobacco-date {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
 .add-button {
   position: absolute;
   bottom: 12px;
@@ -65,4 +81,42 @@
 .button-spinner {
   width: 20px;
   height: 20px;
+}
+
+/* Checkmark overlay */
+.checkmark-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--mat-sys-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.checkmark-icon {
+  font-size: 64px;
+  color: var(--mat-sys-on-primary);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
 }
