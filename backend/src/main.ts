@@ -12,9 +12,12 @@ async function bootstrap() {
     transform: true,
   }));
 
-  // Enable CORS for Telegram Mini Apps
+  // Enable CORS for Telegram Mini Apps and local development
+  const corsOrigin = process.env.CORS_ORIGIN || 'https://t.me';
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'https://t.me',
+    origin: corsOrigin.includes(',') 
+      ? corsOrigin.split(',').map(origin => origin.trim())
+      : corsOrigin,
     credentials: true,
   });
 
