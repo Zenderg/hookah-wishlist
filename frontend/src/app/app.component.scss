@@ -114,6 +114,20 @@
   font: var(--mat-sys-body-small);
 }
 
+/* Tobacco cards list */
+.tobaccos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Wishlist list */
+.wishlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 /* Filter modal */
 .filter-modal-overlay {
   position: fixed;

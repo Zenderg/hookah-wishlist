@@ -307,6 +307,18 @@ The project structure has been initialized. Source code files have been created 
   - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.html:13) template to use `tobaccoName` input
   - Updated [`AppComponent`](frontend/src/app/app.component.html:152) to pass `tobaccoName` to wishlist card
 
+- **Fixed UUID instead of brand name in search tab**:
+  - Root cause: [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.html:10) was displaying `tobacco().brandId` (UUID) instead of actual brand name
+  - Solution: Added `brandName` input to [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts:18)
+  - Added [`loadBrandNamesForTobaccos()`](frontend/src/app/app.component.ts:357) method to fetch brand names for tobaccos displayed in search tab
+  - Updated [`app.component.html`](frontend/src/app/app.component.html:58) to pass `brandName` to tobacco card component
+  - Removed "Бренд: " label from card display (now only shows brand name directly)
+
+- **Fixed cards spacing issue**:
+  - Root cause: The `.tobaccos-list` class had no CSS styling for spacing between cards
+  - Solution: Added CSS for `.tobaccos-list` in [`app.component.scss`](frontend/src/app/app.component.scss:119-123) with `gap: 12px` (per design spec requirement of 12-16px)
+  - Added CSS for `.wishlist-list` with same spacing for consistency
+
 - **Implementation verified**:
   - Backend compiles successfully without errors
   - Frontend compiles successfully without errors

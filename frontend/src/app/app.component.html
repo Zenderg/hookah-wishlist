@@ -55,6 +55,7 @@
           @for (tobacco of tobaccos(); track tobacco.id) {
             <app-tobacco-card
               [tobacco]="tobacco"
+              [brandName]="getBrandName(tobacco.brandId)"
               [adding]="addingToWishlist().has(tobacco.id)"
               [inWishlist]="wishlistTobaccoIds().has(tobacco.id)"
               (addToWishlist)="onAddToWishlist($event)"

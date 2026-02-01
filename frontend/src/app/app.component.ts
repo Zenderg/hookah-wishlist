@@ -177,6 +177,8 @@ export class AppComponent implements OnInit, OnDestroy {
         }
         this.totalPages.set(response.pages);
         this.loading.set(false);
+        // Load brand names for tobaccos
+        this.loadBrandNamesForTobaccos(response.data);
       },
       error: (err) => {
         console.error('Failed to load tobaccos:', err);
@@ -334,6 +336,26 @@ export class AppComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error(`Failed to load tobacco ${tobaccoId}:`, err);
+          },
+        });
+      }
+    });
+  }
+
+  private loadBrandNamesForTobaccos(tobaccos: Tobacco[]) {
+    const brandIds = [...new Set(tobaccos.map((tobacco) => tobacco.brandId).filter(Boolean))];
+    const currentBrandCache = this.brandCache();
+
+    brandIds.forEach((brandId) => {
+      if (!currentBrandCache.has(brandId)) {
+        this.hookahDbService.getBrandById(brandId).subscribe({
+          next: (brand) => {
+            this.brandCache.update((cache) => new Map(cache).set(brandId, brand.name));
+          },
+          error: (err) => {
+            console.error(`Failed to load brand ${brandId}:`, err);
+            // Use brand ID as fallback name
+            this.brandCache.update((cache) => new Map(cache).set(brandId, brandId));
           },
         });
       }

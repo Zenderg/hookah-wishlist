@@ -14,6 +14,7 @@ import type { Tobacco } from '../../services/hookah-db.service';
 })
 export class TobaccoCardComponent {
   tobacco = input.required<Tobacco>();
+  brandName = input<string>('');
   adding = input<boolean>(false);
   inWishlist = input<boolean>(false);
   addToWishlist = output<Tobacco>();
