@@ -63,16 +63,10 @@ export class WishlistTabComponent implements OnInit {
   }
 
   loadWishlist() {
-    const telegramId = this.authService.getTelegramId();
-    if (!telegramId) {
-      this.wishlistError.set('Не удалось получить данные пользователя');
-      return;
-    }
-
     this.wishlistLoading.set(true);
     this.wishlistError.set(null);
 
-    this.wishlistService.getWishlist(telegramId).subscribe({
+    this.wishlistService.getWishlist().subscribe({
       next: (items) => {
         this.wishlist.set(items);
         this.wishlistLoading.set(false);

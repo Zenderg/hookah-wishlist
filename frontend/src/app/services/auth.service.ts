@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { initData, type User as TMAUser } from '@tma.js/sdk';
+import { retrieveRawInitData } from '@tma.js/sdk';
 
 export interface User {
   id: string;
@@ -25,23 +25,36 @@ export class AuthService {
     // Telegram Mini Apps SDK automatically initializes when imported
   }
 
+  getInitDataRaw(): string {
+    const initDataRaw = retrieveRawInitData();
+    if (!initDataRaw) {
+      return localStorage.getItem('initDataRaw') || '';
+    }
+    localStorage.setItem('initDataRaw', initDataRaw);
+    return initDataRaw;
+  }
+
   getTelegramId(): string {
-    try {
-      const user = initData.user();
-      const telegramId = user?.id?.toString();
-
-      if (telegramId) {
-        localStorage.setItem('telegramId', telegramId);
-        return telegramId;
-      }
-
-      // Fallback to localStorage or mock user for local development
-      return localStorage.getItem('telegramId') || this.getMockTelegramId();
-    } catch (error) {
-      console.error('Failed to get Telegram ID:', error);
-      // Fallback to localStorage or mock user for local development
+    const initDataRaw = this.getInitDataRaw();
+    if (!initDataRaw) {
       return localStorage.getItem('telegramId') || this.getMockTelegramId();
     }
+
+    const params = new URLSearchParams(initDataRaw);
+    const userParam = params.get('user');
+    if (!userParam) {
+      return localStorage.getItem('telegramId') || this.getMockTelegramId();
+    }
+
+    const user = JSON.parse(userParam);
+    const telegramId = user.id?.toString();
+
+    if (telegramId) {
+      localStorage.setItem('telegramId', telegramId);
+      return telegramId;
+    }
+
+    return localStorage.getItem('telegramId') || this.getMockTelegramId();
   }
 
   private getMockTelegramId(): string {
@@ -54,10 +67,45 @@ export class AuthService {
     return '';
   }
 
+  private getUsername(): string | undefined {
+    const initDataRaw = this.getInitDataRaw();
+    if (!initDataRaw) {
+      // Return mock username for local development
+      if (!environment.production) {
+        return 'mock_user';
+      }
+      return undefined;
+    }
+
+    const params = new URLSearchParams(initDataRaw);
+    const userParam = params.get('user');
+    if (!userParam) {
+      // Return mock username for local development
+      if (!environment.production) {
+        return 'mock_user';
+      }
+      return undefined;
+    }
+
+    const user = JSON.parse(userParam);
+    return user?.username;
+  }
+
   validateUser(telegramId: string, username?: string): Observable<User> {
     return this.http.post<User>(`${this.apiUrl}/auth/validate`, {
       telegramId,
       username,
+    });
+  }
+
+  authenticateWithInitData(): Observable<User> {
+    const initDataRaw = this.getInitDataRaw();
+    if (!initDataRaw) {
+      throw new Error('Init data not available');
+    }
+
+    return this.http.post<User>(`${this.apiUrl}/auth/validate-init-data`, {
+      initData: initDataRaw,
     });
   }
 
@@ -70,20 +118,6 @@ export class AuthService {
     }
 
     return this.validateUser(telegramId, username);
-  }
-
-  private getUsername(): string | undefined {
-    try {
-      const user = initData.user();
-      return user?.username;
-    } catch (error) {
-      console.error('Failed to get username:', error);
-      // Return mock username for local development
-      if (!environment.production) {
-        return 'mock_user';
-      }
-      return undefined;
-    }
   }
 
   getCurrentUser(): User | null {
@@ -99,5 +133,6 @@ export class AuthService {
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
     localStorage.removeItem('telegramId');
+    localStorage.removeItem('initDataRaw');
   }
 }

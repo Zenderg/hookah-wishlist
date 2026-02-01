@@ -53,12 +53,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Load wishlist
   private loadWishlist() {
-    const telegramId = this.authService.getTelegramId();
-    if (!telegramId) {
-      return;
-    }
-
-    this.wishlistService.getWishlist(telegramId).subscribe({
+    this.wishlistService.getWishlist().subscribe({
       next: (items) => {
         this.wishlist.set(items);
       },
