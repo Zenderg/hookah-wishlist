@@ -25,7 +25,8 @@ FROM nginx:alpine AS production
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application from builder stage
-COPY --from=builder /app/dist/hookah-wishlist-frontend /usr/share/nginx/html
+# Note: New Angular application builder outputs to browser/ subdirectory
+COPY --from=builder /app/dist/hookah-wishlist-frontend/browser /usr/share/nginx/html
 
 # Expose port
 EXPOSE 80
