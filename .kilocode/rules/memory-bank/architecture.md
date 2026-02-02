@@ -247,8 +247,6 @@ hookah-wishlist/
   │   └── tsconfig.json
 │
 ├── docker-compose.yml
-├── Dockerfile.backend
-├── Dockerfile.frontend
 └── .gitignore
 ```
 

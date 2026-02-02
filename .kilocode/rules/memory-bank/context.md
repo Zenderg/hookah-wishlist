@@ -2,15 +2,16 @@
 
 ## Current State
 
-The project is in a mature state with a fully functional MVP. The application has been implemented with all core features:
+The project is in a mature state with a fully functional MVP.
 
-**Backend (NestJS)**:
+### Backend (NestJS)
 - Complete REST API with authentication, wishlist management, and hookah-db proxy
 - Telegram bot with all command handlers (`/start`, `/help`, `/wishlist`)
 - SQLite database with proper schema and TypeORM integration
 - Comprehensive test coverage (57 unit tests, all passing)
+- Bot uses polling to receive updates from Telegram
 
-**Frontend (Angular)**:
+### Frontend (Angular)
 - Modern single-page application with floating bottom tab bar
 - Search tab with real-time search, filtering, and pagination
 - Wishlist tab with item management and mark-as-purchased functionality
@@ -20,7 +21,7 @@ The project is in a mature state with a fully functional MVP. The application ha
 - Image optimization with NgOptimizedImage directive
 - Mock user support for local development
 
-**Key Features Implemented**:
+### Key Features Implemented
 - Real-time tobacco search with debouncing (300ms)
 - Infinite scroll pagination
 - Brand and tobacco name caching to avoid duplicate API calls
@@ -28,8 +29,9 @@ The project is in a mature state with a fully functional MVP. The application ha
 - Checkmark animation for add/remove actions
 - Responsive design with Material Design 3 tokens
 - Skeleton loading to prevent visual glitches
+- Telegram Mini Apps init data validation
 
-**Architecture Improvements**:
+### Architecture Improvements
 - Refactored AppComponent into smaller, focused components
 - Created dedicated cache services for brands and tobaccos
 - Extracted filter modal into separate component
@@ -40,315 +42,42 @@ The project is in a mature state with a fully functional MVP. The application ha
 
 - **Implemented Telegram Mini Apps init data validation**:
   - Added `@tma.js/init-data-node` (v2.0.6) dependency to backend
-  - Created [`ValidateInitDataDto`](backend/src/auth/dto/validate-init-data.dto.ts) for init data validation
-  - Added [`validateInitData()`](backend/src/auth/auth.service.ts:46) method to [`AuthService`](backend/src/auth/auth.service.ts):
-    - Parses Telegram Mini Apps init data using `@tma.js/init-data-node`
-    - Validates signature using bot token (throws error if invalid)
-    - Extracts user data (telegramId, username)
-    - Finds or creates user in database
-    - Updates username if it has changed
-  - Added `validate-init-data` endpoint to [`AuthController`](backend/src/auth/auth.controller.ts:16):
-    - Accepts init data from either header (`X-Telegram-Init-Data`) or body
-    - Calls `validateInitData()` service method
+  - Created `ValidateInitDataDto` for init data validation
+  - Added `validateInitData()` method to `AuthService` that parses and validates Telegram Mini Apps init data
+  - Added `validate-init-data` endpoint to `AuthController` that accepts init data from header or body
 - **Implemented init data interceptor in frontend**:
-  - Created [`initDataInterceptor`](frontend/src/app/interceptors/init-data.interceptor.ts:10) to automatically include `X-Telegram-Init-Data` header in all HTTP requests
+  - Created `initDataInterceptor` to automatically include `X-Telegram-Init-Data` header in all HTTP requests
   - Reads init data from localStorage
-  - Registered interceptor in [`main.ts`](frontend/src/main.ts:16) with `provideHttpClient(withInterceptors([initDataInterceptor]))`
+  - Registered interceptor in `main.ts`
 - **Updated frontend AuthService**:
-  - Added [`getInitDataRaw()`](frontend/src/app/services/auth.service.ts:28) method using `retrieveRawInitData()` from `@tma.js/sdk`
-  - Added [`authenticateWithInitData()`](frontend/src/app/services/auth.service.ts:101) method to call new `/auth/validate-init-data` endpoint
-  - Updated [`main.ts`](frontend/src/main.ts:8) to initialize Telegram Mini Apps SDK with `init()` before bootstrapping the app
+  - Added `getInitDataRaw()` method using `retrieveRawInitData()` from `@tma.js/sdk`
+  - Added `authenticateWithInitData()` method to call new `/auth/validate-init-data` endpoint
+  - Updated `main.ts` to initialize Telegram Mini Apps SDK with `init()` before bootstrapping the app
 - **Fixed bot not responding issue**: Bot was initialized but never started to receive updates from Telegram
-  - Added [`BotService.launch()`](backend/src/bot/bot.service.ts:52) method to start bot with polling
-  - Updated [`main.ts`](backend/src/main.ts:29) to launch bot after application starts
+  - Added `BotService.launch()` method to start bot with polling
+  - Updated `main.ts` to launch bot after application starts
   - Added graceful shutdown handlers (SIGTERM, SIGINT) for proper bot termination
-  - Updated [`backend/.env.example`](backend/.env.example) with polling documentation
   - All 57 backend tests pass, backend builds successfully
-- Memory bank initialization completed
-- **Architecture change**: Updated documentation to reflect proxy pattern for hookah-db API integration
-  - Backend will now proxy requests to hookah-db API to avoid CORS issues
-  - Frontend will call backend instead of hookah-db API directly
-  - API key is stored securely on backend, not exposed to frontend
-- **CORS issue discovered**: During testing, found that frontend cannot directly call hookah-db API due to CORS policy
-  - Error: "Access to XMLHttpRequest at 'https://hdb.coolify.dknas.org/api/v1/brands' from origin 'http://localhost:4200' has been blocked by CORS policy"
-  - Solution: Implement proxy pattern in backend
-- **API documentation updated**: Updated documentation to reflect new hookah-db API structure
-  - Endpoint paths changed from `/api/v1/*` to `/*` (no version prefix)
-  - Resource name changed from "flavors" to "tobaccos"
-  - Added new resource: "lines" (product lines within brands)
-  - ID format changed from slug-based to UUID-based
-  - Added new filter endpoints for countries and statuses
-  - Enhanced query parameters: pagination, sorting, and advanced filtering
-- Clarified project requirements through Q&A
-- Defined target audience: casual hookah enthusiasts
-- Confirmed minimal wishlist approach (tobacco names only)
-- Confirmed bot commands: `/start`, `/help`, `/wishlist`
-- Confirmed simple authentication via Telegram user ID
-- Confirmed deployment: personal VPS/home server with Docker Compose
-- Confirmed scope: complete MVP with all features, no future features planned
-- Confirmed backup strategy: manual backups only
-- **Created project structure** with NestJS backend, Angular frontend, and Docker configuration
-- **Implemented SQLite database schema and entities**:
-  - Created [`User`](backend/src/database/entities/user.entity.ts) entity with telegramId, username, createdAt
-  - Updated [`WishlistItem`](backend/src/wishlist/entities/wishlist-item.entity.ts) entity with proper TypeORM configuration
-  - Configured [`DatabaseModule`](backend/src/database/database.module.ts) with TypeORM
-  - Database successfully created at [`backend/data/wishlist.db`](backend/data/wishlist.db)
-  - Verified schema matches architecture specification
-  - Fixed BotModule dependency injection issue (registered handlers as providers)
-  - Application successfully starts and connects to database
-- **Implemented AuthService** with full user validation logic:
-  - Created [`auth.service.spec.ts`](backend/src/auth/auth.service.spec.ts) with 5 unit tests (all passing)
-  - Updated [`AuthService`](backend/src/auth/auth.service.ts) to find or create users by telegramId
-  - Updated [`AuthModule`](backend/src/auth/auth.module.ts) to import DatabaseModule for User repository access
-  - Service validates Telegram user data and returns userId for use in other modules
-- **Implemented WishlistService** with full CRUD operations:
-  - Updated [`WishlistModule`](backend/src/wishlist/wishlist.module.ts) to import DatabaseModule for User repository access
-  - Implemented [`getUserWishlist()`](backend/src/wishlist/wishlist.service.ts:13) - Returns user's wishlist items sorted by creation date (newest first)
-  - Implemented [`addToWishlist()`](backend/src/wishlist/wishlist.service.ts:30) - Adds tobacco to wishlist, returns existing item if duplicate
-  - Implemented [`removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) - Removes item with user ownership validation
-  - Created [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) with 10 unit tests (all passing)
-  - All methods include proper error handling (NotFoundException, ForbiddenException)
-- **Implemented Telegram bot handlers** for all commands:
-  - Implemented [`StartHandler`](backend/src/bot/handlers/start.handler.ts) - Displays welcome message with mini-app link button
-  - Implemented [`HelpHandler`](backend/src/bot/handlers/help.handler.ts) - Shows usage instructions and tips
-  - Implemented [`WishlistHandler`](backend/src/bot/handlers/wishlist.handler.ts) - Displays user's wishlist with tobacco names and dates
-  - Updated [`BotService`](backend/src/bot/bot.service.ts) to register command handlers with Telegraf, includes logging and error handling
-  - Updated [`BotModule`](backend/src/bot/bot.module.ts) to import WishlistModule for dependency injection
-  - Created [`start.handler.spec.ts`](backend/src/bot/handlers/start.handler.spec.ts) with 4 unit tests (all passing)
-  - Created [`help.handler.spec.ts`](backend/src/bot/handlers/help.handler.spec.ts) with 4 unit tests (all passing)
-  - Created [`wishlist.handler.spec.ts`](backend/src/bot/handlers/wishlist.handler.spec.ts) with 4 unit tests (all passing)
-  - All handlers use HTML-formatted messages with emojis for better UX
-  - Inline keyboard buttons for mini-app access
-  - Error handling for missing user IDs
-  - Empty wishlist detection with helpful prompts
-- **Implemented Angular mini-app UI with Angular Material**:
-  - Updated dependencies: replaced `@telegram-apps/sdk` with `@tma.js/sdk` (v3.1.6)
-  - Added Angular Material v21.1.1 with proper theming
-  - Created [`app.routes.ts`](frontend/src/app/app.routes.ts) with lazy-loaded routes
-  - Updated [`main.ts`](frontend/src/main.ts) with `provideRouter` and `provideAnimations`
-  - Created [`SearchComponent`](frontend/src/app/components/search/search.component.ts):
-    - Uses `model()` for two-way binding (searchQuery, selectedBrand)
-    - Uses `signal()` for state management (brands, flavors, loading, error, addingToWishlist)
-    - Uses `computed()` for derived state (filteredBrands, selectedBrandName)
-    - Integrates with HookahDbService and WishlistService
-    - Implements search functionality with brand filtering
-    - Uses Angular Material components (mat-form-field, mat-select, mat-card, mat-button, mat-spinner)
-    - Includes tab navigation between Search and Wishlist views
-  - Created [`WishlistComponent`](frontend/src/app/components/wishlist/wishlist.component.ts):
-    - Uses `signal()` for state management (wishlist, loading, error, removing)
-    - Integrates with WishlistService and AuthService
-    - Displays user's wishlist with remove functionality
-    - Uses Angular Material components (mat-list, mat-card, mat-icon, mat-spinner)
-    - Includes tab navigation between Wishlist and Search views
-    - Handles empty wishlist state with helpful prompts
-  - Updated [`AuthService`](frontend/src/app/services/auth.service.ts):
-    - Integrates with `@tma.js/sdk` for Telegram Mini Apps
-    - Uses `initData.user()` to access Telegram user data
-    - Provides `getTelegramId()`, `validateUser()`, `authenticate()`, `logout()` methods
-  - Updated [`WishlistService`](frontend/src/app/services/wishlist.service.ts):
-    - Uses `AuthService` for getting Telegram ID
-    - Uses `HttpParams` for proper query parameter handling
-    - Provides `getWishlist()`, `addToWishlist()`, `removeFromWishlist()` methods
-  - Updated [`HookahDbService`](frontend/src/app/services/hookah-db.service.ts):
-    - Uses `HttpParams` for proper query parameter handling
-    - Provides methods for brands and flavors from hookah-db API
-    - Includes API key authentication via headers
-  - Updated [`styles.scss`](frontend/src/styles.scss) with Angular Material v21 theming:
-    - Uses `mat.m2-define-palette` and `mat.m2-define-light-theme`
-    - Configured primary (indigo), accent (green), and warn (red) colors
-  - Updated [`tsconfig.json`](frontend/tsconfig.json) with `moduleResolution: "bundler"` and `rootDir: "./src"`
-  - Updated environment files with API configuration
-  - Project successfully builds without errors
-  - Lazy-loaded chunks created for components
-- **Reorganized environment configuration**:
-  - Removed root `.env.example` file
-  - Each subproject now has its own environment configuration:
-    - Backend: `backend/.env.example` (template for `backend/.env`)
-    - Frontend: Uses Angular's `environment.ts` files (not `.env` files)
-  - Updated [`docker-compose.yml`](docker-compose.yml) with hardcoded environment variables
-  - Users edit `docker-compose.yml` locally to change values for Docker deployment
-  - Updated documentation in [`tech.md`](.kilocode/rules/memory-bank/tech.md) to reflect new approach
-- **Updated Angular build configuration for Docker deployment**:
-  - Updated [`angular.json`](frontend/angular.json) to use `@angular/build:application` builder instead of `@angular-devkit/build-angular:browser`
-  - Renamed `main` option to `browser` in angular.json to match application builder requirements
-  - Added `fileReplacements` configuration for production environment
-  - Updated [`Dockerfile`](frontend/Dockerfile) to use Angular CLI's `--define` option for build-time environment variable replacement
-  - Added build arguments (`ARG`) for `API_URL` and `HOOKAH_DB_API_KEY` in Dockerfile
-  - Created [`types.d.ts`](frontend/src/types.d.ts) with TypeScript declarations for global constants (`apiUrl`, `hookahDbApiKey`)
-  - Updated [`environment.ts`](frontend/src/environments/environment.ts) and [`environment.prod.ts`](frontend/src/environments/environment.prod.ts) to use global constants with fallback values
-  - Updated [`docker-compose.yml`](docker-compose.yml) with build arguments for frontend service
-  - Verified Docker build and local build work correctly with environment variable replacement
-- **Implemented HookahDb module in backend**:
-  - Installed `@nestjs/axios` dependency for HTTP client functionality
-  - Created [`HookahDbModule`](backend/src/hookah-db/hookah-db.module.ts) with HttpModule configuration
-  - Created [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) with proxy methods:
-    - `healthCheck()` - Health check endpoint (public, no API key required)
-    - `getBrands(params?)` - List brands with pagination, filtering, sorting, and search
-    - `getBrandById(id)` - Get brand details by UUID
-    - `getBrandTobaccos(id, params?)` - Get tobaccos of a brand
-    - `getBrandCountries()` - Get list of countries for filtering
-    - `getBrandStatuses()` - Get list of brand statuses for filtering
-    - `getTobaccos(params?)` - List tobaccos with pagination, filtering, sorting, and search
-    - `getTobaccoById(id)` - Get tobacco details by UUID
-    - `getTobaccoStatuses()` - Get list of tobacco statuses for filtering
-    - `getLines(params?)` - List lines with pagination, filtering, and search
-    - `getLineById(id)` - Get line details by UUID
-    - `getLineTobaccos(id, params?)` - Get tobaccos of a line
-    - `getLineStatuses()` - Get list of line statuses for filtering
-    - Legacy methods: `getFlavors()`, `getFlavorBySlug()` (deprecated, for backward compatibility)
-  - Created [`HookahDbController`](backend/src/hookah-db/hookah-db.controller.ts) with REST endpoints:
-    - `GET /api/hookah-db/health` - Health check (public)
-    - `GET /api/hookah-db/brands` - List brands with pagination, filtering, sorting, search
-    - `GET /api/hookah-db/brands/:id` - Get brand details by UUID
-    - `GET /api/hookah-db/brands/:id/tobaccos` - Get tobaccos of a brand
-    - `GET /api/hookah-db/brands/countries` - Get list of countries
-    - `GET /api/hookah-db/brands/statuses` - Get list of brand statuses
-    - `GET /api/hookah-db/tobaccos` - List tobaccos with pagination, filtering, sorting, search
-    - `GET /api/hookah-db/tobaccos/:id` - Get tobacco details by UUID
-    - `GET /api/hookah-db/tobaccos/statuses` - Get list of tobacco statuses
-    - `GET /api/hookah-db/lines` - List lines with pagination, filtering, search
-    - `GET /api/hookah-db/lines/:id` - Get line details by UUID
-    - `GET /api/hookah-db/lines/:id/tobaccos` - Get tobaccos of a line
-    - `GET /api/hookah-db/lines/statuses` - Get list of line statuses
-    - Legacy endpoints: `/flavors` (deprecated, for backward compatibility)
-  - Created [`hookah-db.service.spec.ts`](backend/src/hookah-db/hookah-db.service.spec.ts) with 31 unit tests (all passing)
-  - Updated [`AppModule`](backend/src/app.module.ts) to import HookahDbModule
-  - Service includes proper error handling with AxiosError logging
-  - API key is stored securely in environment variables (HOOKAH_DB_API_KEY)
-  - All tests pass and backend builds successfully
-   - **Updated to new hookah-db API structure**:
-     - Removed `/api/v1` prefix from all endpoint URLs
-     - Changed from slug-based IDs to UUID-based IDs
-     - Renamed "flavors" resource to "tobaccos"
-     - Added new "lines" resource support
-     - Added filter endpoints (countries, statuses)
-     - Enhanced query parameters (pagination, sorting, advanced filtering)
-- **Updated frontend HookahDbService** to work with new backend proxy endpoints:
-  - Renamed `Flavor` type to `Tobacco` with UUID-based `id` field
-  - Added `Line` type for product lines within brands
-  - Added `PaginatedResponse<T>` type for paginated API responses
-  - Updated all methods to return `PaginatedResponse<T>` instead of simple arrays
-  - Added new methods: `getTobaccos()`, `getTobaccoById()`, `getLines()`, `getLineById()`, `getLineTobaccos()`, `getBrandCountries()`, `getBrandStatuses()`, `getTobaccoStatuses()`, `getLineStatuses()`
-  - Updated `getBrands()` to accept `BrandsQueryParams` with pagination, sorting, filtering
-  - Updated brand methods to use UUID-based IDs instead of slugs
-  - Removed legacy methods `getFlavors()`, `getFlavorBySlug()` (no backward compatibility)
-- **Updated SearchComponent** to use new HookahDbService API:
-  - Renamed `flavors` signal to `tobaccos`
-  - Changed `Brand.slug` to `Brand.id` for brand filtering
-  - Changed `Flavor` type to `Tobacco` type
-  - Updated to handle `PaginatedResponse<Tobacco>` structure (extracts `response.data`)
-  - Added `getBrandName()` method to display brand name from brand ID
-   - Updated HTML template to use `tobaccos` instead of `flavors`
-   - Updated SCSS file to use `.tobaccos-list`, `.tobacco-card`, `.tobacco-info`, `.tobacco-name`, `.tobacco-brand` classes
-   - Both frontend and backend build successfully
-- **Created comprehensive UI design specification** in [`docs/frontend-ui-design.md`](docs/frontend-ui-design.md):
-   - Design philosophy: Minimalist Apple-inspired, cold palette (Telegram-like), modern sans-serif typography
-   - Single page design with floating bottom tab bar (text-only tabs: "Поиск" and "Wishlist")
-   - Search tab: search bar + filter button, tobacco cards in vertical list
-   - Wishlist tab: compact cards with mark-as-purchased button (removes from wishlist)
-   - Filter modal: center modal with rounded corners, filters for status and country only
-   - Card design: square image on left, name, brand, rating (e.g., "4.5 (123)")
-   - Add to wishlist: small button in bottom-right corner (heart icon)
-   - Mark as purchased: button with icon (checkmark), shows checkmark before card disappears
-   - NO gestures (swipe actions removed, all interactions via buttons only)
-   - Animations: smooth tab transitions, hover effects, skeleton loading, checkmark animation
-   - Loading: infinite scroll, skeleton screens
-   - Error handling: toast notifications at bottom
-   - Empty states: minimalist text only
-   - Card spacing: 12-16px between cards
-   - Card styling: medium border radius (12-16px), subtle shadow
-   - Typography: modern sans-serif (Inter/SF Pro style)
- - **Deleted all UI components**:
-   - Removed [`SearchComponent`](frontend/src/app/components/search/) directory (search.component.ts, .html, .scss)
-   - Removed [`WishlistComponent`](frontend/src/app/components/wishlist/) directory (wishlist.component.ts, .html, .scss)
-   - Removed [`components/`](frontend/src/app/components/) directory
-   - Cleaned up [`app.routes.ts`](frontend/src/app/app.routes.ts) to remove all routes
-   - Kept Angular Material v21.1.1 dependencies and theming for new UI
-   - Services (AuthService, WishlistService, HookahDbService) remain intact and can be reused
-   - Previous UI implementation was unsatisfactory and had too many problems
-   - Will design a new, more detailed and user-friendly interface
-- **Implemented Search Tab UI** in main component:
-   - **Decomposed app.component into smaller components**:
-   - Created [`TabBarComponent`](frontend/src/app/components/tab-bar/) - floating bottom navigation bar
-   - Created [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/) - unified tobacco card for both search and wishlist tabs
-   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) to use unified component
-   - Updated [`app.component.html`](frontend/src/app/app.component.html) to use component selectors
-   - Updated [`app.component.scss`](frontend/src/app/app.component.scss) to remove duplicate styles
-   - Project builds successfully with warnings about bundle size (767.16 kB, budget 500 kB)
-   - Updated [`app.component.ts`](frontend/src/app/app.component.ts) with search functionality
-   - Implemented debounced search (300ms) for optimized API requests
-   - Added signals for state management: `searchQuery`, `tobaccos`, `loading`, `error`, `addingToWishlist`
-   - Implemented pagination state: `currentPage`, `totalPages`, `hasMore` (computed)
-   - Added filter state: `selectedStatus`, `selectedCountry`, `availableStatuses`, `availableCountries`
-   - Implemented infinite scroll with `onLoadMore()` method
-   - Implemented `onAddToWishlist()` method with loading indicator
-   - Added toast notifications via MatSnackBar for success/error states
-   - Updated [`app.component.html`](frontend/src/app/app.component.html) with search UI:
-     - Search bar with icon and filter button
-     - Vertical list of tobacco cards with 12px spacing
-     - Card design: image (80x80px), name, brand, rating, add button (heart icon)
-     - Loading states: spinner for initial load, spinner for "load more"
-     - Error state: message with retry button
-     - Empty state: "Ничего не найдено" text
-     - Filter modal: status and country dropdowns, apply/reset buttons
-   - Updated [`app.component.scss`](frontend/src/app/app.component.scss) with Material Design 3 tokens:
-     - Uses `--mat-sys-*` CSS variables for theming
-     - Responsive design with media queries
-     - Hover effects on cards (shadow elevation)
-     - Toast notification styles (success/error)
-    - Project builds successfully with warnings about bundle size (754.09 kB, budget 500 kB)
-- **Implemented local development mock user support**:
-  - Added mock Telegram ID (`'123456789'`) and mock username (`'mock_user'`) for local development
-  - Updated [`AuthService.getTelegramId()`](frontend/src/app/services/auth.service.ts:28) to fall back to mock user when Telegram context is unavailable
-  - Updated [`AuthService.getUsername()`](frontend/src/app/services/auth.service.ts:75) to return mock username for local development
-  - Added [`AuthService.getMockTelegramId()`](frontend/src/app/services/auth.service.ts:47) private method for mock ID generation
-  - Mock user is only active in development mode (`!environment.production`)
-  - Allows testing Wishlist tab locally without Telegram Mini Apps context
 - **Fixed WishlistController HTTP method decorators**:
-  - Updated [`getWishlist()`](backend/src/wishlist/wishlist.controller.ts:9) to use `@Query('telegramId')` instead of `@Body()` for GET request
-  - Updated [`removeFromWishlist()`](backend/src/wishlist/wishlist.controller.ts:24) to use `@Query('telegramId')` instead of `@Body()` for DELETE request
-  - Added `Query` decorator import from `@nestjs/common`
-  - Fixes error "Cannot read properties of undefined (reading 'telegramId')" when switching to Wishlist tab
-   - Backend and frontend build successfully, all 57 backend tests pass
+  - Updated `getWishlist()` to use `@Query('telegramId')` instead of `@Body()` for GET request
+  - Updated `removeFromWishlist()` to use `@Query('telegramId')` instead of `@Body()` for DELETE request
 - **Fixed tobacco card add button click issue**:
-   - Updated [`TobaccoCardComponent`](frontend/src/app/components/tobacco-card/tobacco-card.component.ts:18) to use modern `output()` syntax instead of `new EventEmitter()`
-   - Added `z-index: 10` to `.add-button` in [`tobacco-card.component.scss`](frontend/src/app/components/tobacco-card/tobacco-card.component.scss:57) to prevent overlap issues
-   - Replaced heart icon `favorite_border` with plus icon `add` in [`tobacco-card.component.html`](frontend/src/app/components/tobacco-card/tobacco-card.component.html:22)
-   - Updated [`WishlistCardComponent`](frontend/src/app/components/wishlist-card/wishlist-card.component.ts:21) to use modern `output()` syntax
-   - Removed `$any()` type assertions from events in [`app.component.html`](frontend/src/app/app.component.html) for better type safety
-   - Root causes: old EventEmitter syntax, missing z-index, poor type typing with `$any()`
+  - Updated `TobaccoCardComponent` to use modern `output()` syntax
+  - Added `z-index: 10` to `.add-button` to prevent overlap issues
+  - Replaced heart icon with plus icon
 - **Fixed "User not found" error when adding tobacco to wishlist**:
-  - Root cause: Frontend uses mock Telegram ID (`'123456789'`) for local development, but user was never created in database
-  - Modified [`WishlistService.addToWishlist()`](backend/src/wishlist/wishlist.service.ts:31) to automatically create user if they don't exist
-  - Modified [`WishlistService.removeFromWishlist()`](backend/src/wishlist/wishlist.service.ts:57) to automatically create user if they don't exist
-  - Updated tests in [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) to verify new behavior
-  - All 57 backend tests pass, both backend and frontend build successfully
-   - This makes the wishlist service more robust and provides better user experience
+  - Modified `WishlistService.addToWishlist()` to automatically create user if they don't exist
+  - Modified `WishlistService.removeFromWishlist()` to automatically create user if they don't exist
 - **Fixed animation issue when removing tobacco from wishlist on search tab**:
-   - Root cause: `onRemoveFromWishlist()` was emitting `itemRemoved` event immediately without waiting for API call, so `removingFromWishlist` signal was never cleared
-   - Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts):
-     - Changed input from `wishlistTobaccoIds` to `wishlistItems` (full wishlist items)
-     - Added computed property `wishlistTobaccoIds` to derive IDs from items
-     - Updated `onRemoveFromWishlist()` to make API call directly (like `onAddToWishlist()`)
-     - Method now finds wishlist item by tobaccoId and calls `removeFromWishlist(item.id)`
-     - Clears `removingFromWishlist` signal when API call completes (success or error)
-     - Shows checkmark animation for 1.5 seconds after successful removal
-     - Removed unused `itemRemoved` output
-   - Updated [`AppComponent`](frontend/src/app/app.component.ts):
-     - Updated `onRemoveFromWishlist()` to handle new flow where search tab makes API call
-     - Now just updates local state and shows success toast (no duplicate API call)
-     - Removed unused `onItemRemoved()` method
-   - Updated [`app.component.html`](frontend/src/app/app.component.html):
-     - Changed input from `wishlistTobaccoIds` to `wishlistItems`
-     - Removed unused `itemRemoved` event handler
-   - Removed incorrect `removeFromWishlistByTobaccoId()` method from [`WishlistService`](frontend/src/app/services/wishlist.service.ts) (uses non-existent endpoint)
-   - Animation flow now works correctly: shrink animation → API call → clear animation → checkmark → update state
+  - Updated `SearchTabComponent` to make API call directly instead of emitting event
+  - Method now finds wishlist item by tobaccoId and calls `removeFromWishlist(item.id)`
+  - Clears `removingFromWishlist` signal when API call completes
+  - Shows checkmark animation for 1.5 seconds after successful removal
 
-   ## Next Steps
+## Next Steps
 
-1. **Deploy backend with polling** - Bot now uses polling to receive updates from Telegram
-2. **Deploy using Docker Compose**
-
+1. Deploy backend with polling - Bot now uses polling to receive updates from Telegram
+2. Deploy using Docker Compose
 
 ## Known Decisions
 
