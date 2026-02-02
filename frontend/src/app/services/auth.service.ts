@@ -26,12 +26,26 @@ export class AuthService {
   }
 
   getInitDataRaw(): string {
-    const initDataRaw = retrieveRawInitData();
-    if (!initDataRaw) {
+    // Check if we're running in Telegram Mini Apps
+    const isTelegramMiniApp = window.Telegram?.WebApp !== undefined;
+
+    if (!isTelegramMiniApp) {
+      // Not in Telegram, return stored init data or empty string for local development
       return localStorage.getItem('initDataRaw') || '';
     }
-    localStorage.setItem('initDataRaw', initDataRaw);
-    return initDataRaw;
+
+    try {
+      const initDataRaw = retrieveRawInitData();
+      if (!initDataRaw) {
+        return localStorage.getItem('initDataRaw') || '';
+      }
+      localStorage.setItem('initDataRaw', initDataRaw);
+      return initDataRaw;
+    } catch (error) {
+      // Handle error when app is opened outside Telegram
+      console.warn('Failed to retrieve init data:', error);
+      return localStorage.getItem('initDataRaw') || '';
+    }
   }
 
   getTelegramId(): string {
@@ -101,6 +115,13 @@ export class AuthService {
   authenticateWithInitData(): Observable<User> {
     const initDataRaw = this.getInitDataRaw();
     if (!initDataRaw) {
+      // In development mode, fall back to mock authentication
+      if (!environment.production) {
+        console.warn('Init data not available, using mock authentication for local development');
+        const mockTelegramId = this.getMockTelegramId();
+        const mockUsername = 'mock_user';
+        return this.validateUser(mockTelegramId, mockUsername);
+      }
       throw new Error('Init data not available');
     }
 
@@ -114,6 +135,13 @@ export class AuthService {
     const username = this.getUsername();
 
     if (!telegramId) {
+      // In development mode, use mock authentication
+      if (!environment.production) {
+        console.warn('No Telegram ID available, using mock authentication for local development');
+        const mockTelegramId = this.getMockTelegramId();
+        const mockUsername = 'mock_user';
+        return this.validateUser(mockTelegramId, mockUsername);
+      }
       throw new Error('Telegram ID not available');
     }
 

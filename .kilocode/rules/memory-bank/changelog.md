@@ -1,6 +1,23 @@
 # Changelog
 
-This document tracks all major changes and milestones in the Hookah Wishlist project.
+This document tracks all major changes and milestones in Hookah Wishlist project.
+
+## 2026
+
+### February - Local Web Development Support
+
+**Implemented Local Web Development Support**
+- Updated [`main.ts`](frontend/src/main.ts:14) to conditionally initialize Telegram SDK only when running in Telegram Mini Apps
+- Added `window.Telegram` type declaration to fix TypeScript errors
+- Updated [`init-data.interceptor.ts`](frontend/src/app/interceptors/init-data.interceptor.ts:18) to skip adding init data header in development mode
+- Updated [`auth.service.ts`](frontend/src/app/services/auth.service.ts:28) to handle `retrieveRawInitData()` error when not in Telegram
+- Updated [`auth.service.ts`](frontend/src/app/services/auth.service.ts:112) to fall back to mock authentication when init data is not available
+- Updated [`wishlist.service.ts`](frontend/src/app/services/wishlist.service.ts:33) to include `telegramId` in request body
+- Updated [`telegram-id.decorator.ts`](backend/src/auth/decorators/telegram-id.decorator.ts:4) to support local development by checking request body/query params for `telegramId`
+- Updated [`AddToWishlistDto`](backend/src/wishlist/dto/add-to-wishlist.dto.ts:3) to include optional `telegramId` field
+- All 57 backend tests pass, both frontend and backend build successfully
+- Application now works in regular web browser without Telegram Mini Apps context
+- Full functionality available for local development including search, filtering, and wishlist management
 
 ## 2025
 
@@ -244,9 +261,9 @@ This document tracks all major changes and milestones in the Hookah Wishlist pro
 - Error: "Access to XMLHttpRequest at 'https://hdb.coolify.dknas.org/api/v1/brands' from origin 'http://localhost:4200' has been blocked by CORS policy"
 - Solution: Implement proxy pattern in backend
 - Updated documentation to reflect proxy pattern for hookah-db API integration
-  - Backend will now proxy requests to hookah-db API to avoid CORS issues
-  - Frontend will call backend instead of hookah-db API directly
-  - API key is stored securely on backend, not exposed to frontend
+- Backend will now proxy requests to hookah-db API to avoid CORS issues
+- Frontend will call backend instead of hookah-db API directly
+- API key is stored securely on backend, not exposed to frontend
 
 **API Documentation Updated**
 - Updated documentation to reflect new hookah-db API structure

@@ -19,7 +19,7 @@ The project is in a mature state with a fully functional MVP.
 - Skeleton loading for better perceived performance
 - Filter modal for status and country filtering
 - Image optimization with NgOptimizedImage directive
-- Mock user support for local development
+- **Local development support**: Works in regular web browser without Telegram Mini Apps context
 
 ### Key Features Implemented
 - Real-time tobacco search with debouncing (300ms)
@@ -73,6 +73,17 @@ The project is in a mature state with a fully functional MVP.
   - Method now finds wishlist item by tobaccoId and calls `removeFromWishlist(item.id)`
   - Clears `removingFromWishlist` signal when API call completes
   - Shows checkmark animation for 1.5 seconds after successful removal
+
+- **Implemented local web development support**:
+  - Updated [`main.ts`](frontend/src/main.ts:14) to conditionally initialize Telegram SDK only when running in Telegram Mini Apps
+  - Added `window.Telegram` type declaration to fix TypeScript errors
+  - Updated [`init-data.interceptor.ts`](frontend/src/app/interceptors/init-data.interceptor.ts:18) to skip adding init data header in development mode
+  - Updated [`auth.service.ts`](frontend/src/app/services/auth.service.ts:28) to handle `retrieveRawInitData()` error when not in Telegram
+  - Updated [`auth.service.ts`](frontend/src/app/services/auth.service.ts:112) to fall back to mock authentication when init data is not available
+  - Updated [`wishlist.service.ts`](frontend/src/app/services/wishlist.service.ts:33) to include `telegramId` in request body
+  - Updated [`telegram-id.decorator.ts`](backend/src/auth/decorators/telegram-id.decorator.ts:4) to support local development by checking request body/query params for `telegramId`
+  - Updated [`AddToWishlistDto`](backend/src/wishlist/dto/add-to-wishlist.dto.ts:3) to include optional `telegramId` field
+  - All 57 backend tests pass, both frontend and backend build successfully
 
 ## Next Steps
 

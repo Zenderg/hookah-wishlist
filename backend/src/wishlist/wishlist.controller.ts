@@ -14,13 +14,19 @@ export class WishlistController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async addToWishlist(@TelegramId() telegramId: string, @Body() addToWishlistDto: AddToWishlistDto) {
+  async addToWishlist(
+    @TelegramId() telegramId: string,
+    @Body() addToWishlistDto: AddToWishlistDto,
+  ) {
     return this.wishlistService.addToWishlist(telegramId, addToWishlistDto.tobaccoId);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async removeFromWishlist(@Param('id') id: string, @TelegramId() telegramId: string) {
+  async removeFromWishlist(
+    @Param('id') id: string,
+    @TelegramId() telegramId: string,
+  ) {
     return this.wishlistService.removeFromWishlist(id, telegramId);
   }
 }
