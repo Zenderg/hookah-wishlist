@@ -21,6 +21,7 @@ Casual hookah enthusiasts who occasionally smoke and want to remember tobaccos t
 - `/start` command - displays instructions and mini-app link
 - `/help` command - shows usage instructions
 - `/wishlist` command - displays user's current wishlist
+- **URL support** - Send htreviews.org tobacco links to add them directly to wishlist
 - Mini-app link - opens the web application
 - Simple Telegram user ID-based authentication
 

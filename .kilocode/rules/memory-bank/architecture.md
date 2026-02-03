@@ -107,6 +107,14 @@ CREATE INDEX idx_users_telegram_id ON users(telegram_id);
    - Bot retrieves user's wishlist from SQLite
    - Bot formats and displays wishlist
 
+3. **URL-based Wishlist Addition Flow**:
+   - User sends htreviews.org tobacco link to bot
+   - Bot validates URL format and extracts tobacco slug
+   - Bot calls `/tobaccos/by-url?url={url}` endpoint on hookah-db API
+   - API validates all three slugs (brand, line, tobacco) and returns tobacco
+   - Bot adds tobacco to user's wishlist
+   - Bot sends confirmation message with tobacco details
+
 ## Key Technical Decisions
 
 ### Why NestJS?
@@ -182,7 +190,8 @@ hookah-wishlist/
 │   │   │   └── handlers/
 │   │   │       ├── start.handler.ts
 │   │   │       ├── help.handler.ts
-│   │   │       └── wishlist.handler.ts
+│   │   │       ├── wishlist.handler.ts
+│   │   │       └── url.handler.ts
 │   │   ├── hookah-db/
 │   │   │   ├── hookah-db.module.ts
 │   │   │   ├── hookah-db.controller.ts
@@ -276,6 +285,9 @@ The backend provides proxy endpoints to hookah-db API to avoid CORS issues:
 - `GET /api/hookah-db/tobaccos` - List tobaccos with pagination, filtering, sorting, and search
   - Query params: `page`, `limit`, `sortBy` (rating, name), `order` (asc, desc), `brandId`, `lineId`, `minRating`, `maxRating`, `country`, `status`, `search`
 - `GET /api/hookah-db/tobaccos/:id` - Get tobacco details by UUID
+- `GET /api/hookah-db/tobaccos/by-url?url={url}` - Get tobacco by htreviews.org URL
+  - Query params: `url` (required) - URL of tobacco on htreviews.org in format `https://htreviews.org/tobaccos/{brand-slug}/{line-slug}/{tobacco-slug}`
+  - Note: Endpoint validates all three slugs (brand, line, tobacco) and returns tobacco only if all three match in database
 - `GET /api/hookah-db/tobaccos/statuses` - Get list of tobacco statuses for filtering
 
 #### Lines (Линейки)

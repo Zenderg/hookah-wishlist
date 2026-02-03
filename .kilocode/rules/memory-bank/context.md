@@ -40,6 +40,15 @@ The project is in a mature state with a fully functional MVP.
 
 ## Recent Changes
 
+- **Implemented URL-based wishlist addition**:
+  - Added `getTobaccoByUrl()` method to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) that calls `GET /tobaccos/by-url?url={url}` endpoint
+  - Created [`UrlHandler`](backend/src/bot/handlers/url.handler.ts) to process htreviews.org tobacco links
+  - Updated [`BotService`](backend/src/bot/bot.service.ts) to listen for text messages (not just commands)
+  - Updated [`BotModule`](backend/src/bot/bot.module.ts) to include `UrlHandler` as a provider
+  - Bot now validates URL format and calls API endpoint to get tobacco data
+  - API validates all three slugs (brand, line, tobacco) and returns tobacco only if all three match
+  - All 57 backend tests pass, backend builds successfully
+
 - **Implemented Telegram Mini Apps init data validation**:
   - Added `@tma.js/init-data-node` (v2.0.6) dependency to backend
   - Created `ValidateInitDataDto` for init data validation
@@ -89,6 +98,7 @@ The project is in a mature state with a fully functional MVP.
 
 1. Deploy backend with polling - Bot now uses polling to receive updates from Telegram
 2. Deploy using Docker Compose
+3. Test URL-based wishlist addition in production environment
 
 ## Known Decisions
 

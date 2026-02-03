@@ -296,6 +296,23 @@ export class HookahDbService {
     }
   }
 
+  async getTobaccoByUrl(url: string): Promise<Tobacco> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<Tobacco>(`${this.apiUrl}/tobaccos/by-url`, {
+          headers: this.getHeaders(),
+          params: { url },
+        }),
+      );
+
+      this.logger.debug(`Fetched tobacco by URL: ${url}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error, `Failed to fetch tobacco by URL: ${url}`);
+      throw error;
+    }
+  }
+
   // Lines endpoints
   async getLines(params?: LinesQueryParams): Promise<PaginatedResponse<Line>> {
     try {

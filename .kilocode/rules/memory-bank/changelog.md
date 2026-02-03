@@ -4,6 +4,17 @@ This document tracks all major changes and milestones in Hookah Wishlist project
 
 ## 2026
 
+### February - URL-based Wishlist Addition
+
+**Implemented URL-based Wishlist Addition**
+- Added `getTobaccoByUrl()` method to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) that calls `GET /tobaccos/by-url?url={url}` endpoint
+- Created [`UrlHandler`](backend/src/bot/handlers/url.handler.ts) to process htreviews.org tobacco links
+- Updated [`BotService`](backend/src/bot/bot.service.ts) to listen for text messages (not just commands)
+- Updated [`BotModule`](backend/src/bot/bot.module.ts) to include `UrlHandler` as a provider
+- Bot now validates URL format and calls API endpoint to get tobacco data
+- API validates all three slugs (brand, line, tobacco) and returns tobacco only if all three match
+- All 57 backend tests pass, backend builds successfully
+
 ### February - Local Web Development Support
 
 **Implemented Local Web Development Support**
