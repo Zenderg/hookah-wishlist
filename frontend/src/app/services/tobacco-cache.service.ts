@@ -32,6 +32,11 @@ export class TobaccoCacheService {
     return tobacco?.brandId;
   }
 
+  getLineIdByTobaccoId(tobaccoId: string): string | null {
+    const tobacco = this.tobaccoCache().get(tobaccoId);
+    return tobacco?.lineId || null;
+  }
+
   loadTobacco(tobaccoId: string): void {
     const currentCache = this.tobaccoCache();
     if (!currentCache.has(tobaccoId)) {

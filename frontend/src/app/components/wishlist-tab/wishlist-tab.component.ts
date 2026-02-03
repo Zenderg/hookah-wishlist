@@ -6,7 +6,7 @@ import { WishlistService, type WishlistItem } from '../../services/wishlist.serv
 import { AuthService } from '../../services/auth.service';
 import { BrandCacheService } from '../../services/brand-cache.service';
 import { TobaccoCacheService } from '../../services/tobacco-cache.service';
-import { type Tobacco } from '../../services/hookah-db.service';
+import { HookahDbService, type Tobacco, type Line } from '../../services/hookah-db.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 
@@ -28,6 +28,7 @@ export class WishlistTabComponent implements OnInit {
   private authService = inject(AuthService);
   private brandCacheService = inject(BrandCacheService);
   private tobaccoCacheService = inject(TobaccoCacheService);
+  private hookahDbService = inject(HookahDbService);
 
   // Outputs
   removeFromWishlist = output<{ item: WishlistItem; alreadyRemoved: boolean }>();
@@ -38,21 +39,26 @@ export class WishlistTabComponent implements OnInit {
   wishlistError = signal<string | null>(null);
   removingFromWishlist = signal<Set<string>>(new Set());
   itemsWithCheckmark = signal<Set<string>>(new Set());
+
+  // Line names cache (Map<lineId, lineName>)
+  lineNames = signal<Map<string, string>>(new Map<string, string>());
   dataReady = computed(() => {
     const items = this.wishlist();
     // If loading is complete and list is empty, data is ready (show empty state)
     if (!this.wishlistLoading() && items.length === 0) return true;
     // If list is empty but still loading, data is not ready (show skeleton)
     if (items.length === 0) return false;
-    // Check if all items have tobacco details and brand names
+    // Check if all items have tobacco details, brand names, and line names
     return items.every((item) => {
       const tobaccoName = this.getTobaccoName(item.tobaccoId);
       const brandName = this.getBrandNameByTobaccoId(item.tobaccoId);
+      const lineName = this.getLineNameByTobaccoId(item.tobaccoId);
       const imageUrl = this.getTobaccoImageUrl(item.tobaccoId);
-      // Data is ready if we have tobacco name (not UUID), brand name (not UUID), and image URL
+      // Data is ready if we have tobacco name (not UUID), brand name (not UUID), line name (not UUID), and image URL
       return (
         tobaccoName !== item.tobaccoId &&
         brandName !== item.tobaccoId &&
+        lineName !== item.tobaccoId &&
         imageUrl !== ''
       );
     });
@@ -92,6 +98,30 @@ export class WishlistTabComponent implements OnInit {
         this.brandCacheService.loadBrandName(brandId);
       }
     });
+
+    // Load line names for tobaccos
+    tobaccoIds.forEach((tobaccoId) => {
+      const lineId = this.tobaccoCacheService.getLineIdByTobaccoId(tobaccoId);
+      if (lineId) {
+        this.loadLineName(lineId);
+      }
+    });
+  }
+
+  private loadLineName(lineId: string): void {
+    // Check if line name is already cached
+    if (!this.lineNames().has(lineId)) {
+      this.hookahDbService.getLineById(lineId).subscribe({
+        next: (line: Line) => {
+          this.lineNames.update((map) => new Map(map).set(lineId, line.name));
+        },
+        error: (err: any) => {
+          console.error(`Failed to load line name for lineId ${lineId}:`, err);
+          // Store lineId as name on error to prevent infinite loading
+          this.lineNames.update((map) => new Map(map).set(lineId, lineId));
+        },
+      });
+    }
   }
 
   onMarkAsPurchased(item: WishlistItem | Tobacco) {
@@ -166,6 +196,18 @@ export class WishlistTabComponent implements OnInit {
       return this.brandCacheService.getBrandName(brandId);
     }
     return tobaccoId;
+  }
+
+  getLineNameByTobaccoId(tobaccoId: string): string {
+    const lineId = this.tobaccoCacheService.getLineIdByTobaccoId(tobaccoId);
+    if (lineId) {
+      return this.getLineName(lineId);
+    }
+    return tobaccoId;
+  }
+
+  getLineName(lineId: string): string {
+    return this.lineNames().get(lineId) || lineId;
   }
 
   formatDate(dateString: string): string {

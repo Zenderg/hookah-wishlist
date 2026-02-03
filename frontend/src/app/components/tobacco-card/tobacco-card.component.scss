@@ -22,8 +22,8 @@
 }
 
 .tobacco-image-container {
-  width: 80px;
-  height: 80px;
+  width: 85px;
+  height: 85px;
   position: relative;
   border-radius: var(--mat-sys-corner-small);
   overflow: hidden;
@@ -55,6 +55,13 @@
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
   margin: 0;
+}
+
+.tobacco-line {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+  opacity: 0.8;
 }
 
 .tobacco-rating {

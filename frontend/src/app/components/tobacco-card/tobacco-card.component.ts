@@ -19,8 +19,9 @@ export class TobaccoCardComponent {
   wishlistItem = input<WishlistItem | null>(null);
   tobaccoName = input<string | null>(null);
   brandName = input<string | null>(null);
+  lineName = input<string | null>(null);
   imageUrl = input<string | null>(null);
-  rating = input<number | null>(null);
+  rating = input<string | null>(null);
   ratingsCount = input<number | null>(null);
   formattedDate = input<string | null>(null);
 
@@ -37,8 +38,15 @@ export class TobaccoCardComponent {
   // Computed values for display
   displayTobaccoName = computed(() => this.tobaccoName() || this.tobacco()?.name || '');
   displayBrandName = computed(() => this.brandName() || '');
+  displayLineName = computed(() => this.lineName() || '');
   displayImageUrl = computed(() => this.imageUrl() || this.tobacco()?.imageUrl || 'https://via.placeholder.com/80');
   displayRating = computed(() => this.rating() ?? this.tobacco()?.rating ?? null);
+  displayRatingFormatted = computed(() => {
+    const rating = this.displayRating();
+    if (rating === null) return '';
+    // Remove last character (e.g., "5.00" -> "5.0")
+    return rating.slice(0, -1);
+  });
   displayRatingsCount = computed(() => this.ratingsCount() ?? this.tobacco()?.ratingsCount ?? null);
   displayDate = computed(() => this.formattedDate() ?? null);
 

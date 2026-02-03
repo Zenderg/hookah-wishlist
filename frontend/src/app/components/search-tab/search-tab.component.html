@@ -58,6 +58,7 @@
         <app-tobacco-card
           [tobacco]="tobacco"
           [brandName]="getBrandName(tobacco.brandId)"
+          [lineName]="getLineName(tobacco.lineId)"
           [adding]="addingToWishlist().has(tobacco.id)"
           [removing]="removingFromWishlist().has(tobacco.id)"
           [withCheckmark]="itemsWithCheckmark().has(tobacco.id)"

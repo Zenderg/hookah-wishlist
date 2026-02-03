@@ -73,23 +73,27 @@ export class SearchTabComponent implements OnInit {
   availableCountries = signal<string[]>([]);
   loadingFilters = signal(false);
 
+  // Line names cache (Map<lineId, lineName>)
+  lineNames = signal<Map<string, string>>(new Map<string, string>());
+
   // Computed: Check if any filters are active
   hasActiveFilters = computed(() => {
     return this.selectedStatus() !== '' || this.selectedCountry() !== '';
   });
 
-  // Computed: Check if all data is ready (tobaccos have brand names)
+  // Computed: Check if all data is ready (tobaccos have brand names and line names)
   dataReady = computed(() => {
     const tobaccoList = this.tobaccos();
     // If loading is complete and list is empty, data is ready (show empty state)
     if (!this.loading() && tobaccoList.length === 0) return true;
     // If list is empty but still loading, data is not ready (show skeleton)
     if (tobaccoList.length === 0) return false;
-    // Check if all tobaccos have brand names loaded
+    // Check if all tobaccos have brand names and line names loaded
     return tobaccoList.every((tobacco) => {
       const brandName = this.getBrandName(tobacco.brandId);
-      // Data is ready if brand name is not the UUID
-      return brandName !== tobacco.brandId;
+      const lineName = this.getLineName(tobacco.lineId);
+      // Data is ready if brand name is not UUID and line name is not UUID
+      return brandName !== tobacco.brandId && lineName !== tobacco.lineId;
     });
   });
 
@@ -197,6 +201,8 @@ export class SearchTabComponent implements OnInit {
         this.loading.set(false);
         // Load brand names for tobaccos
         this.loadBrandNamesForTobaccos(response.data);
+        // Load line names for tobaccos
+        this.loadLineNamesForTobaccos(response.data);
       },
       error: (err) => {
         console.error('Failed to load tobaccos:', err);
@@ -323,6 +329,30 @@ export class SearchTabComponent implements OnInit {
 
   getBrandName(brandId: string): string {
     return this.brandCacheService.getBrandName(brandId);
+  }
+
+  private loadLineNamesForTobaccos(tobaccos: Tobacco[]) {
+    const lineIds = [...new Set(tobaccos.map((tobacco) => tobacco.lineId).filter((id): id is string => id !== null))];
+    lineIds.forEach((lineId) => {
+      // Check if line name is already cached
+      if (!this.lineNames().has(lineId)) {
+        this.hookahDbService.getLineById(lineId).subscribe({
+          next: (line) => {
+            this.lineNames.update((map) => new Map(map).set(lineId, line.name));
+          },
+          error: (err) => {
+            console.error(`Failed to load line name for lineId ${lineId}:`, err);
+            // Store lineId as name on error to prevent infinite loading
+            this.lineNames.update((map) => new Map(map).set(lineId, lineId));
+          },
+        });
+      }
+    });
+  }
+
+  getLineName(lineId: string | null): string {
+    if (!lineId) return '';
+    return this.lineNames().get(lineId) || lineId;
   }
 
   trackByTobaccoId(index: number, tobacco: Tobacco): string {

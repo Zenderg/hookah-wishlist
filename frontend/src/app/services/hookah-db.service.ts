@@ -23,7 +23,7 @@ export type Tobacco = {
   slug: string;
   brandId: string; // UUID
   lineId: string | null; // UUID or null
-  rating: number;
+  rating: string;
   ratingsCount: number;
   strengthOfficial: string;
   strengthByRatings: string;

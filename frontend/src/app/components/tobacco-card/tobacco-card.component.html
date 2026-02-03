@@ -16,9 +16,12 @@
   <div class="tobacco-info">
     <h3 class="tobacco-name">{{ displayTobaccoName() }}</h3>
     <p class="tobacco-brand">{{ displayBrandName() }}</p>
+    @if (displayLineName()) {
+      <p class="tobacco-line">{{ displayLineName() }}</p>
+    }
     @if (showRating()) {
       <p class="tobacco-rating">
-        {{ displayRating() }} ({{ displayRatingsCount() }})
+        {{ displayRatingFormatted() }} ({{ displayRatingsCount() }})
       </p>
     }
     @if (showDate()) {
