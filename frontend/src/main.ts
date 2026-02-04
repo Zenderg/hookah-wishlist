@@ -7,28 +7,9 @@ import { routes } from './app/app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { init } from '@tma.js/sdk';
 import { initDataInterceptor } from './app/interceptors/init-data.interceptor';
-import { environment } from './environments/environment';
 
-// Telegram WebApp type declaration
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: any;
-    };
-  }
-}
-
-// Initialize Telegram Mini Apps SDK only when running in Telegram Mini Apps
-// For local web development, we skip this initialization
-const isTelegramMiniApp = window.Telegram?.WebApp !== undefined;
-
-if (isTelegramMiniApp || environment.production) {
-  try {
-    init();
-  } catch (error) {
-    console.warn('Failed to initialize Telegram SDK:', error);
-  }
-}
+// Initialize Telegram Mini Apps SDK before bootstrapping the app
+init();
 
 bootstrapApplication(AppComponent, {
   providers: [

@@ -272,9 +272,9 @@ This document tracks all major changes and milestones in Hookah Wishlist project
 - Error: "Access to XMLHttpRequest at 'https://hdb.coolify.dknas.org/api/v1/brands' from origin 'http://localhost:4200' has been blocked by CORS policy"
 - Solution: Implement proxy pattern in backend
 - Updated documentation to reflect proxy pattern for hookah-db API integration
-- Backend will now proxy requests to hookah-db API to avoid CORS issues
-- Frontend will call backend instead of hookah-db API directly
-- API key is stored securely on backend, not exposed to frontend
+  - Backend will now proxy requests to hookah-db API to avoid CORS issues
+  - Frontend will call backend instead of hookah-db API directly
+  - API key is stored securely on backend, not exposed to frontend
 
 **API Documentation Updated**
 - Updated documentation to reflect new hookah-db API structure

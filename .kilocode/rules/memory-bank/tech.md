@@ -95,23 +95,6 @@
   - Allows testing Wishlist tab and other features without Telegram Mini Apps context
   - Implemented in [`AuthService.getMockTelegramId()`](frontend/src/app/services/auth.service.ts:47) and [`getUsername()`](frontend/src/app/services/auth.service.ts:75)
 
-**How to Run Locally:**
-```bash
-# Terminal 1 - Backend
-cd backend && npm run start:dev
-
-# Terminal 2 - Frontend
-cd frontend && ng serve
-```
-
-Then open `http://localhost:4200` in your browser. The app will use mock authentication and work without any Telegram Mini Apps context.
-
-**Key Features for Local Development:**
-- Telegram SDK is only initialized when running in Telegram Mini Apps or in production
-- Init data interceptor skips adding header when not available in development mode
-- `@TelegramId()` decorator falls back to mock user ID in development mode
-- Frontend services handle missing init data gracefully
-
 ## Database
 
 ### SQLite
