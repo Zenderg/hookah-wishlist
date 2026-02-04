@@ -7,35 +7,12 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { retrieveRawInitData } from '@tma.js/sdk';
 
 export const initDataInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
-  // Try to retrieve init data from SDK first (most reliable source)
-  let initDataRaw: string | null = null;
-
-  try {
-    // Check if we're running in Telegram Mini Apps
-    const isTelegramMiniApp = window.Telegram?.WebApp !== undefined;
-
-    if (isTelegramMiniApp) {
-      const sdkInitData = retrieveRawInitData();
-      initDataRaw = sdkInitData || null;
-      console.debug('Retrieved init data from Telegram SDK');
-    }
-  } catch (error) {
-    console.warn('Failed to retrieve init data from Telegram SDK:', error);
-  }
-
-  // Fall back to localStorage if SDK retrieval failed
-  if (!initDataRaw) {
-    initDataRaw = localStorage.getItem('initDataRaw');
-    if (initDataRaw) {
-      console.debug('Retrieved init data from localStorage');
-    }
-  }
+  const initDataRaw = localStorage.getItem('initDataRaw');
 
   if (initDataRaw) {
     const authReq = req.clone({
@@ -53,10 +30,5 @@ export const initDataInterceptor: HttpInterceptorFn = (
     return next(req);
   }
 
-  // In production, log a warning but still send the request
-  // This allows graceful degradation if init data is temporarily unavailable
-  console.warn(
-    'No Telegram init data available in production. This may cause authentication errors.'
-  );
   return next(req);
 };
