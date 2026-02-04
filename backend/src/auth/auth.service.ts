@@ -44,6 +44,35 @@ export class AuthService {
   }
 
   async validateInitData(initDataRaw: string) {
+    // Check if mock authentication is enabled
+    const skipAuth = this.configService.get<string>('SKIP_AUTH') === 'true';
+
+    if (skipAuth) {
+      // Return mock user for local development
+      const mockTelegramId = '123456789';
+      const mockUsername = 'mock_user';
+
+      // Find or create mock user
+      let user = await this.userRepository.findOne({
+        where: { telegramId: mockTelegramId },
+      });
+
+      if (!user) {
+        user = this.userRepository.create({
+          telegramId: mockTelegramId,
+          username: mockUsername,
+        });
+        await this.userRepository.save(user);
+      }
+
+      return {
+        valid: true,
+        telegramId: user.telegramId,
+        username: user.username,
+        userId: user.id,
+      };
+    }
+
     if (!initDataRaw) {
       throw new UnauthorizedException('Init data is required');
     }

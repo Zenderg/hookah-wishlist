@@ -7,9 +7,12 @@ import { routes } from './app/app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { init } from '@tma.js/sdk';
 import { initDataInterceptor } from './app/interceptors/init-data.interceptor';
+import { environment } from './environments/environment';
 
 // Initialize Telegram Mini Apps SDK before bootstrapping the app
-init();
+if (environment.production) {
+  init();
+}
 
 bootstrapApplication(AppComponent, {
   providers: [

@@ -8,6 +8,7 @@ import { AuthService } from './services/auth.service';
 import { TabBarComponent } from './components/tab-bar/tab-bar.component';
 import { SearchTabComponent } from './components/search-tab/search-tab.component';
 import { WishlistTabComponent } from './components/wishlist-tab/wishlist-tab.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -40,7 +41,9 @@ export class AppComponent implements OnInit, OnDestroy {
   // Load wishlist on init
   ngOnInit() {
     // Save Telegram init data to localStorage before making any API calls
-    this.authService.getInitDataRaw();
+    if (environment.production) {
+      this.authService.getInitDataRaw();
+    }
     this.loadWishlist();
   }
 
