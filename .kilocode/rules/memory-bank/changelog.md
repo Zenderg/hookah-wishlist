@@ -4,6 +4,20 @@ This document tracks all major changes and milestones in Hookah Wishlist project
 
 ## 2026
 
+### February - Fixed Production Authentication Error
+
+**Fixed "Telegram init data not found in headers" Error in Production**
+- Root cause: Frontend interceptor relied solely on localStorage, which could be empty or unavailable in Telegram Mini Apps
+- Updated [`initDataInterceptor`](frontend/src/app/interceptors/init-data.interceptor.ts:11) to:
+  - Retrieve init data directly from Telegram SDK using `retrieveRawInitData()` (most reliable source)
+  - Fall back to localStorage if SDK retrieval fails
+  - Add comprehensive error handling and debug logging
+  - In production, log warning but still send request (graceful degradation)
+- Frontend now prioritizes fresh init data from SDK over cached localStorage
+- Improves reliability in production by ensuring init data is always retrieved from the authoritative source
+- Frontend builds successfully
+- Backend changes not required (already has proper fallback logic)
+
 ### February - URL-based Wishlist Addition
 
 **Implemented URL-based Wishlist Addition**

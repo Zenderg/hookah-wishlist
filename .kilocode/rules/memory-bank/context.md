@@ -40,6 +40,17 @@ The project is in a mature state with a fully functional MVP.
 
 ## Recent Changes
 
+- **Fixed "Telegram init data not found in headers" error in production**:
+  - Root cause: Frontend interceptor relied solely on localStorage, which could be empty or unavailable in Telegram Mini Apps
+  - Updated [`initDataInterceptor`](frontend/src/app/interceptors/init-data.interceptor.ts:11) to retrieve init data directly from Telegram SDK using `retrieveRawInitData()` (most reliable source)
+  - Falls back to localStorage if SDK retrieval fails
+  - Added comprehensive error handling and debug logging
+  - In production, logs warning but still sends request (graceful degradation)
+  - Frontend now prioritizes fresh init data from SDK over cached localStorage
+  - Improves reliability in production by ensuring init data is always retrieved from the authoritative source
+  - Frontend builds successfully
+  - Backend changes not required (already has proper fallback logic)
+
 - **Implemented URL-based wishlist addition**:
   - Added `getTobaccoByUrl()` method to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) that calls `GET /tobaccos/by-url?url={url}` endpoint
   - Created [`UrlHandler`](backend/src/bot/handlers/url.handler.ts) to process htreviews.org tobacco links
