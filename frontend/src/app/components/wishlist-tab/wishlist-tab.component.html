@@ -28,6 +28,7 @@
     <div class="wishlist-list">
       @for (item of wishlist(); track item.id) {
         <app-tobacco-card
+          [tobacco]="item.tobacco"
           [wishlistItem]="item"
           [tobaccoName]="getTobaccoName(item.tobaccoId)"
           [brandName]="getBrandNameByTobaccoId(item.tobaccoId)"
@@ -37,6 +38,7 @@
           [removing]="removingFromWishlist().has(item.id)"
           [withCheckmark]="itemsWithCheckmark().has(item.id)"
           [inWishlist]="true"
+          (cardClick)="onCardClick($event)"
           (removeFromWishlist)="onMarkAsPurchased($event)"
         />
       }

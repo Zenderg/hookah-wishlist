@@ -5,12 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialog } from '@angular/material/dialog';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { HookahDbService, type TobaccoWithDetails, type PaginatedResponse } from '../../services/hookah-db.service';
 import { WishlistService, type WishlistItem } from '../../services/wishlist.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 import { FilterModalComponent } from '../filter-modal/filter-modal.component';
+import { TobaccoDetailsModalComponent } from '../tobacco-details-modal/tobacco-details-modal.component';
 
 @Component({
   selector: 'app-search-tab',
@@ -32,6 +34,7 @@ import { FilterModalComponent } from '../filter-modal/filter-modal.component';
 export class SearchTabComponent implements OnInit {
   private hookahDbService = inject(HookahDbService);
   private wishlistService = inject(WishlistService);
+  private dialog = inject(MatDialog);
 
   // Inputs
   wishlistItems = input.required<WishlistItem[]>();
@@ -299,5 +302,36 @@ export class SearchTabComponent implements OnInit {
 
   trackByTobaccoId(index: number, tobacco: TobaccoWithDetails): string {
     return tobacco.id;
+  }
+
+  onCardClick(tobacco: TobaccoWithDetails) {
+    const inWishlist = this.wishlistTobaccoIds().has(tobacco.id);
+
+    this.dialog.open(TobaccoDetailsModalComponent, {
+      data: {
+        tobacco,
+        inWishlist,
+      },
+      width: '90%',
+      maxWidth: '500px',
+      maxHeight: '80vh',
+    }).afterClosed().subscribe((result) => {
+      if (!result) return;
+
+      if (result.action === 'added') {
+        // Tobacco was added to wishlist - update local state
+        this.addToWishlist.emit({
+          id: result.tobaccoId,
+          tobaccoId: result.tobaccoId,
+          createdAt: new Date().toISOString(),
+        });
+      } else if (result.action === 'removed') {
+        // Tobacco was removed from wishlist - find and emit wishlist item
+        const wishlistItem = this.wishlistItems().find(wi => wi.tobaccoId === result.tobaccoId);
+        if (wishlistItem) {
+          this.removeFromWishlist.emit(wishlistItem);
+        }
+      }
+    });
   }
 }

@@ -1,0 +1,68 @@
+.modal-content {
+  background-color: var(--mat-sys-surface);
+  border-radius: var(--mat-sys-corner-large);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--mat-sys-level4);
+}
+
+.modal-image-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  flex-shrink: 0;
+}
+
+.modal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-top-left-radius: var(--mat-sys-corner-large);
+  border-top-right-radius: var(--mat-sys-corner-large);
+}
+
+.modal-details {
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.tobacco-name {
+  margin: 0 0 16px 0;
+  font: var(--mat-sys-headline-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.detail-item {
+  margin: 0 0 12px 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.detail-item.description {
+  margin-top: 16px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.action-button {
+  width: 100%;
+  padding: 16px;
+  border-radius: 0 0 var(--mat-sys-corner-large) var(--mat-sys-corner-large);
+  font: var(--mat-sys-label-large);
+  text-transform: uppercase;
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+}
+
+.action-button.in-wishlist {
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+}
+
+.button-spinner {
+  margin: 0 auto;
+}

@@ -2,11 +2,13 @@ import { Component, inject, signal, computed, OnInit, input, output } from '@ang
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { WishlistService, type WishlistItem, type WishlistItemWithDetails } from '../../services/wishlist.service';
 import { AuthService } from '../../services/auth.service';
-import { HookahDbService, type TobaccoWithDetails } from '../../services/hookah-db.service';
+import { HookahDbService, type Tobacco, type TobaccoWithDetails } from '../../services/hookah-db.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
+import { TobaccoDetailsModalComponent } from '../tobacco-details-modal/tobacco-details-modal.component';
 
 @Component({
   selector: 'app-wishlist-tab',
@@ -25,6 +27,7 @@ export class WishlistTabComponent implements OnInit {
   private wishlistService = inject(WishlistService);
   private authService = inject(AuthService);
   private hookahDbService = inject(HookahDbService);
+  private dialog = inject(MatDialog);
 
   // Outputs
   removeFromWishlist = output<{ item: WishlistItem; alreadyRemoved: boolean }>();
@@ -156,5 +159,29 @@ export class WishlistTabComponent implements OnInit {
 
   trackByWishlistItemId(index: number, item: WishlistItem): string {
     return item.id;
+  }
+
+  onCardClick(item: WishlistItemWithDetails | Tobacco) {
+    this.dialog.open(TobaccoDetailsModalComponent, {
+      data: {
+        tobacco: 'tobaccoId' in item ? item.tobacco : item,
+        inWishlist: true,
+      },
+      width: '90%',
+      maxWidth: '500px',
+      maxHeight: '80vh',
+    }).afterClosed().subscribe((result) => {
+      if (!result) return;
+
+      if (result.action === 'removed') {
+        // Tobacco was removed from wishlist - update local state
+        const wishlistItem = this.wishlist().find(wi => wi.tobaccoId === result.tobaccoId);
+        if (wishlistItem) {
+          this.wishlist.update((items) => items.filter((i) => i.id !== wishlistItem.id));
+          // Notify parent
+          this.removeFromWishlist.emit({ item: wishlistItem, alreadyRemoved: true });
+        }
+      }
+    });
   }
 }

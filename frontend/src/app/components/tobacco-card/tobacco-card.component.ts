@@ -3,8 +3,8 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import type { Tobacco } from '../../services/hookah-db.service';
-import type { WishlistItem } from '../../services/wishlist.service';
+import type { Tobacco, TobaccoWithDetails } from '../../services/hookah-db.service';
+import type { WishlistItem, WishlistItemWithDetails } from '../../services/wishlist.service';
 
 @Component({
   selector: 'app-tobacco-card',
@@ -16,7 +16,7 @@ import type { WishlistItem } from '../../services/wishlist.service';
 export class TobaccoCardComponent {
   // Data inputs (all optional for flexibility)
   tobacco = input<Tobacco | null>(null);
-  wishlistItem = input<WishlistItem | null>(null);
+  wishlistItem = input<WishlistItemWithDetails | null>(null);
   tobaccoName = input<string | null>(null);
   brandName = input<string | null>(null);
   lineName = input<string | null>(null);
@@ -32,6 +32,7 @@ export class TobaccoCardComponent {
   withCheckmark = input<boolean>(false);
 
   // Outputs
+  cardClick = output<TobaccoWithDetails>();
   addToWishlist = output<Tobacco>();
   removeFromWishlist = output<Tobacco | WishlistItem>();
 
@@ -56,7 +57,10 @@ export class TobaccoCardComponent {
 
   isLoading = computed(() => this.adding() || this.removing());
 
-  onButtonClick() {
+  onButtonClick(event: Event) {
+    // Stop propagation to prevent card click event
+    event.stopPropagation();
+
     if (this.inWishlist()) {
       const item = this.wishlistItem() || this.tobacco();
       if (item) {
@@ -67,6 +71,17 @@ export class TobaccoCardComponent {
       if (tobacco) {
         this.addToWishlist.emit(tobacco);
       }
+    }
+  }
+
+  onCardClick() {
+    const tobacco = this.tobacco() as TobaccoWithDetails | null;
+    const wishlistItem = this.wishlistItem();
+
+    if (tobacco) {
+      this.cardClick.emit(tobacco);
+    } else if (wishlistItem?.tobacco) {
+      this.cardClick.emit(wishlistItem.tobacco);
     }
   }
 

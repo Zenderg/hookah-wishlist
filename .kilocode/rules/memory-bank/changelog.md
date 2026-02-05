@@ -4,6 +4,34 @@ This document tracks all major changes and milestones in Hookah Wishlist project
 
 ## 2026
 
+### February - Tobacco Details Modal
+
+**Implemented Tobacco Details Modal**
+- Created [`TobaccoDetailsModalComponent`](frontend/src/app/components/tobacco-details-modal/tobacco-details-modal.component.ts) to display full tobacco information in a modal window
+- Modal opens when clicking on any tobacco card (excluding the add/remove button)
+- Modal displays comprehensive tobacco information:
+  - Image (full width at top)
+  - Name (large heading)
+  - Brand with country (format: "Бренд: [Name] ([Country])")
+  - Line (only if lineId is not null)
+  - Rating (format: "[Rating] ([Count])" without star icon)
+  - Official strength (format: "Крепость официальная: [Value]")
+  - Strength by ratings (format: "Крепость по оценкам: [Value]")
+  - Status (format: "Статус: [Value]")
+  - Description (full text with word wrap, no truncation)
+- Modal includes add/remove button at bottom:
+  - Button text changes based on wishlist status ("Добавить" / "Удалить")
+  - Shows loading spinner during HTTP request
+  - Automatically closes after successful add/remove operation
+  - Stays open on error to allow retry
+- Modal closes when clicking on backdrop (no separate close button)
+- All data taken from existing `TobaccoWithDetails` object - no additional HTTP requests
+- Integrated into [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts) with `onCardClick()` method
+- Integrated into [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/wishlist-tab.component.ts) with `onCardClick()` method
+- Modal uses Angular Material Dialog with standard animations
+- Responsive design: 90% width on mobile, max 500px on desktop, max 80% viewport height
+- Technical specification documented in [`docs/tobacco-details-modal-tz.md`](docs/tobacco-details-modal-tz.md)
+
 ### February - Optimized HTTP Requests
 
 **Optimized HTTP Requests by Moving Data Enrichment to Backend**

@@ -63,6 +63,7 @@
           [removing]="removingFromWishlist().has(tobacco.id)"
           [withCheckmark]="itemsWithCheckmark().has(tobacco.id)"
           [inWishlist]="wishlistTobaccoIds().has(tobacco.id)"
+          (cardClick)="onCardClick($event)"
           (addToWishlist)="onAddToWishlist($event)"
           (removeFromWishlist)="onRemoveFromWishlist($event)"
         />

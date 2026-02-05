@@ -2,6 +2,7 @@
   class="tobacco-card"
   [class.removing]="removing()"
   [class.with-checkmark]="withCheckmark()"
+  (click)="onCardClick()"
 >
   <div class="tobacco-image-container">
     <img
@@ -32,7 +33,7 @@
     mat-icon-button
     class="add-button"
     [class.in-wishlist]="inWishlist()"
-    (click)="onButtonClick()"
+    (click)="onButtonClick($event)"
     [disabled]="isLoading()"
   >
     @if (!isLoading()) {

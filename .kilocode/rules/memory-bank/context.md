@@ -31,6 +31,7 @@ The project is in a mature state with a fully functional MVP.
 - Skeleton loading to prevent visual glitches
 - Telegram Mini Apps init data validation
 - **Optimized HTTP requests** - reduced from ~23-43 requests (search) and ~41-61 requests (wishlist) to 1 request each
+- **Tobacco details modal** - displays full tobacco information in a modal window when clicking on a tobacco card
 
 ### Architecture Improvements
 - Refactored AppComponent into smaller, focused components
