@@ -6,7 +6,7 @@ import { retrieveRawInitData } from '@tma.js/sdk';
 import { TobaccoWithDetails } from './hookah-db.service';
 
 export interface WishlistItem {
-  id: string;
+  id: number;
   tobaccoId: string;
   createdAt: string;
 }
@@ -47,7 +47,7 @@ export class WishlistService {
     });
   }
 
-  removeFromWishlist(id: string): Observable<void> {
+  removeFromWishlist(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/wishlist/${id}`);
   }
 }

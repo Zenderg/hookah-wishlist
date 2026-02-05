@@ -36,8 +36,8 @@ export class WishlistTabComponent implements OnInit {
   wishlist = signal<WishlistItemWithDetails[]>([]);
   wishlistLoading = signal(false);
   wishlistError = signal<string | null>(null);
-  removingFromWishlist = signal<Set<string>>(new Set());
-  itemsWithCheckmark = signal<Set<string>>(new Set());
+  removingFromWishlist = signal<Set<number>>(new Set());
+  itemsWithCheckmark = signal<Set<number>>(new Set());
 
   // Computed: Check if data is ready (wishlist has items with tobacco details)
   dataReady = computed(() => {
@@ -157,15 +157,23 @@ export class WishlistTabComponent implements OnInit {
     return `${day}.${month}.${year}`;
   }
 
-  trackByWishlistItemId(index: number, item: WishlistItem): string {
+  trackByWishlistItemId(index: number, item: WishlistItem): number {
     return item.id;
   }
 
   onCardClick(item: WishlistItemWithDetails | Tobacco) {
+    // Extract wishlist item ID if available
+    let wishlistItemId: number | undefined;
+    if ('tobaccoId' in item) {
+      // It's a WishlistItemWithDetails
+      wishlistItemId = (item as WishlistItemWithDetails).id;
+    }
+
     this.dialog.open(TobaccoDetailsModalComponent, {
       data: {
         tobacco: 'tobaccoId' in item ? item.tobacco : item,
         inWishlist: true,
+        wishlistItemId,
       },
       width: '90%',
       maxWidth: '500px',

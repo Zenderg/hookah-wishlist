@@ -8,7 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { HookahDbService, type TobaccoWithDetails, type PaginatedResponse } from '../../services/hookah-db.service';
-import { WishlistService, type WishlistItem } from '../../services/wishlist.service';
+import { WishlistService, type WishlistItem, type WishlistItemWithDetails } from '../../services/wishlist.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 import { FilterModalComponent } from '../filter-modal/filter-modal.component';
@@ -304,13 +304,33 @@ export class SearchTabComponent implements OnInit {
     return tobacco.id;
   }
 
-  onCardClick(tobacco: TobaccoWithDetails) {
-    const inWishlist = this.wishlistTobaccoIds().has(tobacco.id);
+  onCardClick(item: TobaccoWithDetails | WishlistItemWithDetails) {
+    let tobacco: TobaccoWithDetails;
+    let inWishlist: boolean;
+    let wishlistItemId: number | undefined;
+
+    if ('tobacco' in item) {
+      // It's a WishlistItemWithDetails
+      const wishlistItem = item as WishlistItemWithDetails;
+      tobacco = wishlistItem.tobacco;
+      inWishlist = true;
+      wishlistItemId = wishlistItem.id;
+    } else {
+      // It's a TobaccoWithDetails
+      tobacco = item as TobaccoWithDetails;
+      inWishlist = this.wishlistTobaccoIds().has(tobacco.id);
+      // Find wishlist item ID if tobacco is in wishlist
+      const wishlistItem = inWishlist
+        ? this.wishlistItems().find(wi => wi.tobaccoId === tobacco.id)
+        : undefined;
+      wishlistItemId = wishlistItem?.id;
+    }
 
     this.dialog.open(TobaccoDetailsModalComponent, {
       data: {
         tobacco,
         inWishlist,
+        wishlistItemId,
       },
       width: '90%',
       maxWidth: '500px',
@@ -319,9 +339,9 @@ export class SearchTabComponent implements OnInit {
       if (!result) return;
 
       if (result.action === 'added') {
-        // Tobacco was added to wishlist - update local state
+        // Tobacco was added to wishlist - update local state with correct wishlist item ID
         this.addToWishlist.emit({
-          id: result.tobaccoId,
+          id: result.wishlistItemId,
           tobaccoId: result.tobaccoId,
           createdAt: new Date().toISOString(),
         });

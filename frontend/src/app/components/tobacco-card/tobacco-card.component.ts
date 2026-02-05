@@ -32,7 +32,7 @@ export class TobaccoCardComponent {
   withCheckmark = input<boolean>(false);
 
   // Outputs
-  cardClick = output<TobaccoWithDetails>();
+  cardClick = output<TobaccoWithDetails | WishlistItemWithDetails>();
   addToWishlist = output<Tobacco>();
   removeFromWishlist = output<Tobacco | WishlistItem>();
 
@@ -78,10 +78,11 @@ export class TobaccoCardComponent {
     const tobacco = this.tobacco() as TobaccoWithDetails | null;
     const wishlistItem = this.wishlistItem();
 
-    if (tobacco) {
+    // Prefer emitting wishlistItem if available (for wishlist tab)
+    if (wishlistItem) {
+      this.cardClick.emit(wishlistItem);
+    } else if (tobacco) {
       this.cardClick.emit(tobacco);
-    } else if (wishlistItem?.tobacco) {
-      this.cardClick.emit(wishlistItem.tobacco);
     }
   }
 

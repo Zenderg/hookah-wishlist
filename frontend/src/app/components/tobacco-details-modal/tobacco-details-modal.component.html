@@ -1,70 +1,70 @@
-<div class="modal-content">
-    <!-- Image at top, full width -->
-    <div class="modal-image-container">
-      <img
-        [ngSrc]="tobacco().imageUrl"
-        [alt]="tobacco().name"
-        class="modal-image"
-        fill
-        (error)="onImageError($event)"
-      />
-    </div>
+<!-- Image at top, full width -->
+<div class="modal-image-container">
+  <img
+    [ngSrc]="tobacco().imageUrl"
+    [alt]="tobacco().name"
+    class="modal-image"
+    fill
+    (error)="onImageError($event)"
+  />
+</div>
 
-    <!-- Content with details -->
-    <div class="modal-details">
-      <!-- Name -->
-      <h2 class="tobacco-name">{{ tobacco().name }}</h2>
+<!-- Content with details - mat-dialog-content handles scrolling automatically -->
+<mat-dialog-content>
+  <!-- Name -->
+  <h2 class="tobacco-name">{{ tobacco().name }}</h2>
 
-      <!-- Brand with country -->
-      @if (tobacco().brand) {
-        <p class="detail-item">{{ displayBrandWithCountry() }}</p>
-      }
+  <!-- Brand with country -->
+  @if (tobacco().brand) {
+    <p class="detail-item"><span class="label">Бренд:</span> {{ displayBrandWithCountry() }}</p>
+  }
 
-      <!-- Line (only if lineId is not null) -->
-      @if (tobacco().line) {
-        <p class="detail-item">Линейка: {{ tobacco().line?.name }}</p>
-      }
+  <!-- Line (only if lineId is not null) -->
+  @if (tobacco().line) {
+    <p class="detail-item"><span class="label">Линейка:</span> {{ tobacco().line?.name }}</p>
+  }
 
-      <!-- Rating -->
-      @if (tobacco().rating && tobacco().ratingsCount) {
-        <p class="detail-item">
-          Рейтинг: {{ displayRatingFormatted() }} ({{ tobacco().ratingsCount }})
-        </p>
-      }
+  <!-- Rating -->
+  @if (tobacco().rating && tobacco().ratingsCount) {
+    <p class="detail-item">
+      <span class="label">Рейтинг:</span> {{ displayRatingFormatted() }} ({{ tobacco().ratingsCount }})
+    </p>
+  }
 
-      <!-- Strength official -->
-      @if (tobacco().strengthOfficial) {
-        <p class="detail-item">Крепость официальная: {{ tobacco().strengthOfficial }}</p>
-      }
+  <!-- Strength official -->
+  @if (tobacco().strengthOfficial) {
+    <p class="detail-item"><span class="label">Крепость официальная:</span> {{ tobacco().strengthOfficial }}</p>
+  }
 
-      <!-- Strength by ratings -->
-      @if (tobacco().strengthByRatings) {
-        <p class="detail-item">Крепость по оценкам: {{ tobacco().strengthByRatings }}</p>
-      }
+  <!-- Strength by ratings -->
+  @if (tobacco().strengthByRatings) {
+    <p class="detail-item"><span class="label">Крепость по оценкам:</span> {{ tobacco().strengthByRatings }}</p>
+  }
 
-      <!-- Status -->
-      @if (tobacco().status) {
-        <p class="detail-item">Статус: {{ tobacco().status }}</p>
-      }
+  <!-- Status -->
+  @if (tobacco().status) {
+    <p class="detail-item"><span class="label">Статус:</span> {{ tobacco().status }}</p>
+  }
 
-      <!-- Description (full text with word wrap) -->
-      @if (tobacco().description) {
-        <p class="detail-item description">{{ tobacco().description }}</p>
-      }
-    </div>
+  <!-- Description (full text with word wrap) -->
+  @if (tobacco().description) {
+    <p class="detail-item description">{{ tobacco().description }}</p>
+  }
+</mat-dialog-content>
 
-    <!-- Add/Remove button at bottom, full width -->
-    <button
-      mat-button
-      class="action-button"
-      [class.in-wishlist]="inWishlist()"
-      (click)="onAddRemoveClick()"
-      [disabled]="loading"
-    >
-      @if (!loading) {
-        {{ buttonText() }}
-      } @else {
-        <mat-spinner diameter="24" class="button-spinner"></mat-spinner>
-      }
-      </button>
-  </div>
+<!-- Add/Remove button at bottom - mat-dialog-actions handles button layout -->
+<mat-dialog-actions align="end">
+  <button
+    mat-flat-button
+    class="action-button"
+    [class.in-wishlist]="inWishlist()"
+    (click)="onAddRemoveClick()"
+    [disabled]="loading"
+  >
+    @if (!loading) {
+      {{ buttonText() }}
+    } @else {
+      <mat-spinner diameter="24" class="button-spinner"></mat-spinner>
+    }
+  </button>
+</mat-dialog-actions>
