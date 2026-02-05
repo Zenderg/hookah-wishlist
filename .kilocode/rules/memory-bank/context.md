@@ -24,21 +24,53 @@ The project is in a mature state with a fully functional MVP.
 ### Key Features Implemented
 - Real-time tobacco search with debouncing (300ms)
 - Infinite scroll pagination
-- Brand and tobacco name caching to avoid duplicate API calls
+- **Backend data enrichment** - backend returns tobacco data with brand and line details in single request
 - Toast notifications for user feedback
 - Checkmark animation for add/remove actions
 - Responsive design with Material Design 3 tokens
 - Skeleton loading to prevent visual glitches
 - Telegram Mini Apps init data validation
+- **Optimized HTTP requests** - reduced from ~23-43 requests (search) and ~41-61 requests (wishlist) to 1 request each
 
 ### Architecture Improvements
 - Refactored AppComponent into smaller, focused components
-- Created dedicated cache services for brands and tobaccos
+- **Backend data enrichment** - backend returns tobacco data with brand and line details in single request
+- **Removed cache services** - `BrandCacheService` and `TobaccoCacheService` no longer needed
 - Extracted filter modal into separate component
 - Unified tobacco card component for both search and wishlist tabs
 - Removed tobaccoName from database schema (fetch from API instead)
 
 ## Recent Changes
+
+- **Optimized HTTP requests by moving data enrichment to backend**:
+  - Added `TobaccoWithDetails` interface to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) extending `Tobacco` with `brand?: Brand` and `line?: Line`
+  - Added `getTobaccosWithDetails()` method to fetch tobaccos and enrich them with brand/line data in parallel
+  - Added `getTobaccosByIdsWithDetails()` method for batch fetching by IDs
+  - Added private helper methods `fetchBrandsByIds()` and `fetchLinesByIds()` for batch fetching
+  - Added new controller endpoints:
+    - `GET /api/hookah-db/tobaccos/with-details` - returns tobaccos with brand and line details
+    - `POST /api/hookah-db/tobaccos/by-ids` - accepts `{ ids: string[] }` body
+  - Updated [`WishlistService`](backend/src/wishlist/wishlist.service.ts) with `WishlistItemWithDetails` interface and `getUserWishlistWithDetails()` method
+  - Added `GET /api/wishlist/with-details` endpoint to [`WishlistController`](backend/src/wishlist/wishlist.controller.ts)
+  - Updated [`WishlistModule`](backend/src/wishlist/wishlist.module.ts) to import `HookahDbModule`
+  - Updated [`HookahDbService`](frontend/src/app/services/hookah-db.service.ts) on frontend with `TobaccoWithDetails` type and new methods
+  - Updated [`WishlistService`](frontend/src/app/services/wishlist.service.ts) on frontend with `WishlistItemWithDetails` interface and `getWishlistWithDetails()` method
+  - Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts) to use `TobaccoWithDetails` instead of `Tobacco`
+  - Removed `BrandCacheService` dependency from `SearchTabComponent`
+  - Removed `lineNames` signal and related methods (`loadLineNamesForTobaccos`, `getLineName`) from `SearchTabComponent`
+  - Removed `dataReady` computed property from `SearchTabComponent` (no longer needed since data comes ready)
+  - Updated [`search-tab.component.html`](frontend/src/app/components/search-tab/search-tab.component.html) to use `tobacco.brand?.name` and `tobacco.line?.name` directly
+  - Updated [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/wishlist-tab.component.ts) to use `WishlistItemWithDetails` and `TobaccoWithDetails`
+  - Removed `BrandCacheService` and `TobaccoCacheService` dependencies from `WishlistTabComponent`
+  - Removed `lineNames` signal from `WishlistTabComponent`
+  - Updated `dataReady` computed to check `item.tobacco !== undefined`
+  - Updated `loadWishlist()` to call `getWishlistWithDetails()` instead of `getWishlist()`
+  - Removed `loadTobaccoDetails()` and `loadLineName()` methods from `WishlistTabComponent`
+  - Updated all getter methods (`getTobaccoName`, `getTobaccoImageUrl`, `getBrandNameByTobaccoId`, `getLineNameByTobaccoId`) to use data from enriched tobacco objects
+  - Updated `onMarkAsPurchased()` parameter type from `Tobacco` to `TobaccoWithDetails`
+  - Updated tests in [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) to work with new methods
+  - All 57 backend tests pass, both frontend and backend build successfully
+  - **Performance improvement**: Reduced HTTP requests from ~23-43 (search) and ~41-61 (wishlist) to 1 request each
 
 - **Implemented URL-based wishlist addition**:
   - Added `getTobaccoByUrl()` method to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) that calls `GET /tobaccos/by-url?url={url}` endpoint
@@ -88,6 +120,7 @@ The project is in a mature state with a fully functional MVP.
 1. Deploy backend with polling - Bot now uses polling to receive updates from Telegram
 2. Deploy using Docker Compose
 3. Test URL-based wishlist addition in production environment
+4. Test optimized HTTP requests in production environment (search and wishlist tabs)
 
 ## Known Decisions
 
@@ -95,7 +128,7 @@ The project is in a mature state with a fully functional MVP.
 - Automated backup system (manual backups only)
 - Complex wishlist features (notes, quantities, priorities)
 - Multi-factor authentication beyond Telegram user ID
-- Local caching of hookah-db data (fetch in real-time)
+- **Local caching of hookah-db data on client** (backend now returns enriched data in single request)
 - Additional features beyond MVP scope
 
 ### Technical Constraints

@@ -6,9 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
-import { HookahDbService, type Tobacco, type PaginatedResponse } from '../../services/hookah-db.service';
+import { HookahDbService, type TobaccoWithDetails, type PaginatedResponse } from '../../services/hookah-db.service';
 import { WishlistService, type WishlistItem } from '../../services/wishlist.service';
-import { BrandCacheService } from '../../services/brand-cache.service';
 import { TobaccoCardComponent } from '../tobacco-card/tobacco-card.component';
 import { SkeletonCardComponent } from '../skeleton-card/skeleton-card.component';
 import { FilterModalComponent } from '../filter-modal/filter-modal.component';
@@ -33,14 +32,13 @@ import { FilterModalComponent } from '../filter-modal/filter-modal.component';
 export class SearchTabComponent implements OnInit {
   private hookahDbService = inject(HookahDbService);
   private wishlistService = inject(WishlistService);
-  private brandCacheService = inject(BrandCacheService);
 
   // Inputs
   wishlistItems = input.required<WishlistItem[]>();
 
   // Outputs
   addToWishlist = output<WishlistItem>();
-  removeFromWishlist = output<Tobacco | WishlistItem>();
+  removeFromWishlist = output<TobaccoWithDetails | WishlistItem>();
 
   // Search state
   searchQuery = signal('');
@@ -48,7 +46,7 @@ export class SearchTabComponent implements OnInit {
   private destroy$ = new Subject<void>();
 
   // Tobacco data state
-  tobaccos = signal<Tobacco[]>([]);
+  tobaccos = signal<TobaccoWithDetails[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
   addingToWishlist = signal<Set<string>>(new Set<string>());
@@ -73,28 +71,9 @@ export class SearchTabComponent implements OnInit {
   availableCountries = signal<string[]>([]);
   loadingFilters = signal(false);
 
-  // Line names cache (Map<lineId, lineName>)
-  lineNames = signal<Map<string, string>>(new Map<string, string>());
-
   // Computed: Check if any filters are active
   hasActiveFilters = computed(() => {
     return this.selectedStatus() !== '' || this.selectedCountry() !== '';
-  });
-
-  // Computed: Check if all data is ready (tobaccos have brand names and line names)
-  dataReady = computed(() => {
-    const tobaccoList = this.tobaccos();
-    // If loading is complete and list is empty, data is ready (show empty state)
-    if (!this.loading() && tobaccoList.length === 0) return true;
-    // If list is empty but still loading, data is not ready (show skeleton)
-    if (tobaccoList.length === 0) return false;
-    // Check if all tobaccos have brand names and line names loaded
-    return tobaccoList.every((tobacco) => {
-      const brandName = this.getBrandName(tobacco.brandId);
-      const lineName = this.getLineName(tobacco.lineId);
-      // Data is ready if brand name is not UUID and line name is not UUID
-      return brandName !== tobacco.brandId && lineName !== tobacco.lineId;
-    });
   });
 
   ngOnInit() {
@@ -190,8 +169,8 @@ export class SearchTabComponent implements OnInit {
       country: this.selectedCountry() || undefined,
     };
 
-    this.hookahDbService.getTobaccos(params).subscribe({
-      next: (response: PaginatedResponse<Tobacco>) => {
+    this.hookahDbService.getTobaccosWithDetails(params).subscribe({
+      next: (response: PaginatedResponse<TobaccoWithDetails>) => {
         if (this.currentPage() === 1) {
           this.tobaccos.set(response.data);
         } else {
@@ -199,10 +178,6 @@ export class SearchTabComponent implements OnInit {
         }
         this.totalPages.set(response.pages);
         this.loading.set(false);
-        // Load brand names for tobaccos
-        this.loadBrandNamesForTobaccos(response.data);
-        // Load line names for tobaccos
-        this.loadLineNamesForTobaccos(response.data);
       },
       error: (err) => {
         console.error('Failed to load tobaccos:', err);
@@ -219,7 +194,7 @@ export class SearchTabComponent implements OnInit {
     }
   }
 
-  onAddToWishlist(tobacco: Tobacco) {
+  onAddToWishlist(tobacco: TobaccoWithDetails) {
     const addingSet = this.addingToWishlist();
     this.addingToWishlist.set(new Set(addingSet).add(tobacco.id));
 
@@ -267,7 +242,7 @@ export class SearchTabComponent implements OnInit {
     });
   }
 
-  onRemoveFromWishlist(item: Tobacco | WishlistItem) {
+  onRemoveFromWishlist(item: TobaccoWithDetails | WishlistItem) {
     let wishlistItem: WishlistItem | undefined;
 
     if ('tobaccoId' in item) {
@@ -275,7 +250,7 @@ export class SearchTabComponent implements OnInit {
       wishlistItem = item as WishlistItem;
     } else {
       // It's a Tobacco object - find the wishlist item
-      const tobacco = item as Tobacco;
+      const tobacco = item as TobaccoWithDetails;
       wishlistItem = this.wishlistItems().find(wi => wi.tobaccoId === tobacco.id);
     }
 
@@ -322,40 +297,7 @@ export class SearchTabComponent implements OnInit {
     });
   }
 
-  private loadBrandNamesForTobaccos(tobaccos: Tobacco[]) {
-    const brandIds = [...new Set(tobaccos.map((tobacco) => tobacco.brandId).filter(Boolean))];
-    this.brandCacheService.loadBrandNames(brandIds);
-  }
-
-  getBrandName(brandId: string): string {
-    return this.brandCacheService.getBrandName(brandId);
-  }
-
-  private loadLineNamesForTobaccos(tobaccos: Tobacco[]) {
-    const lineIds = [...new Set(tobaccos.map((tobacco) => tobacco.lineId).filter((id): id is string => id !== null))];
-    lineIds.forEach((lineId) => {
-      // Check if line name is already cached
-      if (!this.lineNames().has(lineId)) {
-        this.hookahDbService.getLineById(lineId).subscribe({
-          next: (line) => {
-            this.lineNames.update((map) => new Map(map).set(lineId, line.name));
-          },
-          error: (err) => {
-            console.error(`Failed to load line name for lineId ${lineId}:`, err);
-            // Store lineId as name on error to prevent infinite loading
-            this.lineNames.update((map) => new Map(map).set(lineId, lineId));
-          },
-        });
-      }
-    });
-  }
-
-  getLineName(lineId: string | null): string {
-    if (!lineId) return '';
-    return this.lineNames().get(lineId) || lineId;
-  }
-
-  trackByTobaccoId(index: number, tobacco: Tobacco): string {
+  trackByTobaccoId(index: number, tobacco: TobaccoWithDetails): string {
     return tobacco.id;
   }
 }

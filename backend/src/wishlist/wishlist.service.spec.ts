@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { WishlistItem } from './entities/wishlist-item.entity';
 import { User } from '../database/entities/user.entity';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { HookahDbService } from '../hookah-db/hookah-db.service';
 
 describe('WishlistService', () => {
   let service: WishlistService;
@@ -25,6 +26,10 @@ describe('WishlistService', () => {
     save: jest.fn(),
   };
 
+  const mockHookahDbService = {
+    getTobaccosByIdsWithDetails: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -37,6 +42,10 @@ describe('WishlistService', () => {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
         },
+        {
+          provide: HookahDbService,
+          useValue: mockHookahDbService,
+        },
       ],
     }).compile();
 
@@ -47,6 +56,7 @@ describe('WishlistService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    mockHookahDbService.getTobaccosByIdsWithDetails.mockClear();
   });
 
   it('should be defined', () => {

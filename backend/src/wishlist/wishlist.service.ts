@@ -3,6 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WishlistItem } from './entities/wishlist-item.entity';
 import { User } from '../database/entities/user.entity';
+import { HookahDbService, TobaccoWithDetails } from '../hookah-db/hookah-db.service';
+
+// Wishlist item with full tobacco details
+export interface WishlistItemWithDetails extends WishlistItem {
+  tobacco: TobaccoWithDetails;
+}
 
 @Injectable()
 export class WishlistService {
@@ -11,6 +17,7 @@ export class WishlistService {
     private wishlistRepository: Repository<WishlistItem>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private hookahDbService: HookahDbService,
   ) {}
 
   async getUserWishlist(telegramId: string): Promise<WishlistItem[]> {
@@ -26,6 +33,49 @@ export class WishlistService {
       where: { userId: user.id },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Get user wishlist with full tobacco details
+  async getUserWishlistWithDetails(telegramId: string): Promise<WishlistItemWithDetails[]> {
+    const user = await this.userRepository.findOne({
+      where: { telegramId },
+    });
+
+    if (!user) {
+      return [];
+    }
+
+    const wishlistItems = await this.wishlistRepository.find({
+      where: { userId: user.id },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (wishlistItems.length === 0) {
+      return [];
+    }
+
+    // Get tobacco IDs
+    const tobaccoIds = wishlistItems.map((item) => item.tobaccoId);
+
+    // Fetch tobaccos with brand and line details
+    const tobaccos = await this.hookahDbService.getTobaccosByIdsWithDetails(tobaccoIds);
+
+    // Create a map for quick lookup
+    const tobaccoMap = new Map(tobaccos.map((tobacco) => [tobacco.id, tobacco]));
+
+    // Combine wishlist items with tobacco details
+    return wishlistItems
+      .map((item) => {
+        const tobacco = tobaccoMap.get(item.tobaccoId);
+        if (!tobacco) {
+          return null;
+        }
+        return {
+          ...item,
+          tobacco,
+        };
+      })
+      .filter((item): item is WishlistItemWithDetails => item !== null);
   }
 
   async addToWishlist(telegramId: string, tobaccoId: string): Promise<WishlistItem> {

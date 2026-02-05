@@ -36,6 +36,12 @@ export interface Tobacco {
   updatedAt: Date;
 }
 
+// Extended tobacco type with related brand and line data
+export interface TobaccoWithDetails extends Tobacco {
+  brand?: Brand;
+  line?: Line;
+}
+
 export interface Line {
   id: string;
   name: string;
@@ -264,6 +270,102 @@ export class HookahDbService {
     }
   }
 
+  // Get tobaccos with brand and line details included
+  async getTobaccosWithDetails(params?: TobaccosQueryParams): Promise<PaginatedResponse<TobaccoWithDetails>> {
+    try {
+      const queryParams = this.buildQueryParams({
+        page: params?.page?.toString(),
+        limit: params?.limit?.toString(),
+        sortBy: params?.sortBy,
+        order: params?.order,
+        brandId: params?.brandId,
+        lineId: params?.lineId,
+        minRating: params?.minRating?.toString(),
+        maxRating: params?.maxRating?.toString(),
+        country: params?.country,
+        status: params?.status,
+        search: params?.search,
+      });
+
+      const response = await firstValueFrom(
+        this.httpService.get<PaginatedResponse<Tobacco>>(`${this.apiUrl}/tobaccos`, {
+          headers: this.getHeaders(),
+          params: queryParams,
+        }),
+      );
+
+      this.logger.debug(`Fetched ${response.data.data.length} tobaccos with details (page ${response.data.page})`);
+
+      // Collect unique brand IDs and line IDs
+      const brandIds = new Set<string>();
+      const lineIds = new Set<string>();
+
+      response.data.data.forEach((tobacco) => {
+        brandIds.add(tobacco.brandId);
+        if (tobacco.lineId) {
+          lineIds.add(tobacco.lineId);
+        }
+      });
+
+      // Fetch brands and lines in parallel
+      const [brands, lines] = await Promise.all([
+        this.fetchBrandsByIds(Array.from(brandIds)),
+        this.fetchLinesByIds(Array.from(lineIds)),
+      ]);
+
+      // Create maps for quick lookup
+      const brandMap = new Map(brands.map((brand) => [brand.id, brand]));
+      const lineMap = new Map(lines.map((line) => [line.id, line]));
+
+      // Enrich tobaccos with brand and line data
+      const enrichedTobaccos: TobaccoWithDetails[] = response.data.data.map((tobacco) => ({
+        ...tobacco,
+        brand: brandMap.get(tobacco.brandId),
+        line: tobacco.lineId ? lineMap.get(tobacco.lineId) : undefined,
+      }));
+
+      return {
+        ...response.data,
+        data: enrichedTobaccos,
+      };
+    } catch (error) {
+      this.handleError(error, 'Failed to fetch tobaccos with details');
+      throw error;
+    }
+  }
+
+  // Helper method to fetch multiple brands by IDs
+  private async fetchBrandsByIds(brandIds: string[]): Promise<Brand[]> {
+    if (brandIds.length === 0) return [];
+
+    const brands = await Promise.all(
+      brandIds.map((id) =>
+        this.getBrandById(id).catch((error) => {
+          this.logger.warn(`Failed to fetch brand ${id}:`, error);
+          return null;
+        }),
+      ),
+    );
+
+    return brands.filter((brand): brand is Brand => brand !== null);
+  }
+
+  // Helper method to fetch multiple lines by IDs
+  private async fetchLinesByIds(lineIds: string[]): Promise<Line[]> {
+    if (lineIds.length === 0) return [];
+
+    const lines = await Promise.all(
+      lineIds.map((id) =>
+        this.getLineById(id).catch((error) => {
+          this.logger.warn(`Failed to fetch line ${id}:`, error);
+          return null;
+        }),
+      ),
+    );
+
+    return lines.filter((line): line is Line => line !== null);
+  }
+
   async getTobaccoById(id: string): Promise<Tobacco> {
     try {
       const response = await firstValueFrom(
@@ -276,6 +378,59 @@ export class HookahDbService {
       return response.data;
     } catch (error) {
       this.handleError(error, `Failed to fetch tobacco: ${id}`);
+      throw error;
+    }
+  }
+
+  // Get multiple tobaccos by IDs with brand and line details
+  async getTobaccosByIdsWithDetails(tobaccoIds: string[]): Promise<TobaccoWithDetails[]> {
+    if (tobaccoIds.length === 0) return [];
+
+    try {
+      const tobaccos = await Promise.all(
+        tobaccoIds.map((id) =>
+          this.getTobaccoById(id).catch((error) => {
+            this.logger.warn(`Failed to fetch tobacco ${id}:`, error);
+            return null;
+          }),
+        ),
+      );
+
+      const validTobaccos = tobaccos.filter((t): t is Tobacco => t !== null);
+
+      this.logger.debug(`Fetched ${validTobaccos.length} tobaccos by IDs with details`);
+
+      // Collect unique brand IDs and line IDs
+      const brandIds = new Set<string>();
+      const lineIds = new Set<string>();
+
+      validTobaccos.forEach((tobacco) => {
+        brandIds.add(tobacco.brandId);
+        if (tobacco.lineId) {
+          lineIds.add(tobacco.lineId);
+        }
+      });
+
+      // Fetch brands and lines in parallel
+      const [brands, lines] = await Promise.all([
+        this.fetchBrandsByIds(Array.from(brandIds)),
+        this.fetchLinesByIds(Array.from(lineIds)),
+      ]);
+
+      // Create maps for quick lookup
+      const brandMap = new Map(brands.map((brand) => [brand.id, brand]));
+      const lineMap = new Map(lines.map((line) => [line.id, line]));
+
+      // Enrich tobaccos with brand and line data
+      const enrichedTobaccos: TobaccoWithDetails[] = validTobaccos.map((tobacco) => ({
+        ...tobacco,
+        brand: brandMap.get(tobacco.brandId),
+        line: tobacco.lineId ? lineMap.get(tobacco.lineId) : undefined,
+      }));
+
+      return enrichedTobaccos;
+    } catch (error) {
+      this.handleError(error, 'Failed to fetch tobaccos by IDs with details');
       throw error;
     }
   }

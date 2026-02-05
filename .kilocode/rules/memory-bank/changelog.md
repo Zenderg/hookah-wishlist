@@ -4,6 +4,38 @@ This document tracks all major changes and milestones in Hookah Wishlist project
 
 ## 2026
 
+### February - Optimized HTTP Requests
+
+**Optimized HTTP Requests by Moving Data Enrichment to Backend**
+- Added `TobaccoWithDetails` interface to [`HookahDbService`](backend/src/hookah-db/hookah-db.service.ts) extending `Tobacco` with `brand?: Brand` and `line?: Line`
+- Added `getTobaccosWithDetails()` method to fetch tobaccos and enrich them with brand/line data in parallel
+- Added `getTobaccosByIdsWithDetails()` method for batch fetching by IDs
+- Added private helper methods `fetchBrandsByIds()` and `fetchLinesByIds()` for batch fetching
+- Added new controller endpoints:
+  - `GET /api/hookah-db/tobaccos/with-details` - returns tobaccos with brand and line details
+  - `POST /api/hookah-db/tobaccos/by-ids` - accepts `{ ids: string[] }` body
+- Updated [`WishlistService`](backend/src/wishlist/wishlist.service.ts) with `WishlistItemWithDetails` interface and `getUserWishlistWithDetails()` method
+- Added `GET /api/wishlist/with-details` endpoint to [`WishlistController`](backend/src/wishlist/wishlist.controller.ts)
+- Updated [`WishlistModule`](backend/src/wishlist/wishlist.module.ts) to import `HookahDbModule`
+- Updated [`HookahDbService`](frontend/src/app/services/hookah-db.service.ts) on frontend with `TobaccoWithDetails` type and new methods
+- Updated [`WishlistService`](frontend/src/app/services/wishlist.service.ts) on frontend with `WishlistItemWithDetails` interface and `getWishlistWithDetails()` method
+- Updated [`SearchTabComponent`](frontend/src/app/components/search-tab/search-tab.component.ts) to use `TobaccoWithDetails` instead of `Tobacco`
+- Removed `BrandCacheService` dependency from `SearchTabComponent`
+- Removed `lineNames` signal and related methods (`loadLineNamesForTobaccos`, `getLineName`) from `SearchTabComponent`
+- Removed `dataReady` computed property from `SearchTabComponent` (no longer needed since data comes ready)
+- Updated [`search-tab.component.html`](frontend/src/app/components/search-tab/search-tab.component.html) to use `tobacco.brand?.name` and `tobacco.line?.name` directly
+- Updated [`WishlistTabComponent`](frontend/src/app/components/wishlist-tab/wishlist-tab.component.ts) to use `WishlistItemWithDetails` and `TobaccoWithDetails`
+- Removed `BrandCacheService` and `TobaccoCacheService` dependencies from `WishlistTabComponent`
+- Removed `lineNames` signal from `WishlistTabComponent`
+- Updated `dataReady` computed to check `item.tobacco !== undefined`
+- Updated `loadWishlist()` to call `getWishlistWithDetails()` instead of `getWishlist()`
+- Removed `loadTobaccoDetails()` and `loadLineName()` methods from `WishlistTabComponent`
+- Updated all getter methods (`getTobaccoName`, `getTobaccoImageUrl`, `getBrandNameByTobaccoId`, `getLineNameByTobaccoId`) to use data from enriched tobacco objects
+- Updated `onMarkAsPurchased()` parameter type from `Tobacco` to `TobaccoWithDetails`
+- Updated tests in [`wishlist.service.spec.ts`](backend/src/wishlist/wishlist.service.spec.ts) to work with new methods
+- All 57 backend tests pass, both frontend and backend build successfully
+- **Performance improvement**: Reduced HTTP requests from ~23-43 (search) and ~41-61 (wishlist) to 1 request each
+
 ### February - URL-based Wishlist Addition
 
 **Implemented URL-based Wishlist Addition**

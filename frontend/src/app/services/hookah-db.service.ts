@@ -35,6 +35,12 @@ export type Tobacco = {
   updatedAt: string;
 };
 
+// Extended tobacco type with related brand and line data
+export type TobaccoWithDetails = Tobacco & {
+  brand?: Brand;
+  line?: Line;
+};
+
 export type Line = {
   id: string; // UUID
   name: string;
@@ -168,8 +174,34 @@ export class HookahDbService {
     });
   }
 
+  // Get tobaccos with brand and line details included
+  getTobaccosWithDetails(params?: TobaccosQueryParams): Observable<PaginatedResponse<TobaccoWithDetails>> {
+    let httpParams = this.buildHttpParams({
+      page: params?.page?.toString(),
+      limit: params?.limit?.toString(),
+      sortBy: params?.sortBy,
+      order: params?.order,
+      brandId: params?.brandId,
+      lineId: params?.lineId,
+      minRating: params?.minRating?.toString(),
+      maxRating: params?.maxRating?.toString(),
+      country: params?.country,
+      status: params?.status,
+      search: params?.search,
+    });
+
+    return this.http.get<PaginatedResponse<TobaccoWithDetails>>(`${this.apiUrl}/hookah-db/tobaccos/with-details`, {
+      params: httpParams,
+    });
+  }
+
   getTobaccoById(id: string): Observable<Tobacco> {
     return this.http.get<Tobacco>(`${this.apiUrl}/hookah-db/tobaccos/${id}`);
+  }
+
+  // Get multiple tobaccos by IDs with brand and line details
+  getTobaccosByIdsWithDetails(ids: string[]): Observable<TobaccoWithDetails[]> {
+    return this.http.post<TobaccoWithDetails[]>(`${this.apiUrl}/hookah-db/tobaccos/by-ids`, { ids });
   }
 
   getTobaccoStatuses(): Observable<string[]> {

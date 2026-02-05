@@ -28,7 +28,7 @@
 <!-- Main content -->
 <main class="main-content" (scroll)="onLoadMore()">
   <!-- Loading state - Skeleton cards -->
-  @if ((loading() && tobaccos().length === 0) || !dataReady()) {
+  @if (loading() && tobaccos().length === 0) {
     <div class="skeleton-list">
       @for (i of [1, 2, 3, 4, 5]; track i) {
         <app-skeleton-card />
@@ -52,13 +52,13 @@
   }
 
   <!-- Tobacco cards list -->
-  @if (!loading() && tobaccos().length > 0 && dataReady()) {
+  @if (!loading() && tobaccos().length > 0) {
     <div class="tobaccos-list">
       @for (tobacco of tobaccos(); track tobacco.id) {
         <app-tobacco-card
           [tobacco]="tobacco"
-          [brandName]="getBrandName(tobacco.brandId)"
-          [lineName]="getLineName(tobacco.lineId)"
+          [brandName]="tobacco.brand?.name ?? null"
+          [lineName]="tobacco.line?.name ?? null"
           [adding]="addingToWishlist().has(tobacco.id)"
           [removing]="removingFromWishlist().has(tobacco.id)"
           [withCheckmark]="itemsWithCheckmark().has(tobacco.id)"

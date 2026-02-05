@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { WishlistService } from './wishlist.service';
+import { WishlistService, WishlistItemWithDetails } from './wishlist.service';
 import { AddToWishlistDto } from './dto/add-to-wishlist.dto';
 import { TelegramId } from '../auth/decorators/telegram-id.decorator';
 
@@ -10,6 +10,12 @@ export class WishlistController {
   @Get()
   async getWishlist(@TelegramId() telegramId: string) {
     return this.wishlistService.getUserWishlist(telegramId);
+  }
+
+  // Get wishlist with full tobacco details
+  @Get('with-details')
+  async getWishlistWithDetails(@TelegramId() telegramId: string): Promise<WishlistItemWithDetails[]> {
+    return this.wishlistService.getUserWishlistWithDetails(telegramId);
   }
 
   @Post()

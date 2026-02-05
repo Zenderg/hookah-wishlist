@@ -4,9 +4,10 @@ import { WishlistController } from './wishlist.controller';
 import { WishlistService } from './wishlist.service';
 import { WishlistItem } from './entities/wishlist-item.entity';
 import { DatabaseModule } from '../database/database.module';
+import { HookahDbModule } from '../hookah-db/hookah-db.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WishlistItem]), DatabaseModule],
+  imports: [TypeOrmModule.forFeature([WishlistItem]), DatabaseModule, HookahDbModule],
   controllers: [WishlistController],
   providers: [WishlistService],
   exports: [WishlistService],

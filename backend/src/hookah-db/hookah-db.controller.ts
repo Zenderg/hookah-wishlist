@@ -1,9 +1,10 @@
-import { Controller, Get, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Query, Param, HttpCode, HttpStatus, Body } from '@nestjs/common';
 import {
   HookahDbService,
   Brand,
   Tobacco,
   Line,
+  TobaccoWithDetails,
   PaginatedResponse,
   BrandsQueryParams,
   TobaccosQueryParams,
@@ -110,10 +111,48 @@ export class HookahDbController {
     return this.hookahDbService.getTobaccos(params);
   }
 
+  // Get tobaccos with brand and line details included
+  @Get('tobaccos/with-details')
+  @HttpCode(HttpStatus.OK)
+  async getTobaccosWithDetails(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: 'rating' | 'name',
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('brandId') brandId?: string,
+    @Query('lineId') lineId?: string,
+    @Query('minRating') minRating?: string,
+    @Query('maxRating') maxRating?: string,
+    @Query('country') country?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ): Promise<PaginatedResponse<TobaccoWithDetails>> {
+    const params: TobaccosQueryParams = {};
+    if (page) params.page = parseInt(page, 10);
+    if (limit) params.limit = parseInt(limit, 10);
+    if (sortBy) params.sortBy = sortBy;
+    if (order) params.order = order;
+    if (brandId) params.brandId = brandId;
+    if (lineId) params.lineId = lineId;
+    if (minRating) params.minRating = parseFloat(minRating);
+    if (maxRating) params.maxRating = parseFloat(maxRating);
+    if (country) params.country = country;
+    if (status) params.status = status;
+    if (search) params.search = search;
+    return this.hookahDbService.getTobaccosWithDetails(params);
+  }
+
   @Get('tobaccos/:id')
   @HttpCode(HttpStatus.OK)
   async getTobaccoById(@Param('id') id: string): Promise<Tobacco> {
     return this.hookahDbService.getTobaccoById(id);
+  }
+
+  // Get multiple tobaccos by IDs with brand and line details
+  @Post('tobaccos/by-ids')
+  @HttpCode(HttpStatus.OK)
+  async getTobaccosByIdsWithDetails(@Body('ids') ids: string[]): Promise<TobaccoWithDetails[]> {
+    return this.hookahDbService.getTobaccosByIdsWithDetails(ids);
   }
 
   @Get('tobaccos/statuses')
