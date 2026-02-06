@@ -59,10 +59,12 @@ export type Line = {
 
 export type PaginatedResponse<T> = {
   data: T[];
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 };
 
 export type BrandsQueryParams = {

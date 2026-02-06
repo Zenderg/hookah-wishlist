@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, input, output } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, AfterViewInit, input, output, viewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,10 +31,11 @@ import { TobaccoDetailsModalComponent } from '../tobacco-details-modal/tobacco-d
   templateUrl: './search-tab.component.html',
   styleUrls: ['./search-tab.component.scss'],
 })
-export class SearchTabComponent implements OnInit {
+export class SearchTabComponent implements OnInit, OnDestroy, AfterViewInit {
   private hookahDbService = inject(HookahDbService);
   private wishlistService = inject(WishlistService);
   private dialog = inject(MatDialog);
+  private observer: IntersectionObserver | null = null;
 
   // Inputs
   wishlistItems = input.required<WishlistItem[]>();
@@ -74,6 +75,9 @@ export class SearchTabComponent implements OnInit {
   availableCountries = signal<string[]>([]);
   loadingFilters = signal(false);
 
+  // Sentinel element for infinite scroll
+  scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
+
   // Computed: Check if any filters are active
   hasActiveFilters = computed(() => {
     return this.selectedStatus() !== '' || this.selectedCountry() !== '';
@@ -85,9 +89,32 @@ export class SearchTabComponent implements OnInit {
     this.loadTobaccos();
   }
 
+  ngAfterViewInit() {
+    this.setupIntersectionObserver();
+  }
+
   ngOnDestroy() {
+    this.observer?.disconnect();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private setupIntersectionObserver() {
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !this.loading() && this.hasMore()) {
+          this.currentPage.update((page) => page + 1);
+          this.loadTobaccos();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    const sentinel = this.scrollSentinel()?.nativeElement;
+    if (sentinel) {
+      this.observer.observe(sentinel);
+    }
   }
 
   private setupSearchDebounce() {
@@ -179,7 +206,7 @@ export class SearchTabComponent implements OnInit {
         } else {
           this.tobaccos.update((current) => [...current, ...response.data]);
         }
-        this.totalPages.set(response.pages);
+        this.totalPages.set(response.meta.totalPages);
         this.loading.set(false);
       },
       error: (err) => {
@@ -188,13 +215,6 @@ export class SearchTabComponent implements OnInit {
         this.loading.set(false);
       },
     });
-  }
-
-  onLoadMore() {
-    if (!this.loading() && this.hasMore()) {
-      this.currentPage.update((page) => page + 1);
-      this.loadTobaccos();
-    }
   }
 
   onAddToWishlist(tobacco: TobaccoWithDetails) {

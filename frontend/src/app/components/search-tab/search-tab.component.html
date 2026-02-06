@@ -26,7 +26,7 @@
 </header>
 
 <!-- Main content -->
-<main class="main-content" (scroll)="onLoadMore()">
+<main class="main-content">
   <!-- Loading state - Skeleton cards -->
   @if (loading() && tobaccos().length === 0) {
     <div class="skeleton-list">
@@ -52,7 +52,7 @@
   }
 
   <!-- Tobacco cards list -->
-  @if (!loading() && tobaccos().length > 0) {
+  @if (tobaccos().length > 0) {
     <div class="tobaccos-list">
       @for (tobacco of tobaccos(); track tobacco.id) {
         <app-tobacco-card
@@ -77,6 +77,9 @@
       <mat-spinner diameter="30"></mat-spinner>
     </div>
   }
+
+  <!-- Infinite scroll sentinel -->
+  <div #scrollSentinel class="scroll-sentinel"></div>
 
   <!-- No more items indicator -->
   @if (!loading() && !hasMore() && tobaccos().length > 0) {
