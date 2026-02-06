@@ -46,5 +46,29 @@ describe('HelpHandler', () => {
       expect(message).toContain('Посетить магазин табаков');
       expect(message).toContain('Советы');
     });
+
+    it('should include URL-based wishlist addition section', async () => {
+      const mockCtx = {
+        reply: jest.fn().mockResolvedValue({}),
+      };
+
+      await handler.handle(mockCtx);
+
+      const message = mockCtx.reply.mock.calls[0][0];
+      expect(message).toContain('Быстрое добавление по ссылке');
+      expect(message).toContain('htreviews.org');
+      expect(message).toContain('автоматически найдет');
+    });
+
+    it('should include example URL in help message', async () => {
+      const mockCtx = {
+        reply: jest.fn().mockResolvedValue({}),
+      };
+
+      await handler.handle(mockCtx);
+
+      const message = mockCtx.reply.mock.calls[0][0];
+      expect(message).toContain('https://htreviews.org/tobaccos/');
+    });
   });
 });
