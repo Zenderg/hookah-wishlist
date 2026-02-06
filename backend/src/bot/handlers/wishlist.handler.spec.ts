@@ -28,6 +28,7 @@ describe('WishlistHandler', () => {
     const mockHookahDbService = {
       getTobaccoById: jest.fn(),
       getBrandById: jest.fn(),
+      getLineById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -110,11 +111,13 @@ describe('WishlistHandler', () => {
           id: 'tobacco-1',
           name: 'Mint Chocolate',
           brandId: 'brand-1',
+          lineId: 'line-1',
         },
         {
           id: 'tobacco-2',
           name: 'Blueberry Muffin',
           brandId: 'brand-2',
+          lineId: null,
         },
       ];
 
@@ -129,6 +132,13 @@ describe('WishlistHandler', () => {
         },
       ];
 
+      const mockLines = [
+        {
+          id: 'line-1',
+          name: 'Bold Series',
+        },
+      ];
+
       const mockCtx = {
         from: { id: 123456789 },
         reply: jest.fn().mockResolvedValue({}),
@@ -140,6 +150,9 @@ describe('WishlistHandler', () => {
       });
       hookahDbService.getBrandById.mockImplementation((id) => {
         return Promise.resolve(mockBrands.find(b => b.id === id) as any);
+      });
+      hookahDbService.getLineById.mockImplementation((id) => {
+        return Promise.resolve(mockLines.find(l => l.id === id) as any);
       });
 
       await handler.handle(mockCtx);
@@ -158,6 +171,8 @@ describe('WishlistHandler', () => {
       expect(message).toContain('Starbuzz');
       expect(message).toContain('Al Fakher');
       expect(message).toContain('🏭 Бренд:');
+      expect(message).toContain('📦 Линейка:');
+      expect(message).toContain('Bold Series');
     });
 
     it('should display items in the order returned by service', async () => {
@@ -207,8 +222,58 @@ describe('WishlistHandler', () => {
       const newIndex = message.indexOf('New Tobacco');
       const oldIndex = message.indexOf('Old Tobacco');
 
-      // Items should be displayed in the order returned by service
+      // Items should be displayed in order returned by service
       expect(newIndex).toBeLessThan(oldIndex);
+    });
+
+    it('should not display line when lineId is null', async () => {
+      const mockWishlistItems: WishlistItem[] = [
+        {
+          id: 1,
+          userId: 1,
+          tobaccoId: 'tobacco-1',
+          createdAt: new Date('2024-01-15'),
+          user: mockUser,
+        },
+      ];
+
+      const mockTobaccos = [
+        {
+          id: 'tobacco-1',
+          name: 'Mint Chocolate',
+          brandId: 'brand-1',
+          lineId: null,
+        },
+      ];
+
+      const mockBrands = [
+        {
+          id: 'brand-1',
+          name: 'Starbuzz',
+        },
+      ];
+
+      const mockCtx = {
+        from: { id: 123456789 },
+        reply: jest.fn().mockResolvedValue({}),
+      };
+
+      wishlistService.getUserWishlist.mockResolvedValue(mockWishlistItems);
+      hookahDbService.getTobaccoById.mockImplementation((id) => {
+        return Promise.resolve(mockTobaccos.find(t => t.id === id) as any);
+      });
+      hookahDbService.getBrandById.mockImplementation((id) => {
+        return Promise.resolve(mockBrands.find(b => b.id === id) as any);
+      });
+
+      await handler.handle(mockCtx);
+
+      const message = mockCtx.reply.mock.calls[0][0];
+      expect(message).toContain('Mint Chocolate');
+      expect(message).toContain('Starbuzz');
+      expect(message).toContain('🏭 Бренд:');
+      expect(message).not.toContain('📦 Линейка:');
+      expect(hookahDbService.getLineById).not.toHaveBeenCalled();
     });
   });
 });

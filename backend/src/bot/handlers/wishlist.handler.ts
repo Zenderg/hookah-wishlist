@@ -35,14 +35,10 @@ export class WishlistHandler {
 
     // Fetch tobacco details for each wishlist item
     for (const [index, item] of wishlist.entries()) {
-      const date = new Date(item.createdAt).toLocaleDateString('ru-RU', {
-        month: 'short',
-        day: 'numeric',
-      });
-
       try {
         const tobacco = await this.hookahDbService.getTobaccoById(item.tobaccoId);
         let brandName = 'Неизвестный бренд';
+        let lineName = '';
 
         try {
           const brand = await this.hookahDbService.getBrandById(tobacco.brandId);
@@ -51,13 +47,24 @@ export class WishlistHandler {
           // If brand fetch fails, use default text
         }
 
+        if (tobacco.lineId) {
+          try {
+            const line = await this.hookahDbService.getLineById(tobacco.lineId);
+            lineName = line.name;
+          } catch (lineError) {
+            // If line fetch fails, leave lineName empty
+          }
+        }
+
         message += `${index + 1}. <b>${tobacco.name}</b>\n`;
         message += `   🏭 Бренд: ${brandName}\n`;
-        message += `   📅 Добавлен: ${date}\n\n`;
+        if (lineName) {
+          message += `   📦 Линейка: ${lineName}\n`;
+        }
+        message += '\n';
       } catch (error) {
         // If tobacco fetch fails, show tobacco ID as fallback
-        message += `${index + 1}. <b>${item.tobaccoId}</b>\n`;
-        message += `   📅 Добавлен: ${date}\n\n`;
+        message += `${index + 1}. <b>${item.tobaccoId}</b>\n\n`;
       }
     }
 
