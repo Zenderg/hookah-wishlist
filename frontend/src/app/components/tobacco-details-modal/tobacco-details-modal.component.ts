@@ -45,7 +45,7 @@ export class TobaccoDetailsModalComponent {
   displayBrandWithCountry = computed(() => {
     const brand = this.tobacco().brand;
     if (!brand) return '';
-    return `Бренд: ${brand.name} (${brand.country})`;
+    return `${brand.name} (${brand.country})`;
   });
 
   buttonText = computed(() => (this.inWishlist() ? 'Удалить' : 'Добавить'));
