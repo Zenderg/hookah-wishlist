@@ -56,6 +56,7 @@ export class SearchTabComponent implements OnInit, OnDestroy, AfterViewInit {
   addingToWishlist = signal<Set<string>>(new Set<string>());
   removingFromWishlist = signal<Set<string>>(new Set<string>());
   itemsWithCheckmark = signal<Set<string>>(new Set<string>());
+  itemsWithRemoveMark = signal<Set<string>>(new Set<string>());
 
   // Computed: Get wishlist tobacco IDs from wishlist items
   wishlistTobaccoIds = computed(() => new Set(this.wishlistItems().map(item => item.tobaccoId)));
@@ -296,10 +297,10 @@ export class SearchTabComponent implements OnInit, OnDestroy, AfterViewInit {
           newSet.delete(tobaccoId);
           return newSet;
         });
-        // Show checkmark animation for 1.5 seconds
-        this.itemsWithCheckmark.update((set) => new Set(set).add(tobaccoId));
+        // Show remove mark animation for 1.5 seconds
+        this.itemsWithRemoveMark.update((set) => new Set(set).add(tobaccoId));
         setTimeout(() => {
-          this.itemsWithCheckmark.update((set) => {
+          this.itemsWithRemoveMark.update((set) => {
             const newSet = new Set(set);
             newSet.delete(tobaccoId);
             return newSet;

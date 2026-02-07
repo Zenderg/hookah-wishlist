@@ -39,7 +39,7 @@ export class WishlistTabComponent implements OnInit {
   wishlistLoading = signal(false);
   wishlistError = signal<string | null>(null);
   removingFromWishlist = signal<Set<number>>(new Set());
-  itemsWithCheckmark = signal<Set<number>>(new Set());
+  itemsWithRemoveMark = signal<Set<number>>(new Set());
 
   // Computed: Check if data is ready (wishlist has items with tobacco details)
   dataReady = computed(() => {
@@ -95,7 +95,7 @@ export class WishlistTabComponent implements OnInit {
     this.removingFromWishlist.set(new Set(removingSet).add(itemId));
 
     // Show checkmark animation
-    this.itemsWithCheckmark.update((set) => new Set(set).add(itemId));
+    this.itemsWithRemoveMark.update((set) => new Set(set).add(itemId));
 
     // Wait for animation, then remove
     setTimeout(() => {
@@ -107,7 +107,7 @@ export class WishlistTabComponent implements OnInit {
             newSet.delete(itemId);
             return newSet;
           });
-          this.itemsWithCheckmark.update((set) => {
+          this.itemsWithRemoveMark.update((set) => {
             const newSet = new Set(set);
             newSet.delete(itemId);
             return newSet;
@@ -121,7 +121,7 @@ export class WishlistTabComponent implements OnInit {
             newSet.delete(itemId);
             return newSet;
           });
-          this.itemsWithCheckmark.update((set) => {
+          this.itemsWithRemoveMark.update((set) => {
             const newSet = new Set(set);
             newSet.delete(itemId);
             return newSet;

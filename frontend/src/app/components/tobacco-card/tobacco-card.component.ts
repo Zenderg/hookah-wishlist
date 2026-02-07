@@ -30,6 +30,7 @@ export class TobaccoCardComponent {
   adding = input<boolean>(false);
   removing = input<boolean>(false);
   withCheckmark = input<boolean>(false);
+  withRemoveMark = input<boolean>(false);
 
   // Outputs
   cardClick = output<TobaccoWithDetails | WishlistItemWithDetails>();

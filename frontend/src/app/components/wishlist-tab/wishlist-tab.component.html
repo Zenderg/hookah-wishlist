@@ -41,7 +41,7 @@
           [imageUrl]="getTobaccoImageUrl(item.tobaccoId)"
           [formattedDate]="formatDate(item.createdAt)"
           [removing]="removingFromWishlist().has(item.id)"
-          [withCheckmark]="itemsWithCheckmark().has(item.id)"
+          [withRemoveMark]="itemsWithRemoveMark().has(item.id)"
           [inWishlist]="true"
           (cardClick)="onCardClick($event)"
           (removeFromWishlist)="onMarkAsPurchased($event)"

@@ -53,4 +53,9 @@
       <mat-icon class="checkmark-icon">check_circle</mat-icon>
     </div>
   }
+  @if (withRemoveMark()) {
+    <div class="checkmark-overlay remove-overlay">
+      <mat-icon class="checkmark-icon">remove_circle</mat-icon>
+    </div>
+  }
 </div>
