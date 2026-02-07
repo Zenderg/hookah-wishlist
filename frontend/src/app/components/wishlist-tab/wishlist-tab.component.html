@@ -1,5 +1,11 @@
 <main class="main-content wishlist-content">
-  <!-- Loading state - Skeleton cards -->
+  <header class="wishlist-header">
+    <h1 class="wishlist-title">Wishlist</h1>
+    @if (wishlist().length > 0 && dataReady()) {
+      <span class="wishlist-count">{{ wishlist().length }}</span>
+    }
+  </header>
+
   @if (wishlistLoading() || !dataReady()) {
     <div class="skeleton-list">
       @for (i of [1, 2, 3, 4, 5]; track i) {
@@ -8,7 +14,6 @@
     </div>
   }
 
-  <!-- Error state -->
   @if (wishlistError() && !wishlistLoading()) {
     <div class="error-container">
       <p class="error-text">{{ wishlistError() }}</p>
@@ -16,14 +21,14 @@
     </div>
   }
 
-  <!-- Empty state -->
   @if (!wishlistLoading() && !wishlistError() && wishlist().length === 0) {
     <div class="empty-container">
+      <mat-icon class="empty-icon">bookmark_border</mat-icon>
       <p class="empty-text">Wishlist пуст</p>
+      <p class="empty-hint">Добавляйте табаки из поиска</p>
     </div>
   }
 
-  <!-- Wishlist items list -->
   @if (!wishlistLoading() && !wishlistError() && wishlist().length > 0 && dataReady()) {
     <div class="wishlist-list">
       @for (item of wishlist(); track item.id) {

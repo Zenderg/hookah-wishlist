@@ -1,18 +1,16 @@
-/* Global styles for the app */
 :host {
   display: block;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .app-container {
   min-height: 100vh;
-  background-color: var(--mat-sys-surface-container-low);
+  background: #0a0a12;
   color: var(--mat-sys-on-surface);
   display: flex;
   flex-direction: column;
 }
 
-/* Toast notifications */
 ::ng-deep .mat-mdc-snack-bar-container {
   .toast-success {
     background-color: var(--mat-sys-primary);

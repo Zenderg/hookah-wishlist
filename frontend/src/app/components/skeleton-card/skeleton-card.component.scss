@@ -1,20 +1,20 @@
 .skeleton-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background-color: var(--mat-sys-surface);
-  border-radius: var(--mat-sys-corner-medium);
-  box-shadow: var(--mat-sys-level1);
-  height: 112px; // Match tobacco card height
+  gap: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  height: 104px;
 }
 
 .skeleton-image {
   flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  background-color: var(--mat-sys-surface-container-highest);
+  width: 76px;
+  height: 76px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .skeleton-content {
@@ -26,33 +26,33 @@
 }
 
 .skeleton-text {
-  height: 16px;
-  border-radius: 4px;
-  background-color: var(--mat-sys-surface-container-highest);
+  height: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .skeleton-name {
-  width: 70%;
-  height: 20px;
+  width: 65%;
+  height: 16px;
 }
 
 .skeleton-brand {
-  width: 50%;
+  width: 45%;
 }
 
 .skeleton-rating {
-  width: 30%;
+  width: 25%;
+  height: 12px;
 }
 
 .skeleton-button {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background-color: var(--mat-sys-surface-container-highest);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-// Shimmer animation
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
@@ -67,18 +67,14 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.08),
       transparent
     );
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 2s ease-in-out infinite;
   }
 }
 
 @keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+  0% { left: -100%; }
+  100% { left: 100%; }
 }

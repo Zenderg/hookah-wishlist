@@ -1,8 +1,6 @@
-/* Main content */
 .main-content {
   flex: 1;
-  padding: 16px;
-  padding-bottom: 80px; /* Space for tab bar */
+  padding: 0 16px 100px;
   overflow-y: auto;
   max-width: 600px;
   margin: 0 auto;
@@ -10,61 +8,92 @@
   box-sizing: border-box;
 }
 
-/* Loading state */
-.loading-container {
+.wishlist-header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 40px;
+  gap: 10px;
+  padding: 20px 0 16px;
 }
 
-/* Error state */
+.wishlist-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.wishlist-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px 24px;
   gap: 16px;
 }
 
 .error-text {
-  font: var(--mat-sys-body-medium);
+  font-size: 14px;
   color: var(--mat-sys-error);
   text-align: center;
+  opacity: 0.8;
 }
 
-/* Empty state */
 .empty-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 40px;
+  padding: 80px 24px;
+  gap: 8px;
+}
+
+.empty-icon {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  color: rgba(255, 255, 255, 0.12);
+  margin-bottom: 8px;
 }
 
 .empty-text {
-  font: var(--mat-sys-body-large);
-  color: var(--mat-sys-on-surface-variant);
+  font-size: 17px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
   text-align: center;
+  margin: 0;
 }
 
-/* Wishlist list */
+.empty-hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: center;
+  margin: 0;
+}
+
 .wishlist-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* Skeleton list */
 .skeleton-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-/* Responsive */
-@media (min-width: 768px) {
-  .main-content {
-    padding: 24px;
-  }
+  gap: 10px;
+  padding-top: 20px;
 }

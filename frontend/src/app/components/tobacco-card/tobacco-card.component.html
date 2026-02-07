@@ -21,9 +21,11 @@
       <p class="tobacco-line">{{ displayLineName() }}</p>
     }
     @if (showRating()) {
-      <p class="tobacco-rating">
-        {{ displayRatingFormatted() }} ({{ displayRatingsCount() }})
-      </p>
+      <div class="tobacco-rating">
+        <mat-icon class="star-icon" inline>star</mat-icon>
+        <span>{{ displayRatingFormatted() }}</span>
+        <span class="rating-count">({{ displayRatingsCount() }})</span>
+      </div>
     }
     @if (showDate()) {
       <p class="tobacco-date">{{ displayDate() }}</p>
@@ -38,9 +40,9 @@
   >
     @if (!isLoading()) {
       @if (inWishlist()) {
-        <mat-icon>check_circle</mat-icon>
+        <mat-icon class="action-icon filled">check_circle</mat-icon>
       } @else {
-        <mat-icon>add</mat-icon>
+        <mat-icon class="action-icon">add_circle</mat-icon>
       }
     } @else {
       <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
@@ -48,7 +50,7 @@
   </button>
   @if (withCheckmark()) {
     <div class="checkmark-overlay">
-      <mat-icon class="checkmark-icon">check</mat-icon>
+      <mat-icon class="checkmark-icon">check_circle</mat-icon>
     </div>
   }
 </div>

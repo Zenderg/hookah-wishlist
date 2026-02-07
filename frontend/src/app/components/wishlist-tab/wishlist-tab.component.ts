@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { WishlistService, type WishlistItem, type WishlistItemWithDetails } from '../../services/wishlist.service';
@@ -16,6 +17,7 @@ import { TobaccoDetailsModalComponent } from '../tobacco-details-modal/tobacco-d
   imports: [
     CommonModule,
     MatButtonModule,
+    MatIconModule,
     MatProgressSpinnerModule,
     TobaccoCardComponent,
     SkeletonCardComponent,

@@ -4,6 +4,7 @@
     [class.active]="activeTab() === 'search'"
     (click)="onTabClick('search')"
   >
+    <mat-icon class="tab-icon">search</mat-icon>
     <span class="tab-text">Поиск</span>
   </button>
   <button
@@ -11,6 +12,7 @@
     [class.active]="activeTab() === 'wishlist'"
     (click)="onTabClick('wishlist')"
   >
+    <mat-icon class="tab-icon">bookmark</mat-icon>
     <span class="tab-text">Wishlist</span>
   </button>
 </nav>
